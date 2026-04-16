@@ -1,0 +1,73 @@
+<div id="date-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+        <div style="background:white; padding:20px; border-radius:10px; text-align:center;">
+            <h3>Select Date for Report</h3>
+            <form id="date-form">
+                <input type="date" id="report-date" required />
+                <br /><br />
+                <button type="submit">Submit</button>
+                <button type="button" onclick="closeModal()">Close</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 10001; max-width: 400px; width: 90%;">
+        <h3>Edit Counter Data</h3>
+        <form id="edit-form">
+            <input type="hidden" id="edit-id" />
+            <div>
+                <label for="edit-shift-start">Shift Start Timestamp:</label><br />
+                <input type="datetime-local" id="edit-shift-start" name="shiftStartTimestamp" required />
+            </div>
+            <div>
+                <label for="edit-shift-end">Shift End Timestamp:</label><br />
+                <input type="datetime-local" id="edit-shift-end" name="shiftEndTimestamp" required />
+            </div>
+            <div>
+                <label for="edit-counter">Counter:</label><br />
+                <select id="edit-counter" name="counter" required>
+                    <option value="counter 1">counter 1</option>
+                    <option value="counter 2">counter 2</option>
+                </select>
+            </div>
+            <div>
+                <label for="edit-pineLabValue">Pine Lab Value:</label><br />
+                <input type="text" id="edit-pineLabValue" name="pineLabValue" />
+            </div>
+            <div>
+                <label for="edit-reason">Reason for Edit:</label><br />
+                <textarea id="edit-reason" name="editReason" rows="3" placeholder="Provide reason for edit" required></textarea>
+            </div>
+            <div style="margin-top: 10px;">
+                <button type="submit">Save</button>
+                <button type="button" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Delete Reason Modal -->
+    <div id="delete-reason-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 10001; max-width: 400px; width: 90%;">
+        <h3>Reason for Deletion</h3>
+        <form id="delete-reason-form">
+            <input type="hidden" id="delete-id" />
+            <div>
+                <label for="delete-reason-text">Reason: </label><br />
+                <textarea id="delete-reason-text" name="reason" rows="4" style="width:100%;" placeholder="Please provide a reason for deleting this item." required></textarea>
+            </div>
+            <div style="margin-top: 10px;">
+                <button type="submit">Confirm Delete</button>
+                <button type="button" onclick="closeDeleteModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Edit Comparison Modal -->
+    <div id="edit-comparison-modal" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 10001; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;">
+        <h3>Edit Comparison</h3>
+        <div id="comparison-content"></div>
+        <div style="margin-top: 10px; text-align: right;">
+            <button onclick="closeEditComparisonModal()">Close</button>
+        </div>
+    </div>
+
+    

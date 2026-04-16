@@ -3,43 +3,893 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namma Mart - Employee Page</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="employee.css">
+    <title>Namma Mart - Employee Portal</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css"> <!-- Reusing Admin SaaS Theme -->
+    <style>
+        /* Employee specific Bento Grid overrides */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            padding: 30px;
+            max-width: 1200px;
+        }
+
+        .bento-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border-color: #0A0A0A;
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: #F95A2C; /* Namma Mart Accent */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+
+        .bento-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            background: #F8FAFC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #0A0A0A;
+            transition: all 0.3s ease;
+        }
+
+        .bento-card:hover .bento-icon {
+            background: #0A0A0A;
+            color: #FFFFFF;
+            transform: rotate(-10deg);
+        }
+
+        .bento-card.accent:hover .bento-icon {
+            background: #F95A2C;
+            color: #FFFFFF;
+        }
+
+        .bento-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1A1A1A;
+            letter-spacing: -0.3px;
+        }
+
+        .bento-desc {
+            font-size: 14px;
+            color: #64748B;
+            line-height: 1.5;
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #0A0A0A;
+            color: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        /* SaaS Switch Toggle */
+        .saas-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .saas-switch input { opacity: 0; width: 0; height: 0; }
+        .saas-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .4s; border-radius: 24px; }
+        .saas-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:checked + .saas-slider { background-color: #F95A2C; }
+        input:checked + .saas-slider:before { transform: translateX(20px); }
+
+        /* Update Modal Styling */
+        #update-progress-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(4px); z-index: 100000;
+        }
+        .update-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #FFF; padding: 40px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+        .progress-bar-container {
+            width: 100%; height: 8px; background: #F1F5F9; border-radius: 4px; margin: 24px 0; overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%; background: #F95A2C; width: 0%; transition: width 1s linear;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <h1>NAMMA MART</h1>
-            <p>Signature Of Quality</p>
-        </div>
-        <div class="manager-info">
-            <h2>EXTENSIVE MANAGER</h2>
-            <p>Designed By Yochan</p>
-        </div>
-    </header>
-    <div class="profile-icon">👤 <span class="employee-name">Employee Name</span></div>
-    <main>
-        <div class="employee-container">
-            <div class="employee-buttons">
-                <button class="employee-btn" onclick="window.location.href='extra.html'">extra</button>
-                <button class="employee-btn" onclick="window.location.href='delivery.html'">delivery</button>
-                <button class="employee-btn" onclick="window.location.href='bill_paid.html'">bill paid</button>
-                <button class="employee-btn" onclick="window.location.href='issue.html'">issue</button>
-                <button class="employee-btn" onclick="window.location.href='retail_credit.html'">retail credit</button>
-                <button class="employee-btn" onclick="window.location.href='analysis.html'">analysis</button>
-                <button class="employee-btn logout-btn" onclick="logout()">logout</button>
-                <button class="employee-btn" onclick="endShift()">End shift</button>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon"><i class="fas fa-certificate"></i></div>
+                <div class="sidebar-title">
+                    <span class="title-main">Extensive Manager</span>
+                    <span class="title-sub">by Pinpoint Startups</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section-title" style="padding: 15px 24px 5px; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">Menu</div>
+                
+                <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+                    <i class="fas fa-home"></i> <span>Dashboard</span>
+                </div>
+
+                <div class="nav-item" id="nav-workspace" onclick="switchTab('workspace')">
+                    <i class="fas fa-briefcase"></i> <span>Workspace</span>
+                </div>
+                
+                <div style="flex-grow: 1;"></div>
+                
+                <div class="nav-item text-danger" onclick="endShift()">
+                    <i class="far fa-clock"></i> <span>End Shift</span>
+                </div>
+                <div class="nav-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 style="font-size: 24px; font-weight: 600; letter-spacing:-0.5px;">Welcome back, <span class="employee-name" style="color:#F95A2C;">Employee</span> ✌️</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-profile">
+                        <img id="profile-avatar" src="https://ui-avatars.com/api/?name=Yochan&background=5B67C0&color=fff" alt="User" style="width: 40px; height: 40px; border-radius: 50%;">
+                        <div class="user-info">
+                            <span class="user-name">Yochan</span>
+                            <span class="user-role">Developer</span>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-icon" style="margin-left: 8px; color: #64748B; font-size: 10px;"></i>
+                        
+                        <!-- Contact Links Dropdown -->
+                        <div class="profile-dropdown-menu" id="emp-profile-menu">
+                            <a href="https://www.instagram.com/yochxn.__" target="_blank" class="profile-dropdown-item"><i class="fab fa-instagram" style="color: #E1306C;"></i> Instagram</a>
+                            <a href="https://www.linkedin.com/in/yochan-balekaje-779a17389" target="_blank" class="profile-dropdown-item"><i class="fab fa-linkedin" style="color: #0077B5;"></i> LinkedIn</a>
+                            <a href="https://github.com/yochanbr" target="_blank" class="profile-dropdown-item"><i class="fab fa-github" style="color: #181717;"></i> GitHub</a>
+                            <a href="https://wa.me/916363251294" target="_blank" class="profile-dropdown-item"><i class="fab fa-whatsapp" style="color: #25D366;"></i> WhatsApp</a>
+                            <a href="mailto:yochanbr@gmail.com" class="profile-dropdown-item"><i class="fas fa-envelope" style="color: #EA4335;"></i> yochanbr@gmail.com</a>
+                            <a href="mailto:contact@yochan.site" class="profile-dropdown-item"><i class="fas fa-envelope" style="color: #EA4335;"></i> contact@yochan.site</a>
+                            <a href="https://yochan.site" target="_blank" class="profile-dropdown-item"><i class="fas fa-globe" style="color: #4B5563;"></i> Website</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <script>
+                document.querySelector('.user-profile').addEventListener('click', function(e) {
+                    const menu = document.getElementById('emp-profile-menu');
+                    menu.classList.toggle('show');
+                    e.stopPropagation();
+                });
+                document.addEventListener('click', function(e) {
+                    const menu = document.getElementById('emp-profile-menu');
+                    if (menu && menu.classList.contains('show') && !e.target.closest('.user-profile')) {
+                        menu.classList.remove('show');
+                    }
+                });
+            </script>
+            
+            <!-- LIVE BROADCAST TICKER -->
+            <div id="live-broadcast-banner" style="display: none; background: #FEF2F2; border-bottom: 1px solid #FECACA; overflow: hidden; position: relative; z-index: 50; height: 38px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.05);">
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; z-index: 2; display: flex; align-items: center; background: #DC2626; color: rgba(255,255,255,0.95); padding: 0 16px; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; box-shadow: 4px 0 12px rgba(0,0,0,0.1);">
+                    <i class="fas fa-bullhorn" style="margin-right: 8px; animation: broadcast-pulse 2s infinite;"></i> ADMIN BROADCAST
+                </div>
+                <div style="position: absolute; right: 0; top: 0; bottom: 0; z-index: 2; width: 40px; background: linear-gradient(to right, transparent, #FEF2F2);"></div>
+                
+                <style>
+                    @keyframes broadcast-marquee {
+                        0% { transform: translateX(100vw); }
+                        100% { transform: translateX(-100%); }
+                    }
+                    @keyframes broadcast-pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                    }
+                    #live-broadcast-msg {
+                        display: inline-block;
+                        white-space: nowrap;
+                        color: #991B1B;
+                        font-weight: 600;
+                        font-size: 14px;
+                        line-height: 38px;
+                        animation: broadcast-marquee 20s linear infinite;
+                    }
+                </style>
+                <div id="live-broadcast-msg"></div>
+            </div>
+            <div class="dashboard-scroll" style="height: calc(100vh - 80px); overflow-y: auto; background: #F8FAFC;">
+                
+                <div id="view-dashboard" style="padding: 30px; display: block;">
+                <style>
+                    .dash-grid { display: grid; gap: 24px; padding-bottom: 30px; }
+                    .dash-hero { background: linear-gradient(135deg, #1A1A1A 0%, #333333 100%); border-radius: 24px; padding: 32px 40px; color: #FFF; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+                    .dash-hero::after { content: ''; position: absolute; right: -50px; top: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(249, 90, 44, 0.2) 0%, transparent 70%); pointer-events: none; }
+                    .dash-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+                    .dash-stat-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+                    .dash-stat-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
+                    .dash-icon-box { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+                    .dash-progress-ring { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(#F95A2C var(--p), #F1F5F9 0); position: relative; font-weight: 700; font-size: 14px; color: #1A1A1A; }
+                    .dash-progress-ring::after { content: ""; position: absolute; width: 44px; height: 44px; background: #FFF; border-radius: 50%; }
+                    .dash-progress-ring span { position: relative; z-index: 1; }
+                    
+                    .dash-bottom-row { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; }
+                    .dash-panel { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 20px; height: 400px; }
+                    .dash-timeline { list-style: none; padding: 0; margin: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex: 1; padding-right: 10px; }
+                    .dash-timeline-item { display: flex; gap: 16px; position: relative; }
+                    .dash-timeline-item::before { content: ''; position: absolute; left: 19px; top: 38px; bottom: -16px; width: 2px; background: #F1F5F9; z-index: 0; }
+                    .dash-timeline-item:last-child::before { display: none; }
+                    .dash-timeline-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 50%; background: #F8FAFC; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #E2E8F0; display: flex; align-items: center; justify-content: center; color: #475569; z-index: 1; font-size: 14px; }
+                    .dash-timeline-content { flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 18px; border-radius: 12px; }
+                    
+                    .dash-alert { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 12px; background: #FFFBEB; border: 1px solid #FEF3C7; margin-bottom: 12px; }
+                    .dash-alert-icon { font-size: 18px; color: #F59E0B; margin-top: 2px; }
+                </style>
+                
+                <div class="dash-grid">
+                    <!-- Top Hero -->
+                    <div class="dash-hero">
+                        <div>
+                            <p style="margin: 0 0 8px 0; color: #94A3B8; font-weight: 500; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase;">Current Shift</p>
+                            <h2 style="margin: 0 0 12px 0; font-size: 32px; font-weight: 700; color: #FFFFFF;" id="dash-greeting">Welcome back, Employee</h2>
+                            <div style="display: flex; gap: 16px; align-items: center; color: #CBD5E1; font-size: 14px;">
+                                <div style="display: flex; align-items: center; gap: 6px;"><i class="far fa-calendar-alt"></i> <span id="dash-date">Monday, Mar 23</span></div>
+                                <div style="display: flex; align-items: center; gap: 6px;"><i class="far fa-clock"></i> <span id="dash-time">00:00 AM</span></div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; z-index: 1;">
+                            <button class="namma-btn-cancel" style="background: rgba(255,255,255,0.1); color: #FFFFFF; display: flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" onclick="endShift();">
+                                <i class="fas fa-flag-checkered"></i> End Shift
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Row -->
+                    <div class="dash-stat-row">
+                        <div class="dash-stat-card" onclick="document.querySelector('#nav-workspace').click(); openBillSettledModal();">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div class="dash-icon-box" style="background: #ECFDF5; color: #10B981;"><i class="fas fa-file-invoice-dollar"></i></div>
+                                <i class="fas fa-arrow-right" style="color: #CBD5E1; font-size: 12px;"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 4px 0; font-size: 28px; font-weight: 700; color: #1A1A1A;" id="dash-bills-count">0</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 14px; font-weight: 500;">Bills Settled Today</p>
+                            </div>
+                        </div>
+                        <div class="dash-stat-card" onclick="document.querySelector('#nav-workspace').click(); openDeliveryHubModal();">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div class="dash-icon-box" style="background: #EFF6FF; color: #3B82F6;"><i class="fas fa-truck"></i></div>
+                                <i class="fas fa-arrow-right" style="color: #CBD5E1; font-size: 12px;"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 4px 0; font-size: 28px; font-weight: 700; color: #1A1A1A;" id="dash-deliveries-count">0</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 14px; font-weight: 500;">Deliveries Handled</p>
+                            </div>
+                        </div>
+                        <div class="dash-stat-card" onclick="document.querySelector('#nav-workspace').click(); openExtraTasksModal();">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div class="dash-icon-box" style="background: #FEE2E2; color: #EF4444;"><i class="fas fa-plus-circle"></i></div>
+                                <i class="fas fa-arrow-right" style="color: #CBD5E1; font-size: 12px;"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0 0 4px 0; font-size: 28px; font-weight: 700; color: #1A1A1A;" id="dash-extras-count">0</h3>
+                                <p style="margin: 0; color: #64748B; font-size: 14px; font-weight: 500;">Extra Tasks</p>
+                            </div>
+                        </div>
+                        <div class="dash-stat-card" style="box-shadow: inset 0 0 0 1px #F1F5F9; background: #F8FAFC; border: none; cursor: default;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; height: 100%;">
+                                <div>
+                                    <h3 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: #1A1A1A;">Daily Target</h3>
+                                    <p style="margin: 0; color: #64748B; font-size: 13px;">Shift Progress</p>
+                                </div>
+                                <div class="dash-progress-ring" style="--p: 85%;">
+                                    <span>85%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Split -->
+                    <div class="dash-bottom-row">
+                        <!-- Recent Activity -->
+                        <div class="dash-panel" style="height: auto; min-height: 400px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Recent Activity</h3>
+                                <button style="background: none; border: none; color: #F95A2C; font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='none'" onclick="document.querySelector('#nav-workspace').click(); openSalesAnalysisModal(); saFetchHistory();">View All Audit Logs</button>
+                            </div>
+                            <ul class="dash-timeline" id="dash-timeline">
+                                <div style="text-align: center; color: #94A3B8; padding: 40px; font-size: 14px; border: 1px dashed #E2E8F0; border-radius: 12px;">
+                                    Fetching today's activity log...
+                                </div>
+                            </ul>
+                        </div>
+
+                        <!-- Alerts Panel -->
+                        <div class="dash-panel">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A; display: flex; align-items: center; gap: 8px;">
+                                Pending Actions <span style="background: #E2E8F0; color: #64748B; border-radius: 12px; padding: 2px 8px; font-size: 12px; line-height: 1;">0</span>
+                            </h3>
+                            <div style="flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: #94A3B8; font-size: 14px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #F8FAFC; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #CBD5E1;">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <div>You're all caught up!</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <div id="view-workspace" style="display: none;">
+                    <div class="bento-grid">
+                    <div class="bento-card" onclick="openRetailCreditModal()">
+                        <div class="bento-icon"><i class="fas fa-credit-card"></i></div>
+                        <div>
+                            <div class="bento-title">Retail Credit</div>
+                            <div class="bento-desc">Process store credits and customer tabs seamlessly.</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" onclick="openDeliveryHubModal()">
+                        <div class="bento-icon"><i class="fas fa-truck"></i></div>
+                        <div>
+                            <div class="bento-title">Delivery Hub</div>
+                            <div class="bento-desc">Manage outgoing orders and delivery statuses.</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" onclick="openBillSettledModal()">
+                        <div class="bento-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div>
+                            <div class="bento-title">Bill Settled</div>
+                            <div class="bento-desc">Record and track settled customer invoices accurately.</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card accent" onclick="openReportIssueModal()">
+                        <div class="bento-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="bento-title">Report Issue</div>
+                            <div class="bento-desc">Log discrepancies, damages, or operational roadblocks.</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" onclick="openSalesAnalysisModal()">
+                        <div class="bento-icon"><i class="fas fa-chart-line"></i></div>
+                        <div>
+                            <div class="bento-title">Sales Analysis</div>
+                            <div class="bento-desc">View your daily metrics and performance insights.</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" onclick="openExtraTasksModal()">
+                        <div class="bento-icon"><i class="fas fa-plus-circle"></i></div>
+                        <div>
+                            <div class="bento-title">Extra Tasks</div>
+                            <div class="bento-desc">Access additional duties and miscellaneous logs.</div>
+                        </div>
+                    </div>
+
+                </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- System Update Modal -->
+    <div id="update-progress-modal">
+        <div class="update-box">
+            <h2 style="margin-bottom: 8px; font-size: 22px; font-weight: 600; color: #0A0A0A;">System Update</h2>
+            <p style="color: #64748B; font-size: 15px;">Updating Namma Mart core systems...</p>
+            <div class="progress-bar-container">
+                <div id="progress-fill"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600;">
+                <span id="progress-percentage" style="color: #F95A2C;">0%</span>
+                <span id="remaining-time" style="color: #64748B;">Time remaining: 2:00</span>
             </div>
         </div>
-    </main>
-    <footer>
-        <p>EMPLOYEE PAGE</p>
-    </footer>
+    </div>
+
+    <!-- Draggable Retail Credit Modal & Overlay -->
+    <div id="retail-credit-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="retail-credit-modal" style="display: none; position: fixed; top: 100px; left: 50%; transform: translateX(-50%); width: 550px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; overflow: hidden; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0;">
+        <div id="retail-credit-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-credit-card" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Retail Credit</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeRetailCreditModal()"></i>
+        </div>
+        <div style="padding: 32px 36px;">
+            <form id="retail-credit-form">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Phone Number <span style="color:#ef4444">*</span></label>
+                    <input type="tel" id="rc-phone" name="phone-number" inputmode="numeric" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="10-digit number">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Amount <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 16px; top: 15px; font-size: 16px; color: #64748B; font-weight: 500;">₹</span>
+                        <input type="text" id="rc-amount" name="amount" style="width: 100%; padding: 14px 16px 14px 34px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="0.00">
+                    </div>
+                </div>
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Mode of Pay <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <select id="rc-mode" name="mode-of-pay" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; appearance: none; color: #1A1A1A; cursor: pointer;" required>
+                            <option value="" disabled selected>Select Payment Method</option>
+                            <option value="Upi Pinelab">UPI Pinelab</option>
+                            <option value="Card Pinelab">Card Pinelab</option>
+                            <option value="Upi Paytm">UPI Paytm</option>
+                            <option value="Card Paytm">Card Paytm</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 17px; color: #94A3B8; pointer-events: none; font-size: 14px;"></i>
+                    </div>
+                </div>
+                <button type="submit" class="namma-btn-confirm" style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Process Credit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Draggable Delivery Hub Modal & Overlay -->
+    <div id="delivery-hub-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="delivery-hub-modal" style="display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 550px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0;">
+        <div id="delivery-hub-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-truck" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Delivery Hub</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeDeliveryHubModal()"></i>
+        </div>
+        <!-- Wrap content in scrollable div to prevent exceeding viewport height -->
+        <div style="padding: 32px 36px; max-height: calc(100vh - 180px); overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: #FFF5F2; border-radius: 12px; border: 1px solid #FEE2E2;">
+                <div>
+                    <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1A1A1A;">Bill With Extra</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">Include extra items/fees.</p>
+                </div>
+                <!-- CSS Toggle Switch -->
+                <label class="saas-switch">
+                    <input type="checkbox" id="dl-bill-with-extra-toggle">
+                    <span class="saas-slider round"></span>
+                </label>
+            </div>
+
+            <form id="delivery-hub-form">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Bill Number <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="dl-bill-number" name="bill-number" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="Enter bill number">
+                </div>
+
+                <div id="dl-extra-fields" style="display: none; background: #F8FAFC; padding: 20px; border-radius: 12px; border: 1px dashed #CBD5E1; margin-bottom: 20px;">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 8px;">Amount without Extra</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 14px; top: 11px; font-size: 15px; color: #64748B;">₹</span>
+                            <input type="text" id="dl-amount-with-extra" name="amount-with-extra" style="width: 100%; padding: 12px 14px 12px 30px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 15px; background: #FFFFFF; box-sizing: border-box; outline: none;" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 8px;">Extra Amount</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 14px; top: 11px; font-size: 15px; color: #64748B;">₹</span>
+                            <input type="text" id="dl-extra-amount" name="extra-amount" style="width: 100%; padding: 12px 14px 12px 30px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 15px; background: #FFFFFF; box-sizing: border-box; outline: none;" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 8px;">Extra Item Category</label>
+                        <input type="text" id="dl-extra-item-category" name="extra-item-category" style="width: 100%; padding: 12px 14px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 15px; background: #FFFFFF; box-sizing: border-box; outline: none;" placeholder="e.g. Carry Bag">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Total Amount <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 16px; top: 15px; font-size: 16px; color: #64748B; font-weight: 500;">₹</span>
+                        <input type="text" id="dl-amount" name="amount" style="width: 100%; padding: 14px 16px 14px 34px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Mode of Pay <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <select id="dl-mode" name="mode-of-pay" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; appearance: none; color: #1A1A1A; cursor: pointer;" required>
+                            <option value="" disabled selected>Select Payment Method</option>
+                            <option value="Upi Pinelab">UPI Pinelab</option>
+                            <option value="Card Pinelab">Card Pinelab</option>
+                            <option value="Upi Paytm">UPI Paytm</option>
+                            <option value="Card Paytm">Card Paytm</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 17px; color: #94A3B8; pointer-events: none; font-size: 14px;"></i>
+                    </div>
+                </div>
+                <button type="submit" class="namma-btn-confirm" style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Process Delivery</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Draggable Bill Settled Modal & Overlay -->
+    <div id="bill-settled-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="bill-settled-modal" style="display: none; position: fixed; top: 120px; left: 50%; transform: translateX(-50%); width: 500px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; overflow: hidden; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0;">
+        <div id="bill-settled-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-file-invoice-dollar" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Bill Settled</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeBillSettledModal()"></i>
+        </div>
+        <div style="padding: 32px 36px;">
+            <form id="bill-settled-form">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Vendor / Supplier <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="bs-vendor" name="vendor-supplier" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="Enter supplier name">
+                </div>
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Amount Paid <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 16px; top: 15px; font-size: 16px; color: #64748B; font-weight: 500;">₹</span>
+                        <input type="text" id="bs-amount" name="amount-paid" style="width: 100%; padding: 14px 16px 14px 34px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="0.00">
+                    </div>
+                </div>
+                <button type="submit" class="namma-btn-confirm" style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Record Settlement</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Draggable Report Issue Modal & Overlay -->
+    <div id="report-issue-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="report-issue-modal" style="display: none; position: fixed; top: 120px; left: 50%; transform: translateX(-50%); width: 550px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; overflow: hidden; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0;">
+        <div id="report-issue-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-exclamation-triangle" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Report Issue</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeReportIssueModal()"></i>
+        </div>
+        <div style="padding: 32px 36px; max-height: calc(100vh - 180px); overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: #FFF5F2; border-radius: 12px; border: 1px solid #FEE2E2;">
+                <div>
+                    <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1A1A1A;">Non Bill Issue</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">Toggle if this issue is not related to a specific bill.</p>
+                </div>
+                <label class="saas-switch">
+                    <input type="checkbox" id="ri-non-bill-issue-toggle">
+                    <span class="saas-slider round"></span>
+                </label>
+            </div>
+
+            <form id="report-issue-form">
+                <div id="ri-bill-number-field" style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Bill Number <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="ri-bill-number" name="bill-number" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="Enter related bill number">
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">What is the issue you are facing? <span style="color:#ef4444">*</span></label>
+                    <textarea id="ri-issue-description" name="issue-description" rows="4" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s; resize: vertical;" required placeholder="Describe the issue in detail..."></textarea>
+                </div>
+                
+                <button type="submit" class="namma-btn-confirm" style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Draggable Extra Tasks Modal & Overlay -->
+    <div id="extra-tasks-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="extra-tasks-modal" style="display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 550px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0;">
+        <div id="extra-tasks-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-plus-circle" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Extra Tasks</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeExtraTasksModal()"></i>
+        </div>
+        <div style="padding: 32px 36px; max-height: calc(100vh - 180px); overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 16px; background: #FFF5F2; border-radius: 12px; border: 1px solid #FEE2E2;">
+                <div>
+                    <h4 style="margin: 0; font-size: 15px; font-weight: 600; color: #1A1A1A;">Completely Extra</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">Toggle if this is independent of any existing bill.</p>
+                </div>
+                <label class="saas-switch">
+                    <input type="checkbox" id="et-completely-extra-toggle">
+                    <span class="saas-slider round"></span>
+                </label>
+            </div>
+
+            <form id="extra-tasks-form">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Item Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="et-item-name" name="item-name" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="Enter item name">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Bill Number</label>
+                    <input type="text" id="et-bill-number" name="bill-number" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" placeholder="Enter related bill number">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Extra Amount <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 16px; top: 15px; font-size: 16px; color: #64748B; font-weight: 500;">₹</span>
+                        <input type="text" id="et-amount" name="extra-amount" style="width: 100%; padding: 14px 16px 14px 34px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; transition: border 0.2s;" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; font-size: 15px; font-weight: 500; color: #475569; margin-bottom: 10px;">Mode of Pay <span style="color:#ef4444">*</span></label>
+                    <div style="position: relative;">
+                        <select id="et-mode" name="mode-of-pay" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 16px; background: #F8FAFC; box-sizing: border-box; outline: none; appearance: none; color: #1A1A1A; cursor: pointer;" required>
+                            <option value="" disabled selected>Select Payment Method</option>
+                            <option value="Upi Pinelab">UPI Pinelab</option>
+                            <option value="Card Pinelab">Card Pinelab</option>
+                            <option value="Upi Paytm">UPI Paytm</option>
+                            <option value="Card Paytm">Card Paytm</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                        <i class="fas fa-chevron-down" style="position: absolute; right: 16px; top: 17px; color: #94A3B8; pointer-events: none; font-size: 14px;"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="namma-btn-confirm" style="width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Save Extra Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Draggable Sales Analysis Modal & Overlay -->
+    <div id="sales-analysis-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 999;"></div>
+    <div id="sales-analysis-modal" style="display: none; position: fixed; top: 60px; left: 50%; transform: translateX(-50%); width: 850px; max-width: 95vw; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 1000; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0; overflow: hidden;">
+        <div id="sales-analysis-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-chart-line" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 id="sa-modal-title" style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Sales Analysis - Please Select Category</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeSalesAnalysisModal()"></i>
+        </div>
+        <div style="padding: 24px 30px; max-height: calc(100vh - 140px); overflow-y: auto;">
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px;" onclick="saFetchData('extra')">Extra Tasks</button>
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px;" onclick="saFetchData('delivery')">Delivery Hub</button>
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px;" onclick="saFetchData('bill_paid')">Bill Settled</button>
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px;" onclick="saFetchData('issue')">Report Issue</button>
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px;" onclick="saFetchData('retail_credit')">Retail Credit</button>
+                <button class="namma-btn-cancel" style="padding: 10px 16px; font-size: 14px; background: #FEE2E2; color: #B91C1C;" onclick="saFetchHistory()">Audit History</button>
+            </div>
+
+            <div style="border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                    <thead id="sa-table-head" style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+                        <tr><th style="padding: 14px 16px; color: #64748B; font-weight: 600;">Data will appear here</th></tr>
+                    </thead>
+                    <tbody id="sa-table-body">
+                        <tr><td style="padding: 24px; text-align: center; color: #94A3B8;">Select a category above to load today's data.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Overlay for Editing Analysis Rows -->
+    <div id="sa-edit-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
+        <div id="sa-edit-box" style="background: #FFFFFF; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); width: 480px; max-width: 90vw; padding: 0; font-family: 'Inter', sans-serif; transform: scale(0.95); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; border: 1px solid #E2E8F0;">
+            <div style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-edit" style="color: #3B82F6; font-size: 18px;"></i>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">Edit Record</h3>
+                </div>
+                <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='#1A1A1A'" onmouseout="this.style.color='#64748B'" onclick="closeSaEditModal()"></i>
+            </div>
+            
+            <div style="padding: 30px; max-height: 60vh; overflow-y: auto;">
+                <form id="sa-edit-form">
+                    <input type="hidden" id="sa-edit-id">
+                    <input type="hidden" id="sa-edit-type">
+                    <div id="sa-edit-fields"></div>
+                    <!-- Reason always required -->
+                    <div style="margin-top: 24px; margin-bottom: 30px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 10px;">Reason for Edit <span style="color:#ef4444">*</span></label>
+                        <textarea id="sa-edit-reason" name="editReason" rows="3" style="width: 100%; padding: 14px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: border 0.2s, box-shadow 0.2s;" required placeholder="Briefly explain why this record is being modified..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 16px;">
+                        <button type="button" class="namma-btn-cancel" style="padding: 16px; border-radius: 12px; font-size: 15px;" onclick="closeSaEditModal()">Cancel</button>
+                        <button type="submit" class="namma-btn-confirm" style="padding: 16px; border-radius: 12px; font-size: 15px; background: #3B82F6; color: white;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draggable End Shift Report Modal & Overlay -->
+    <div id="esr-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 9999;"></div>
+    <div id="esr-modal" style="display: none; position: fixed; top: 50px; left: 50%; transform: translateX(-50%); width: 600px; max-width: 95vw; background: #FFFFFF; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); z-index: 10000; font-family: 'Inter', sans-serif; border: 1px solid #E2E8F0; overflow: hidden; flex-direction: column; max-height: 90vh;">
+        <div id="esr-header" style="background: #F8FAFC; padding: 20px 30px; border-bottom: 1px solid #E2E8F0; cursor: grab; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-flag-checkered" style="color: #F95A2C; font-size: 18px;"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1A1A1A;">End Shift Report</h3>
+            </div>
+            <i class="fas fa-times" style="color: #64748B; cursor: pointer; font-size: 20px;" onclick="closeEsrModal()"></i>
+        </div>
+        
+        <div id="esr-capture-area" style="padding: 30px; overflow-y: auto; flex: 1; background: #FFFFFF;">
+            
+            <!-- Shift Details -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Shift Details</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
+                    <div><span style="color: #94A3B8;">Employee:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-name">...</strong></div>
+                    <div><span style="color: #94A3B8;">Date:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-date">...</strong></div>
+                    <div><span style="color: #94A3B8;">Start Time:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-start">...</strong></div>
+                    <div><span style="color: #94A3B8;">End Time:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-end">...</strong></div>
+                    <div><span style="color: #94A3B8;">Counter:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-counter">...</strong></div>
+                    <div><span style="color: #94A3B8;">Pine Lab:</span> <strong style="color: #1A1A1A; margin-left: 8px;" id="esr-pinelab">...</strong></div>
+                </div>
+            </div>
+
+            <!-- Watermark -->
+            <div style="margin-top: 10px; margin-bottom: 24px; font-size: 12px; color: #CBD5E1; font-weight: 600; text-align: center; letter-spacing: 1.5px; text-transform: uppercase;">
+                Powered by PinPoint Startups
+            </div>
+
+            <!-- Financial Collections -->
+            <h4 style="margin: 0 0 16px 0; font-size: 15px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Today's Collections</h4>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div style="background: #FFFBEB; border: 1px solid #FEF3C7; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #D97706; font-weight: 600; margin-bottom: 4px;">UPI PINELAB</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #92400E;" id="esr-upi-pinelab">₹0</div>
+                </div>
+                <div style="background: #EFF6FF; border: 1px solid #DBEAFE; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #2563EB; font-weight: 600; margin-bottom: 4px;">CARD PINELAB</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #1E3A8A;" id="esr-card-pinelab">₹0</div>
+                </div>
+                <div style="background: #F0FDF4; border: 1px solid #DCFCE7; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #16A34A; font-weight: 600; margin-bottom: 4px;">CASH</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #14532D;" id="esr-cash">₹0</div>
+                </div>
+                <div style="background: #F5F3FF; border: 1px solid #EDE9FE; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #7C3AED; font-weight: 600; margin-bottom: 4px;">UPI PAYTM</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #4C1D95;" id="esr-upi-paytm">₹0</div>
+                </div>
+                <div style="background: #FEF2F2; border: 1px solid #FEE2E2; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #DC2626; font-weight: 600; margin-bottom: 4px;">CARD PAYTM</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #7F1D1D;" id="esr-card-paytm">₹0</div>
+                </div>
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 12px; color: #475569; font-weight: 600; margin-bottom: 4px;">RETAIL CREDIT</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #0F172A;" id="esr-retail-credit">₹0</div>
+                </div>
+            </div>
+
+            <!-- Data Activity -->
+            <div style="background: #F1F5F9; border-radius: 16px; padding: 20px; display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <div style="font-size: 24px; font-weight: 700; color: #10B981;" id="esr-inputed">0</div>
+                    <div style="font-size: 12px; color: #64748B; font-weight: 600; text-transform: uppercase;">New Records</div>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: 700; color: #3B82F6;" id="esr-edited">0</div>
+                    <div style="font-size: 12px; color: #64748B; font-weight: 600; text-transform: uppercase;">Records Edited</div>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: 700; color: #EF4444;" id="esr-deleted">0</div>
+                    <div style="font-size: 12px; color: #64748B; font-weight: 600; text-transform: uppercase;">Records Deleted</div>
+                </div>
+            </div>
+
+            <!-- Hidden Tables Container for Audit Screenshot -->
+            <div id="esr-hidden-tables" style="display: none;"></div>
+
+            <div style="margin-top: 24px; font-size: 13px; color: #94A3B8; text-align: center; font-style: italic;">
+                This snapshot is automatically saved to the administrator logs upon closing.
+            </div>
+
+        </div>
+        
+        <div style="padding: 20px 30px; border-top: 1px solid #E2E8F0; background: #F8FAFC; flex-shrink: 0; text-align: center;">
+            <button class="namma-btn-confirm" id="esr-close-btn" style="padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; background: #0A0A0A; color: white; cursor: pointer;">Acknowledge & Logout</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        function updateEmployeeName() {
-            const employeeName = localStorage.getItem('username') || 'Employee Name';
-            document.querySelector('.employee-name').textContent = employeeName;
+        // --- NAMMA MART CUSTOM SAAS MODAL SYSTEM --- //
+        const nammaModalSystem = (() => {
+            if (!document.getElementById('namma-modal-styles')) {
+                const style = document.createElement('style'); style.id = 'namma-modal-styles';
+                style.innerHTML = `#namma-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; } #namma-modal-box { background: #FFFFFF; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); width: 100%; max-width: 420px; padding: 32px; text-align: center; font-family: 'Inter', sans-serif; transform: translateY(20px) scale(0.95); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-sizing: border-box; } #namma-modal-icon { font-size: 36px; color: #F95A2C; margin-bottom: 20px; } #namma-modal-message { font-size: 16px; color: #1A1A1A; font-weight: 500; margin-bottom: 24px; line-height: 1.5; } #namma-modal-input { width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; font-size: 16px; color: #1A1A1A; margin-bottom: 24px; outline: none; transition: all 0.2s ease; box-sizing: border-box; } #namma-modal-input:focus { border-color: #0A0A0A; background: #FFFFFF; box-shadow: 0 0 0 4px rgba(10,10,10,0.05); } #namma-modal-buttons { display: flex; gap: 12px; justify-content: center; } .namma-btn { padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; flex: 1; } .namma-btn-cancel { background: #F1F5F9; color: #64748B; } .namma-btn-cancel:hover { background: #E2E8F0; color: #1A1A1A; } .namma-btn-confirm { background: #0A0A0A; color: #FFFFFF; } .namma-btn-confirm:hover { background: #F95A2C; transform: translateY(-1px); }`;
+                document.head.appendChild(style);
+            }
+            function showModal(type, message, defaultValue = '') {
+                return new Promise((resolve) => {
+                    const existing = document.getElementById('namma-modal-overlay'); if (existing) existing.remove();
+                    const iconSVG = type === 'alert' ? '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' : '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+                    document.body.insertAdjacentHTML('beforeend', `<div id="namma-modal-overlay"><div id="namma-modal-box"><div id="namma-modal-icon">${iconSVG}</div><div id="namma-modal-message">${message}</div>${type === 'prompt' ? `<input type="text" id="namma-modal-input" value="${defaultValue}" autocomplete="off">` : ''}<div id="namma-modal-buttons">${type === 'prompt' ? `<button class="namma-btn namma-btn-cancel" id="namma-modal-cancel">Cancel</button>` : ''}<button class="namma-btn namma-btn-confirm" id="namma-modal-confirm">OK</button></div></div></div>`);
+                    const overlay = document.getElementById('namma-modal-overlay'); const box = document.getElementById('namma-modal-box'); const btnConfirm = document.getElementById('namma-modal-confirm'); const btnCancel = document.getElementById('namma-modal-cancel'); const input = document.getElementById('namma-modal-input');
+                    void overlay.offsetWidth; overlay.style.opacity = '1'; box.style.transform = 'translateY(0) scale(1)'; if (input) setTimeout(() => input.focus(), 50);
+                    const close = (result) => { overlay.style.opacity = '0'; box.style.transform = 'translateY(20px) scale(0.95)'; setTimeout(() => { overlay.remove(); resolve(result); }, 200); };
+                    btnConfirm.addEventListener('click', () => close(type === 'prompt' ? (input ? input.value : '') : true)); if (btnCancel) btnCancel.addEventListener('click', () => close(null));
+                    if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); btnConfirm.click(); } if (e.key === 'Escape' && btnCancel) { e.preventDefault(); btnCancel.click(); } });
+                });
+            }
+            return { alert: (msg) => showModal('alert', msg), prompt: (msg, def) => showModal('prompt', msg, def) };
+        })();
+        window.alert = nammaModalSystem.alert;
+        // --- END CUSTOM MODAL SYSTEM --- //
+
+        function switchTab(tabId) {
+            document.getElementById('nav-dashboard').classList.remove('active');
+            document.getElementById('nav-workspace').classList.remove('active');
+            
+            document.getElementById('view-dashboard').style.display = 'none';
+            document.getElementById('view-workspace').style.display = 'none';
+            
+            document.getElementById('nav-' + tabId).classList.add('active');
+            document.getElementById('view-' + tabId).style.display = 'block';
+        }
+
+        async function updateEmployeeName() {
+            const employeeId = localStorage.getItem('employeeId');
+            if (employeeId) {
+                try {
+                    const response = await fetch(`/api/employees/${employeeId}`);
+                    if (response.ok) {
+                        const employee = await response.json();
+                        const realName = employee.name || employeeId;
+                        const firstName = realName.split(' ')[0];
+                        
+                        // Update topbar greeting
+                        document.querySelectorAll('.employee-name').forEach(el => el.textContent = firstName);
+                        
+
+                        return;
+                    }
+                } catch(e) {}
+            }
+            
+            // Fallback
+            const fallbackName = localStorage.getItem('username') || localStorage.getItem('employeeId') || 'Employee';
+            document.querySelectorAll('.employee-name').forEach(el => el.textContent = fallbackName);
+
         }
         updateEmployeeName();
         window.addEventListener('storage', updateEmployeeName);
@@ -53,56 +903,161 @@
         async function endShift() {
             const employeeId = localStorage.getItem('employeeId');
             if (!employeeId) {
-                alert('Employee ID not found. Please log in again.');
+                nammaModalSystem.alert('Employee ID not found. Please log in again.');
                 return;
             }
 
-            // First, send OTP to employee's email
-            try {
-                const otpResponse = await fetch('/api/send-employee-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ employeeId })
-                });
-                const otpData = await otpResponse.json();
-                if (!otpData.success) {
-                    alert('Failed to send OTP: ' + otpData.message);
-                    return;
-                }
-                alert('OTP sent to your email. Please check your inbox.');
-            } catch (error) {
-                console.error('Error sending OTP:', error);
-                alert('An error occurred while sending OTP.');
-                return;
-            }
+            const confirmEnd = window.confirm("Your shift will be ended and no further transactions can be logged. Proceed?");
+            if (!confirmEnd) return;
 
-            // Now, prompt for OTP
-            const otp = prompt('Enter the OTP sent to your email to end shift:');
-            if (!otp) return;
-
-            // Verify the OTP
-            try {
-                const verifyResponse = await fetch('/api/verify-employee-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ otp, employeeId })
-                });
-                const verifyData = await verifyResponse.json();
-                if (verifyData.success) {
-                    alert('Shift ended successfully!');
-                    // Redirect to new end shift report page with employeeId and current date
-                    const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-                    window.location.href = `end_shift_report.html?employeeId=${encodeURIComponent(employeeId)}&date=${encodeURIComponent(todayDate)}`;
-                } else {
-                    alert('Invalid OTP: ' + verifyData.message);
-                }
-            } catch (error) {
-                console.error('Error verifying OTP:', error);
-                alert('An error occurred while verifying OTP.');
-            }
+            // Generate report instantly rather than enforcing the legacy OTP mechanism
+            const todayDate = new Date().toISOString().split('T')[0];
+            openEsrModal(employeeId, todayDate, null);
         }
 
-        // Function to check update status and show modal if in progress
+        // ESR Modal Logic
+        async function openEsrModal(employeeId, date, incomingShiftId) {
+            const modal = document.getElementById('esr-modal');
+            const overlay = document.getElementById('esr-overlay');
+            
+            // 1. Fetch Employee
+            const empRes = await fetch(`/api/employees/${employeeId}`);
+            const employee = empRes.ok ? await empRes.json() : { name: 'Unknown' };
+            document.getElementById('esr-name').textContent = employee.name || 'Unknown';
+            document.getElementById('esr-date').textContent = date;
+            
+            // 2. Fetch Counter Data
+            const counterRes = await fetch(`/api/counter_data?employeeId=${employeeId}&date=${date}`);
+            const counterData = counterRes.ok ? await counterRes.json() : [];
+            let shiftStart = '', shiftEnd = '', counterNumber = '', pineLabValue = '', lastStart = '', lastEnd = '', effectiveShiftId = incomingShiftId || '1';
+            
+            if (counterData.length > 0) {
+                const shift = counterData[counterData.length - 1];
+                shiftStart = shift.shiftStartTime ? new Date(shift.shiftStartTime).toLocaleString('en-US', {hour12: true}) : '';
+                shiftEnd = shift.shiftEndTime ? new Date(shift.shiftEndTime).toLocaleString('en-US', {hour12: true}) : '';
+                counterNumber = shift.counter || '';
+                if(counterNumber.toLowerCase() === 'counter 1' || counterNumber === '1') pineLabValue = shift.pineLabValue || '';
+                lastStart = shift.shiftStartTime;
+                lastEnd = shift.shiftEndTime;
+                effectiveShiftId = shift.shiftId || incomingShiftId || '1';
+            }
+            
+            document.getElementById('esr-start').textContent = shiftStart;
+            document.getElementById('esr-end').textContent = shiftEnd;
+            document.getElementById('esr-counter').textContent = counterNumber;
+            document.getElementById('esr-pinelab').textContent = pineLabValue;
+            
+            // 3. Fetch Summary Totals
+            let sumUrl = `/api/todays-report-summary?employeeId=${employeeId}&date=${date}`;
+            if(lastStart) {
+                sumUrl += `&shiftStartTime=${encodeURIComponent(lastStart)}`;
+                if(lastEnd) sumUrl += `&shiftEndTime=${encodeURIComponent(lastEnd)}`;
+            }
+            const sumRes = await fetch(sumUrl);
+            const summary = sumRes.ok ? await sumRes.json() : { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
+            
+            document.getElementById('esr-upi-pinelab').textContent = '₹' + summary.upiPinelab.toFixed(2);
+            document.getElementById('esr-card-pinelab').textContent = '₹' + summary.cardPinelab.toFixed(2);
+            document.getElementById('esr-upi-paytm').textContent = '₹' + summary.upiPaytm.toFixed(2);
+            document.getElementById('esr-card-paytm').textContent = '₹' + summary.cardPaytm.toFixed(2);
+            document.getElementById('esr-cash').textContent = '₹' + summary.cash.toFixed(2);
+            document.getElementById('esr-retail-credit').textContent = '₹' + summary.retailCredit.toFixed(2);
+            
+            // 4. Fetch Activity summary
+            let actUrl = `/api/data-activity-summary?employeeId=${employeeId}&date=${date}`;
+            if(lastStart) {
+                actUrl += `&shiftStartTime=${encodeURIComponent(lastStart)}`;
+                if(lastEnd) actUrl += `&shiftEndTime=${encodeURIComponent(lastEnd)}`;
+            }
+            const actRes = await fetch(actUrl);
+            const activity = actRes.ok ? await actRes.json() : { deleted: 0, edited: 0, inputed: 0 };
+            
+            document.getElementById('esr-deleted').textContent = activity.deleted;
+            document.getElementById('esr-edited').textContent = activity.edited;
+            document.getElementById('esr-inputed').textContent = activity.inputed;
+            
+            // Activating modal
+            overlay.style.display = 'block';
+            modal.style.display = 'flex';
+            modal.style.transform = 'translateX(-50%)';
+            modal.style.left = '50%';
+            modal.style.top = '50px';
+            
+            // 5. Screenshot logic capturing just the aesthetic summary view
+            setTimeout(async () => {
+                try {
+                    const captureTarget = document.getElementById('esr-capture-area');
+                    const canvas = await html2canvas(captureTarget, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
+                    const jpgData = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                    await fetch('/api/save-esr-jpg', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employeeId, date, shiftId: effectiveShiftId, jpgData })
+                    });
+                } catch(e) { console.error('Screenshot failed', e); }
+            }, 1000);
+        }
+        
+        async function closeEsrModal() {
+            const employeeId = localStorage.getItem('employeeId');
+            if (employeeId) {
+                try {
+                    await fetch('/api/end-shift', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employeeId })
+                    });
+                } catch(e) {}
+            }
+            document.getElementById('esr-overlay').style.display = 'none';
+            document.getElementById('esr-modal').style.display = 'none';
+            logout();
+        }
+        
+        document.getElementById('esr-close-btn').addEventListener('click', closeEsrModal);
+
+        // Make ESR modal draggable
+        (() => {
+            const esrModal = document.getElementById("esr-modal");
+            const esrHeader = document.getElementById("esr-header");
+            let isEsrDragging = false, esrStartX, esrStartY, esrInitialX, esrInitialY;
+
+            esrHeader.addEventListener('mousedown', (e) => {
+                isEsrDragging = true;
+                esrHeader.style.cursor = 'grabbing';
+                esrStartX = e.clientX;
+                esrStartY = e.clientY;
+                const rect = esrModal.getBoundingClientRect();
+                esrInitialX = rect.left;
+                esrInitialY = rect.top;
+                
+                // Clear any transform centering so left/top take full control
+                esrModal.style.transform = "none";
+                esrModal.style.left = esrInitialX + "px";
+                esrModal.style.top = esrInitialY + "px";
+
+                document.addEventListener('mousemove', esrDrag);
+                document.addEventListener('mouseup', esrDragEnd);
+            });
+
+            function esrDrag(e) {
+                if (!isEsrDragging) return;
+                e.preventDefault();
+                const currentX = e.clientX;
+                const currentY = e.clientY;
+                const dx = currentX - esrStartX;
+                const dy = currentY - esrStartY;
+                esrModal.style.left = (esrInitialX + dx) + "px";
+                esrModal.style.top = (esrInitialY + dy) + "px";
+            }
+
+            function esrDragEnd() {
+                isEsrDragging = false;
+                esrHeader.style.cursor = 'grab';
+                document.removeEventListener('mousemove', esrDrag);
+                document.removeEventListener('mouseup', esrDragEnd);
+            }
+        })();
+
         const checkUpdateStatus = () => {
             fetch('/api/update-status')
                 .then(response => response.json())
@@ -114,12 +1069,10 @@
 
                     if (status.updateInProgress) {
                         modal.style.display = 'block';
-
-                        // Calculate progress (assume 2 minutes total)
                         const startTime = new Date(status.updateStartTime);
                         const now = new Date();
-                        const elapsed = (now - startTime) / 1000; // seconds
-                        const totalTime = 120; // 2 minutes
+                        const elapsed = (now - startTime) / 1000;
+                        const totalTime = 120;
                         const progress = Math.min((elapsed / totalTime) * 100, 100);
 
                         progressFill.style.width = progress + '%';
@@ -133,14 +1086,1003 @@
                         modal.style.display = 'none';
                     }
                 })
-                .catch(error => {
-                    console.error('Error checking update status:', error);
-                });
+                .catch(err => console.error('Error checking update status:', err));
         };
 
-        // Check update status on page load and every 5 seconds
-        checkUpdateStatus();
-        setInterval(checkUpdateStatus, 5000);
+        // Draggable Modal Logic
+        const modal = document.getElementById("retail-credit-modal");
+        const header = document.getElementById("retail-credit-header");
+
+        function openRetailCreditModal() {
+            document.getElementById("retail-credit-overlay").style.display = "block";
+            modal.style.display = "block";
+            // Reset transform for fresh open, removing translateX translation offset if any from dragging
+            modal.style.transform = "translateX(-50%)";
+            modal.style.left = "50%";
+            modal.style.top = "100px";
+        }
+
+        function closeRetailCreditModal() {
+            document.getElementById("retail-credit-overlay").style.display = "none";
+            modal.style.display = "none";
+            document.getElementById("retail-credit-form").reset();
+        }
+
+        // Make modal draggable
+        let isDragging = false, startX, startY, initialX, initialY;
+
+        header.addEventListener('mousedown', dragStart);
+
+        function dragStart(e) {
+            isDragging = true;
+            header.style.cursor = 'grabbing';
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            const rect = modal.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            // Remove transform because we update purely via left/top now
+            modal.style.transform = 'none';
+            modal.style.left = (initialX + dx) + 'px';
+            modal.style.top = (initialY + dy) + 'px';
+        }
+
+        function dragEnd() {
+            isDragging = false;
+            header.style.cursor = 'grab';
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        // === BILL SETTLED LOGIC === //
+        const bsModal = document.getElementById("bill-settled-modal");
+        const bsHeader = document.getElementById("bill-settled-header");
+
+        function openBillSettledModal() {
+            document.getElementById("bill-settled-overlay").style.display = "block";
+            bsModal.style.display = "block";
+            bsModal.style.transform = "translateX(-50%)";
+            bsModal.style.left = "50%";
+            bsModal.style.top = "120px";
+        }
+
+        function closeBillSettledModal() {
+            document.getElementById("bill-settled-overlay").style.display = "none";
+            bsModal.style.display = "none";
+            document.getElementById("bill-settled-form").reset();
+        }
+
+        let bsDragging = false, bsStartX, bsStartY, bsInitialX, bsInitialY;
+        bsHeader.addEventListener('mousedown', bsDragStart);
+
+        function bsDragStart(e) {
+            bsDragging = true;
+            bsHeader.style.cursor = 'grabbing';
+            bsStartX = e.clientX; bsStartY = e.clientY;
+            const rect = bsModal.getBoundingClientRect();
+            bsInitialX = rect.left; bsInitialY = rect.top;
+            document.addEventListener('mousemove', bsDrag);
+            document.addEventListener('mouseup', bsDragEnd);
+        }
+
+        function bsDrag(e) {
+            if (!bsDragging) return;
+            e.preventDefault();
+            const dx = e.clientX - bsStartX; const dy = e.clientY - bsStartY;
+            bsModal.style.transform = 'none';
+            bsModal.style.left = (bsInitialX + dx) + 'px';
+            bsModal.style.top = (bsInitialY + dy) + 'px';
+        }
+
+        function bsDragEnd() {
+            bsDragging = false;
+            bsHeader.style.cursor = 'grab';
+            document.removeEventListener('mousemove', bsDrag);
+            document.removeEventListener('mouseup', bsDragEnd);
+        }
+
+        document.getElementById('bill-settled-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) {
+                await nammaModalSystem.alert('Employee ID not found. Please log in again.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {
+                employeeId: employeeId,
+                vendorSupplier: formData.get('vendor-supplier'),
+                amountPaid: formData.get('amount-paid')
+            };
+
+            try {
+                const response = await fetch('/api/bill_paid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await nammaModalSystem.alert('Bill settlement recorded successfully!');
+                    closeBillSettledModal();
+                } else {
+                    await nammaModalSystem.alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error recording bill payment:', error);
+                await nammaModalSystem.alert('An error occurred while saving data.');
+            }
+        });
+
+        const bsInputs = document.querySelectorAll('#bill-settled-form input');
+        bsInputs.forEach(input => {
+            input.addEventListener('focus', () => { input.style.borderColor = '#0A0A0A'; });
+            input.addEventListener('blur', () => { input.style.borderColor = '#E2E8F0'; });
+        });
+
+        // === REPORT ISSUE LOGIC === //
+        const riModal = document.getElementById("report-issue-modal");
+        const riHeader = document.getElementById("report-issue-header");
+
+        function openReportIssueModal() {
+            document.getElementById("report-issue-overlay").style.display = "block";
+            riModal.style.display = "block";
+            riModal.style.transform = "translateX(-50%)";
+            riModal.style.left = "50%";
+            riModal.style.top = "120px";
+        }
+
+        function closeReportIssueModal() {
+            document.getElementById("report-issue-overlay").style.display = "none";
+            riModal.style.display = "none";
+            document.getElementById("report-issue-form").reset();
+            const billNumberField = document.getElementById('ri-bill-number-field');
+            const billInput = document.getElementById('ri-bill-number');
+            billNumberField.style.display = 'block';
+            billInput.disabled = false;
+            billInput.required = true;
+        }
+
+        let riDragging = false, riStartX, riStartY, riInitialX, riInitialY;
+        riHeader.addEventListener('mousedown', riDragStart);
+
+        function riDragStart(e) {
+            riDragging = true;
+            riHeader.style.cursor = 'grabbing';
+            riStartX = e.clientX; riStartY = e.clientY;
+            const rect = riModal.getBoundingClientRect();
+            riInitialX = rect.left; riInitialY = rect.top;
+            document.addEventListener('mousemove', riDrag);
+            document.addEventListener('mouseup', riDragEnd);
+        }
+
+        function riDrag(e) {
+            if (!riDragging) return;
+            e.preventDefault();
+            const dx = e.clientX - riStartX; const dy = e.clientY - riStartY;
+            riModal.style.transform = 'none';
+            riModal.style.left = (riInitialX + dx) + 'px';
+            riModal.style.top = (riInitialY + dy) + 'px';
+        }
+
+        function riDragEnd() {
+            riDragging = false;
+            riHeader.style.cursor = 'grab';
+            document.removeEventListener('mousemove', riDrag);
+            document.removeEventListener('mouseup', riDragEnd);
+        }
+
+        document.getElementById('ri-non-bill-issue-toggle').addEventListener('change', function() {
+            const billNumberField = document.getElementById('ri-bill-number-field');
+            const billInput = document.getElementById('ri-bill-number');
+            if (this.checked) {
+                billNumberField.style.display = 'none';
+                billInput.value = 'NBS';
+                billInput.required = false;
+                billInput.disabled = true;
+            } else {
+                billNumberField.style.display = 'block';
+                billInput.value = '';
+                billInput.required = true;
+                billInput.disabled = false;
+            }
+        });
+
+        document.getElementById('report-issue-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) {
+                await nammaModalSystem.alert('Employee ID not found. Please login again.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const isNonBillIssue = document.getElementById('ri-non-bill-issue-toggle').checked;
+            const data = {
+                employeeId: employeeId,
+                billNumber: isNonBillIssue ? 'NBS' : formData.get('bill-number'),
+                issueDescription: formData.get('issue-description')
+            };
+
+            try {
+                const response = await fetch('/api/issue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await nammaModalSystem.alert('Issue reported successfully!');
+                    closeReportIssueModal();
+                } else {
+                    await nammaModalSystem.alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error reporting issue:', error);
+                await nammaModalSystem.alert('An error occurred while reporting issue.');
+            }
+        });
+
+        const riInputs = document.querySelectorAll('#report-issue-form input, #report-issue-form textarea');
+        riInputs.forEach(input => {
+            input.addEventListener('focus', () => { input.style.borderColor = '#0A0A0A'; });
+            input.addEventListener('blur', () => { input.style.borderColor = '#E2E8F0'; });
+        });
+
+        // === SALES ANALYSIS LOGIC === //
+        const saModal = document.getElementById("sales-analysis-modal");
+        const saHeader = document.getElementById("sales-analysis-header");
+
+        function openSalesAnalysisModal() {
+            document.getElementById("sales-analysis-overlay").style.display = "block";
+            saModal.style.display = "block";
+            saModal.style.transform = "translateX(-50%)";
+            saModal.style.left = "50%";
+            saModal.style.top = "60px";
+            if (!localStorage.getItem('employeeId')) {
+                nammaModalSystem.alert('Employee ID not found. Please log in again.');
+            }
+        }
+
+        function closeSalesAnalysisModal() {
+            document.getElementById("sales-analysis-overlay").style.display = "none";
+            saModal.style.display = "none";
+            document.getElementById('sa-table-head').innerHTML = '<tr><th style="padding: 14px 16px; color: #64748B; font-weight: 600;">Data will appear here</th></tr>';
+            document.getElementById('sa-table-body').innerHTML = `<tr><td style="padding: 24px; text-align: center; color: #94A3B8;">Select a category above to load today's data.</td></tr>`;
+            document.getElementById('sa-modal-title').textContent = "Sales Analysis - Please Select Category";
+        }
+
+        let saDragging = false, saStartX, saStartY, saInitialX, saInitialY;
+        saHeader.addEventListener('mousedown', saDragStart);
+
+        function saDragStart(e) {
+            saDragging = true;
+            saHeader.style.cursor = 'grabbing';
+            saStartX = e.clientX; saStartY = e.clientY;
+            saInitialX = saModal.getBoundingClientRect().left; 
+            saInitialY = saModal.getBoundingClientRect().top;
+            document.addEventListener('mousemove', saDrag);
+            document.addEventListener('mouseup', saDragEnd);
+        }
+        function saDrag(e) {
+            if (!saDragging) return;
+            e.preventDefault();
+            saModal.style.transform = 'none';
+            saModal.style.left = (saInitialX + (e.clientX - saStartX)) + 'px';
+            saModal.style.top = (saInitialY + (e.clientY - saStartY)) + 'px';
+        }
+        function saDragEnd() {
+            saDragging = false;
+            saHeader.style.cursor = 'grab';
+            document.removeEventListener('mousemove', saDrag);
+            document.removeEventListener('mouseup', saDragEnd);
+        }
+
+        const saConfig = {
+            'extra': { title: 'Extra Data', headers: ['Time', 'Item', 'Bill', 'Amount', 'Mode'], keys: ['timestamp', 'itemName', 'billNumber', 'extraAmount', 'modeOfPay'] },
+            'delivery': { title: 'Delivery Data', headers: ['Time', 'Bill', 'Amount', 'Mode'], keys: ['timestamp', 'billNumber', 'amount', 'modeOfPay'] },
+            'bill_paid': { title: 'Bill Paid Data', headers: ['Time', 'Vendor', 'Amount'], keys: ['timestamp', 'vendorSupplier', 'amountPaid'] },
+            'issue': { title: 'Issue Data', headers: ['Time', 'Bill', 'Details'], keys: ['timestamp', 'billNumber', 'issueDescription'] },
+            'retail_credit': { title: 'Retail Credit Data', headers: ['Time', 'Phone', 'Amount', 'Mode'], keys: ['timestamp', 'phoneNumber', 'amount', 'modeOfPay'] }
+        };
+
+        async function saFetchData(type) {
+            const employeeId = localStorage.getItem('employeeId');
+            if(!employeeId) return;
+            const shiftParams = await getActiveShiftParams(employeeId);
+            document.getElementById('sa-modal-title').textContent = `Sales Analysis - ${saConfig[type].title}`;
+            
+            try {
+                const response = await fetch(`/api/${type}?employeeId=${employeeId}${shiftParams}`);
+                const data = await response.json();
+                
+                const thead = document.getElementById('sa-table-head');
+                thead.innerHTML = '<tr>' + saConfig[type].headers.map(h => `<th style="padding: 12px 16px; color: #475569; font-weight: 600; border-right: 1px solid #E2E8F0;">${h}</th>`).join('') + '<th style="padding: 12px 16px; text-align: center; color: #475569;">Actions</th></tr>';
+                
+                const tbody = document.getElementById('sa-table-body');
+                tbody.innerHTML = '';
+                
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="${saConfig[type].headers.length + 1}" style="padding: 24px; text-align: center; color: #94A3B8;">No records found for today.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #F1F5F9';
+                    
+                    let cellsHTML = saConfig[type].keys.map(key => {
+                        let val = item[key] || '';
+                        if (key === 'timestamp' && val) val = new Date(val).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        return `<td style="padding: 12px 16px; color: #1A1A1A; border-right: 1px solid #F1F5F9;">${val}</td>`;
+                    }).join('');
+                    
+                    const safeItem = JSON.stringify(item).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                    cellsHTML += `<td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+                        <i class="fas fa-edit" style="color: #3B82F6; cursor: pointer; margin-right: 12px;" onclick="saEditItem('${type}', '${item.id}', '${safeItem}')"></i>
+                        <i class="fas fa-trash" style="color: #EF4444; cursor: pointer;" onclick="saDeleteItem('${type}', '${item.id}')"></i>
+                    </td>`;
+                    
+                    row.innerHTML = cellsHTML;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                nammaModalSystem.alert('Error fetching ' + type + ' data.');
+            }
+        }
+
+        async function saFetchHistory() {
+            const employeeId = localStorage.getItem('employeeId');
+            if(!employeeId) return;
+            const shiftParams = await getActiveShiftParams(employeeId);
+            document.getElementById('sa-modal-title').textContent = `Sales Analysis - History Data`;
+            
+            try {
+                const response = await fetch(`/api/history?employeeId=${employeeId}${shiftParams}`);
+                const data = await response.json();
+                
+                const thead = document.getElementById('sa-table-head');
+                thead.innerHTML = '<tr><th style="padding: 12px; color: #475569;">Time</th><th style="padding: 12px; color: #475569;">Action</th><th style="padding: 12px; color: #475569;">Type</th><th style="padding: 12px; color: #475569;">Reason</th><th style="padding: 12px; color: #475569;">Controls</th></tr>';
+                
+                const tbody = document.getElementById('sa-table-body');
+                tbody.innerHTML = '';
+                
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #94A3B8;">No history records found.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #F1F5F9';
+                    const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                    
+                    let controls = '';
+                    if (item.action === 'delete') controls = `<button class="namma-btn-cancel" style="padding: 6px 12px; font-size: 12px;" onclick="saRestoreItem('${item.id}')">Restore</button>`;
+                    if (item.action === 'edit') controls = `<button class="namma-btn-cancel" style="padding: 6px 12px; font-size: 12px;" onclick="saRevertEdit('${item.id}')">Revert</button>`;
+
+                    row.innerHTML = `
+                        <td style="padding: 12px;">${time}</td>
+                        <td style="padding: 12px; text-transform: capitalize;">${item.action}</td>
+                        <td style="padding: 12px; text-transform: capitalize;">${item.type.replace('_', ' ')}</td>
+                        <td style="padding: 12px; font-size: 13px; color: #64748B;">${item.reason || '-'}</td>
+                        <td style="padding: 12px;">${controls}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                nammaModalSystem.alert('Error fetching history data.');
+            }
+        }
+
+        function openSaEditModal() {
+            const overlay = document.getElementById('sa-edit-overlay');
+            const box = document.getElementById('sa-edit-box');
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.style.opacity = '1';
+            box.style.transform = 'scale(1)';
+        }
+
+        function closeSaEditModal() {
+            const overlay = document.getElementById('sa-edit-overlay');
+            const box = document.getElementById('sa-edit-box');
+            overlay.style.opacity = '0';
+            box.style.transform = 'scale(0.95)';
+            setTimeout(() => { overlay.style.display = 'none'; }, 200);
+        }
+
+        function saEditItem(type, id, itemJsonStr) {
+            const parser = new DOMParser();
+            const decodedJson = parser.parseFromString(`<!doctype html><body>${itemJsonStr}`, 'text/html').body.textContent;
+            const item = JSON.parse(decodedJson);
+            
+            document.getElementById('sa-edit-id').value = id;
+            document.getElementById('sa-edit-type').value = type;
+            document.getElementById('sa-edit-reason').value = '';
+            document.getElementById('sa-edit-reason').style.borderColor = '#E2E8F0';
+            
+            const fieldsContainer = document.getElementById('sa-edit-fields');
+            fieldsContainer.innerHTML = '';
+            
+            saConfig[type].keys.forEach(field => {
+                if (field !== 'timestamp' && field !== 'id') {
+                    const wrap = document.createElement('div');
+                    wrap.style.marginBottom = '20px';
+                    const label = document.createElement('label');
+                    label.style.display = 'block'; label.style.fontSize = '14px'; label.style.fontWeight = '600'; label.style.color = '#1A1A1A'; label.style.marginBottom = '10px';
+                    label.textContent = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text'; input.name = field; input.value = item[field] || '';
+                    input.style.width = '100%'; input.style.padding = '14px 16px'; input.style.border = '1px solid #E2E8F0'; input.style.borderRadius = '12px'; input.style.background = '#F8FAFC'; input.style.boxSizing = 'border-box'; input.style.fontSize = '15px'; input.style.transition = 'border 0.2s, box-shadow 0.2s'; input.style.fontFamily = "'Inter', sans-serif";
+                    input.required = true;
+                    input.addEventListener('focus', () => { input.style.borderColor = '#3B82F6'; input.style.background = '#FFFFFF'; input.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.1)'; });
+                    input.addEventListener('blur', () => { input.style.borderColor = '#E2E8F0'; input.style.background = '#F8FAFC'; input.style.boxShadow = 'none'; });
+                    
+                    wrap.appendChild(label); wrap.appendChild(input);
+                    fieldsContainer.appendChild(wrap);
+                }
+            });
+
+            const reasonTextarea = document.getElementById('sa-edit-reason');
+            reasonTextarea.addEventListener('focus', () => { reasonTextarea.style.borderColor = '#3B82F6'; reasonTextarea.style.background = '#FFFFFF'; reasonTextarea.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.1)'; });
+            reasonTextarea.addEventListener('blur', () => { reasonTextarea.style.borderColor = '#E2E8F0'; reasonTextarea.style.background = '#F8FAFC'; reasonTextarea.style.boxShadow = 'none'; });
+            
+            openSaEditModal();
+        }
+
+        document.getElementById('sa-edit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('sa-edit-id').value;
+            const type = document.getElementById('sa-edit-type').value;
+            const employeeId = localStorage.getItem('employeeId');
+            
+            const formData = new FormData(this);
+            const data = { employeeId };
+            for (let [key, value] of formData.entries()) data[key] = value;
+            
+            try {
+                const res = await fetch(`/api/${type}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    closeSaEditModal();
+                    saFetchData(type);
+                } else {
+                    nammaModalSystem.alert('Error updating record.');
+                }
+            } catch (err) {
+                console.error(err);
+                nammaModalSystem.alert('System error updating record.');
+            }
+        });
+
+        async function saDeleteItem(type, id) {
+            const reason = await nammaModalSystem.prompt("Reason for deletion:", "");
+            if (!reason) return;
+            
+            const employeeId = localStorage.getItem('employeeId');
+            try {
+                const url = `/api/${type}/${id}?employeeId=${employeeId}&reason=${encodeURIComponent(reason)}`;
+                const res = await fetch(url, { method: 'DELETE' });
+                if (res.ok) {
+                    saFetchData(type);
+                } else {
+                    const result = await res.json();
+                    nammaModalSystem.alert('Error deleting: ' + (result.message || 'Unknown error'));
+                }
+            } catch (err) {
+                nammaModalSystem.alert('Error hitting delete endpoint.');
+            }
+        }
+
+        async function saRestoreItem(historyId) {
+            try {
+                const res = await fetch(`/api/restore/${historyId}`, { method: 'POST' });
+                if (res.ok) {
+                    saFetchHistory();
+                } else nammaModalSystem.alert('Error restoring item.');
+            } catch (err) { nammaModalSystem.alert('System error.'); }
+        }
+
+        async function saRevertEdit(historyId) {
+            try {
+                const res = await fetch(`/api/revert-edit/${historyId}`, { method: 'POST' });
+                if (res.ok) {
+                    saFetchHistory();
+                } else nammaModalSystem.alert('Error reverting edit.');
+            } catch (err) { nammaModalSystem.alert('System error.'); }
+        }
+
+        // === EXTRA TASKS LOGIC === //
+        const etModal = document.getElementById("extra-tasks-modal");
+        const etHeader = document.getElementById("extra-tasks-header");
+
+        function openExtraTasksModal() {
+            document.getElementById("extra-tasks-overlay").style.display = "block";
+            etModal.style.display = "block";
+            etModal.style.transform = "translateX(-50%)";
+            etModal.style.left = "50%";
+            etModal.style.top = "80px";
+        }
+
+        function closeExtraTasksModal() {
+            document.getElementById("extra-tasks-overlay").style.display = "none";
+            etModal.style.display = "none";
+            document.getElementById("extra-tasks-form").reset();
+            const billNumberInput = document.getElementById('et-bill-number');
+            billNumberInput.readOnly = false;
+            billNumberInput.style.background = '#F8FAFC';
+            billNumberInput.style.color = '#1A1A1A';
+        }
+
+        let etDragging = false, etStartX, etStartY, etInitialX, etInitialY;
+        etHeader.addEventListener('mousedown', etDragStart);
+
+        function etDragStart(e) {
+            etDragging = true;
+            etHeader.style.cursor = 'grabbing';
+            etStartX = e.clientX; etStartY = e.clientY;
+            const rect = etModal.getBoundingClientRect();
+            etInitialX = rect.left; etInitialY = rect.top;
+            document.addEventListener('mousemove', etDrag);
+            document.addEventListener('mouseup', etDragEnd);
+        }
+
+        function etDrag(e) {
+            if (!etDragging) return;
+            e.preventDefault();
+            const dx = e.clientX - etStartX; const dy = e.clientY - etStartY;
+            etModal.style.transform = 'none';
+            etModal.style.left = (etInitialX + dx) + 'px';
+            etModal.style.top = (etInitialY + dy) + 'px';
+        }
+
+        function etDragEnd() {
+            etDragging = false;
+            etHeader.style.cursor = 'grab';
+            document.removeEventListener('mousemove', etDrag);
+            document.removeEventListener('mouseup', etDragEnd);
+        }
+
+        document.getElementById('et-completely-extra-toggle').addEventListener('change', function() {
+            const billNumberInput = document.getElementById('et-bill-number');
+            if (this.checked) {
+                billNumberInput.value = 'CE';
+                billNumberInput.readOnly = true;
+                billNumberInput.style.background = '#E2E8F0';
+                billNumberInput.style.color = '#64748B';
+            } else {
+                billNumberInput.value = '';
+                billNumberInput.readOnly = false;
+                billNumberInput.style.background = '#F8FAFC';
+                billNumberInput.style.color = '#1A1A1A';
+            }
+        });
+
+        document.getElementById('extra-tasks-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) {
+                await nammaModalSystem.alert('Employee ID not found. Please login again.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {
+                employeeId: employeeId,
+                itemName: formData.get('item-name'),
+                billNumber: formData.get('bill-number'),
+                extraAmount: formData.get('extra-amount'),
+                modeOfPay: formData.get('mode-of-pay')
+            };
+
+            try {
+                const response = await fetch('/api/extra', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await nammaModalSystem.alert('Extra task data saved successfully!');
+                    closeExtraTasksModal();
+                } else {
+                    await nammaModalSystem.alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error saving extra task:', error);
+                await nammaModalSystem.alert('An error occurred while saving extra task data.');
+            }
+        });
+
+        const etInputs = document.querySelectorAll('#extra-tasks-form input, #extra-tasks-form select');
+        etInputs.forEach(input => {
+            input.addEventListener('focus', () => { if(input.style.borderColor !== 'rgb(16, 185, 129)') input.style.borderColor = '#0A0A0A'; });
+            input.addEventListener('blur', () => { if(input.style.borderColor !== 'rgb(16, 185, 129)') input.style.borderColor = '#E2E8F0'; });
+        });
+
+        // === DELIVERY HUB LOGIC === //
+        const dlModal = document.getElementById("delivery-hub-modal");
+        const dlHeader = document.getElementById("delivery-hub-header");
+
+        function openDeliveryHubModal() {
+            document.getElementById("delivery-hub-overlay").style.display = "block";
+            dlModal.style.display = "block";
+            dlModal.style.transform = "translateX(-50%)";
+            dlModal.style.left = "50%";
+            dlModal.style.top = "80px";
+        }
+
+        function closeDeliveryHubModal() {
+            document.getElementById("delivery-hub-overlay").style.display = "none";
+            dlModal.style.display = "none";
+            document.getElementById("delivery-hub-form").reset();
+            document.getElementById('dl-extra-fields').style.display = 'none';
+            document.getElementById('dl-amount').readOnly = false;
+        }
+
+        let dlDragging = false, dlStartX, dlStartY, dlInitialX, dlInitialY;
+        dlHeader.addEventListener('mousedown', dlDragStart);
+
+        function dlDragStart(e) {
+            dlDragging = true;
+            dlHeader.style.cursor = 'grabbing';
+            dlStartX = e.clientX; dlStartY = e.clientY;
+            const rect = dlModal.getBoundingClientRect();
+            dlInitialX = rect.left; dlInitialY = rect.top;
+            document.addEventListener('mousemove', dlDrag);
+            document.addEventListener('mouseup', dlDragEnd);
+        }
+
+        function dlDrag(e) {
+            if (!dlDragging) return;
+            e.preventDefault();
+            const dx = e.clientX - dlStartX; const dy = e.clientY - dlStartY;
+            dlModal.style.transform = 'none';
+            dlModal.style.left = (dlInitialX + dx) + 'px';
+            dlModal.style.top = (dlInitialY + dy) + 'px';
+        }
+
+        function dlDragEnd() {
+            dlDragging = false;
+            dlHeader.style.cursor = 'grab';
+            document.removeEventListener('mousemove', dlDrag);
+            document.removeEventListener('mouseup', dlDragEnd);
+        }
+
+        document.getElementById('dl-bill-with-extra-toggle').addEventListener('change', function() {
+            const extraFields = document.getElementById('dl-extra-fields');
+            const amountInput = document.getElementById('dl-amount');
+            if (this.checked) {
+                extraFields.style.display = 'block';
+                amountInput.readOnly = true;
+                amountInput.style.background = '#E2E8F0';
+                amountInput.style.color = '#64748B';
+                calculateDlTotal();
+            } else {
+                extraFields.style.display = 'none';
+                amountInput.readOnly = false;
+                amountInput.style.background = '#F8FAFC';
+                amountInput.style.color = '#1A1A1A';
+                amountInput.value = '';
+            }
+        });
+
+        function calculateDlTotal() {
+            const amountWithExtra = parseFloat(document.getElementById('dl-amount-with-extra').value) || 0;
+            const extraAmount = parseFloat(document.getElementById('dl-extra-amount').value) || 0;
+            const total = amountWithExtra + extraAmount;
+            document.getElementById('dl-amount').value = total;
+        }
+
+        document.getElementById('dl-amount-with-extra').addEventListener('input', calculateDlTotal);
+        document.getElementById('dl-extra-amount').addEventListener('input', calculateDlTotal);
+
+        document.getElementById('delivery-hub-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) {
+                await nammaModalSystem.alert('Employee ID not found. Please log in again.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const isBillWithExtra = document.getElementById('dl-bill-with-extra-toggle').checked;
+            const rawBillNumber = formData.get('bill-number');
+            const formattedBillNumber = isBillWithExtra ? ('E' + rawBillNumber) : rawBillNumber;
+
+            const deliveryData = {
+                employeeId: employeeId,
+                billNumber: formattedBillNumber,
+                amount: formData.get('amount'),
+                extraAmount: formData.get('extra-amount') || 0,
+                totalAmount: formData.get('amount'),
+                modeOfPay: formData.get('mode-of-pay')
+            };
+
+            try {
+                const response = await fetch('/api/delivery', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(deliveryData)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    if (isBillWithExtra) {
+                        const extraData = {
+                            employeeId: employeeId,
+                            itemName: formData.get('extra-item-category'),
+                            billNumber: formattedBillNumber,
+                            extraAmount: formData.get('extra-amount'),
+                            modeOfPay: formData.get('mode-of-pay')
+                        };
+                        const extraResponse = await fetch('/api/extra', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(extraData)
+                        });
+                        const extraResult = await extraResponse.json();
+                        if (extraResult.success) {
+                            await nammaModalSystem.alert('Delivery and extra item data saved successfully!');
+                        } else {
+                            await nammaModalSystem.alert('Delivery saved, but error saving extra: ' + extraResult.message);
+                        }
+                    } else {
+                        await nammaModalSystem.alert('Delivery data saved successfully!');
+                    }
+                    closeDeliveryHubModal();
+                } else {
+                    await nammaModalSystem.alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error saving delivery:', error);
+                await nammaModalSystem.alert('An error occurred while saving delivery data.');
+            }
+        });
+
+        // Add focus/blur states to delivery form inputs
+        const dlInputs = document.querySelectorAll('#delivery-hub-form input, #delivery-hub-form select');
+        dlInputs.forEach(input => {
+            input.addEventListener('focus', () => { if(input.style.borderColor !== 'rgb(16, 185, 129)') input.style.borderColor = '#0A0A0A'; });
+            input.addEventListener('blur', () => { if(input.style.borderColor !== 'rgb(16, 185, 129)') input.style.borderColor = '#E2E8F0'; });
+        });
+
+        // Retail Credit Form Submission & Validation Logic
+        const rcPhoneInput = document.getElementById('rc-phone');
+        
+        rcPhoneInput.addEventListener('input', function() {
+            let v = this.value.replace(/\D/g, '');
+            while (v.startsWith('0')) { v = v.slice(1); }
+            if (v.length > 10) v = v.slice(0, 10);
+            this.value = v;
+
+            if (v.length === 10 && /^[1-9]\d{9}$/.test(v)) {
+                this.style.borderColor = '#10B981'; // Green
+                this.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.1)';
+            } else {
+                this.style.borderColor = '#E2E8F0';
+                this.style.boxShadow = 'none';
+            }
+        });
+
+        // Add focus states
+        const rcInputs = document.querySelectorAll('#retail-credit-form input, #retail-credit-form select');
+        rcInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                if(input.style.borderColor !== 'rgb(16, 185, 129)') {
+                    input.style.borderColor = '#0A0A0A';
+                }
+            });
+            input.addEventListener('blur', () => {
+                if(input.style.borderColor !== 'rgb(16, 185, 129)') {
+                    input.style.borderColor = '#E2E8F0';
+                }
+            });
+        });
+
+        document.getElementById('retail-credit-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) {
+                await nammaModalSystem.alert('Employee ID not found. Please log in again.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const phone = formData.get('phone-number') || '';
+            
+            if (!/^[1-9]\d{9}$/.test(phone)) {
+                await nammaModalSystem.alert('Please enter a valid 10-digit phone number without a leading zero.');
+                rcPhoneInput.focus();
+                return;
+            }
+
+            const payload = {
+                employeeId: employeeId,
+                phoneNumber: phone,
+                amount: formData.get('amount'),
+                modeOfPay: formData.get('mode-of-pay')
+            };
+
+            try {
+                const response = await fetch('/api/retail_credit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    await nammaModalSystem.alert('Retail Credit processed successfully!');
+                    closeRetailCreditModal();
+                } else {
+                    await nammaModalSystem.alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error processing retail credit:', error);
+                await nammaModalSystem.alert('An error occurred while saving data.');
+            }
+        });
+
+        // === DASHBOARD INITIALIZATION === //
+        function updateDashboardClock() {
+            const now = new Date();
+            const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+            const dateOpts = { weekday: 'long', month: 'short', day: 'numeric' };
+            document.getElementById('dash-time').textContent = now.toLocaleTimeString('en-US', timeOpts);
+            document.getElementById('dash-date').textContent = now.toLocaleDateString('en-US', dateOpts);
+        }
+        setInterval(updateDashboardClock, 60000);
+        updateDashboardClock();
+
+        async function getActiveShiftParams(employeeId) {
+            try {
+                const res = await fetch(`/api/employees/${employeeId}`);
+                if (res.ok) {
+                    const emp = await res.json();
+                    if (emp.counter_selections && emp.counter_selections.length > 0) {
+                        const lastShift = emp.counter_selections[emp.counter_selections.length - 1];
+                        if (!lastShift.shiftEndTime) {
+                            return `&shiftStartTime=${encodeURIComponent(lastShift.shiftStartTime)}`;
+                        }
+                        // If there's no active shift, pass a generic query that won't show unrelated data
+                        // Passing the last shift's start/end if you want, but for a fresh screen before counter select, it should be empty.
+                        return `&shiftStartTime=${encodeURIComponent(new Date().toISOString())}`;
+                    }
+                }
+            } catch(e) {}
+            return '';
+        }
+
+        async function loadDashboardData() {
+            const employeeId = localStorage.getItem('employeeId');
+            if (employeeId) {
+                try {
+                    const empRes = await fetch(`/api/employees/${employeeId}`);
+                    if (empRes.ok) {
+                        const emp = await empRes.json();
+                        document.getElementById('dash-greeting').textContent = `Welcome back, ${emp.name.split(' ')[0]}`;
+                    }
+                } catch(e) {}
+
+                const shiftParams = await getActiveShiftParams(employeeId);
+
+                try {
+                    const extraRes = await fetch(`/api/extra?employeeId=${employeeId}${shiftParams}`);
+                    if(extraRes.ok) document.getElementById('dash-extras-count').textContent = (await extraRes.json()).length;
+                    
+                    const deliveryRes = await fetch(`/api/delivery?employeeId=${employeeId}${shiftParams}`);
+                    if(deliveryRes.ok) document.getElementById('dash-deliveries-count').textContent = (await deliveryRes.json()).length;
+
+                    const billsRes = await fetch(`/api/bill_paid?employeeId=${employeeId}${shiftParams}`);
+                    if(billsRes.ok) document.getElementById('dash-bills-count').textContent = (await billsRes.json()).length;
+                } catch(e) { console.error('Failed to load dashboard metrics'); }
+
+                try {
+                    const histRes = await fetch(`/api/history?employeeId=${employeeId}${shiftParams}`);
+                    if (histRes.ok) {
+                        const history = await histRes.json();
+                        const timeline = document.getElementById('dash-timeline');
+                        if (history.length === 0) {
+                            timeline.innerHTML = '<div style="text-align: center; color: #94A3B8; padding: 40px; font-size: 14px; border: 1px dashed #E2E8F0; border-radius: 12px;">No activity logged yet today.</div>';
+                        } else {
+                            timeline.innerHTML = history.slice(0, 5).map(item => {
+                                const time = new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                let icon = '<i class="fas fa-history"></i>'; let color = '#64748B';
+                                if(item.action === 'add') { icon = '<i class="fas fa-plus"></i>'; color = '#10B981'; }
+                                else if(item.action === 'delete') { icon = '<i class="fas fa-trash"></i>'; color = '#EF4444'; }
+                                else if(item.action === 'edit') { icon = '<i class="fas fa-edit"></i>'; color = '#3B82F6'; }
+                                
+                                const title = `${item.action.toUpperCase()} ${item.type.replace('_', ' ').toUpperCase()}`;
+                                const desc = item.reason ? `<span style="color: #64748B;">Reason: ${item.reason}</span>` : `Recorded a new ${item.type.replace('_', ' ')} entry.`;
+                                
+                                return `<li class="dash-timeline-item">
+                                    <div class="dash-timeline-icon" style="color: ${color};">${icon}</div>
+                                    <div class="dash-timeline-content">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                            <strong style="font-size: 14px; color: #1A1A1A;">${title}</strong>
+                                            <span style="font-size: 12px; color: #94A3B8;">${time}</span>
+                                        </div>
+                                        <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.4;">${desc}</p>
+                                    </div>
+                                </li>`;
+                            }).join('');
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+        document.getElementById('nav-dashboard').addEventListener('click', loadDashboardData);
+
+        // ==========================================
+        // BROADCAST MEGAPHONE LISTENER
+        // ==========================================
+        let lastBroadcastTimestamp = 0;
+        async function fetchBroadcast() {
+            try {
+                const response = await fetch('/api/broadcast');
+                const data = await response.json();
+                if (data.success && data.broadcast) {
+                    const banner = document.getElementById('live-broadcast-banner');
+                    const msgEl = document.getElementById('live-broadcast-msg');
+                    
+                    if (data.broadcast.message && data.broadcast.message.trim() !== '') {
+                        if (data.broadcast.timestamp !== lastBroadcastTimestamp) {
+                            msgEl.textContent = data.broadcast.message;
+                            banner.style.display = 'block';
+                            
+                            // Reset animation to force it to restart smoothly
+                            msgEl.style.animation = 'none';
+                            msgEl.offsetHeight; /* trigger reflow */
+                            msgEl.style.animation = 'broadcast-marquee 20s linear infinite';
+                            
+                            lastBroadcastTimestamp = data.broadcast.timestamp;
+                        }
+                    } else {
+                        // Clear broadcast
+                        banner.style.display = 'none';
+                        lastBroadcastTimestamp = 0;
+                    }
+                }
+            } catch(err) {
+                // Silently fail on network error to prevent console spam
+            }
+        }
+        
+        // Initial fetch and 10-second polling
+        fetchBroadcast();
+        setInterval(fetchBroadcast, 10000);
+
     </script>
 </body>
 </html>

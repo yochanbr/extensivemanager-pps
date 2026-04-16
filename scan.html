@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Extensive Biometrics | OmniScan</title>
+    <script src="face-api.min.js"></script>
+    <link rel="stylesheet" href="scan.css">
+</head>
+<body>
+    <div class="kiosk-container">
+
+        <!-- Top Status Bar -->
+        <header class="scan-header">
+            <div class="logo-area">
+                <div class="logo-orb">
+                    <i class="fas fa-sun"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-main">Extensive <span class="brand-accent">Biometrics</span></span>
+                    <span class="brand-sub">by pinpointstartups</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-clock" id="live-clock">00:00:00</div>
+            </div>
+        </header>
+
+        <!-- Scanner Section -->
+        <main class="scanner-section">
+
+            <!-- Camera Orb -->
+            <div class="orb-wrapper" id="orb-container">
+                <!-- Decorative rings -->
+                <div class="orb-ring r1"></div>
+                <div class="orb-ring r2"></div>
+
+                <!-- Camera -->
+                <div class="video-mask">
+                    <video id="scan-video" autoplay muted playsinline></video>
+                    <canvas id="scan-overlay"></canvas>
+
+                    <!-- Scan sweep line -->
+                    <div class="scan-sweep"></div>
+
+                    <!-- Low Light Warning -->
+                    <div class="low-light-badge" id="low-light-badge">
+                        <i class="fas fa-moon"></i>
+                        <span>Lighting too low</span>
+                    </div>
+                </div>
+
+                <!-- Active scan pulse -->
+                <div class="scan-pulse" id="scan-pulse"></div>
+            </div>
+
+            <!-- Prompt text under orb -->
+            <div class="scan-prompt" id="scan-prompt">
+                <p class="prompt-main">Face Detection Ready</p>
+                <p class="prompt-sub">Position your face within the circle</p>
+            </div>
+
+            <!-- Verify Button -->
+            <div class="trigger-area" id="trigger-area">
+                <button class="scan-trigger-btn" id="scan-trigger-btn" onclick="requestManualScan()">
+                    <i class="fas fa-fingerprint"></i>
+                    <span>Verify Identity</span>
+                </button>
+            </div>
+
+        </main>
+
+        <!-- Identity Confirmation Sheet (slides up) -->
+        <div class="confirm-sheet" id="identity-badge">
+            <div class="sheet-handle"></div>
+            <div class="sheet-employee">
+                <div class="emp-avatar" id="id-avatar">?</div>
+                <div class="emp-info">
+                    <span class="emp-label" id="confirm-msg">Face Identified</span>
+                    <span class="emp-name" id="id-name">Employee Name</span>
+                </div>
+                <div class="match-badge"><i class="fas fa-check-circle"></i></div>
+            </div>
+            <div class="confirm-actions" id="confirm-actions">
+                <button class="confirm-btn yes" onclick="confirmIdentity()">
+                    <i class="fas fa-check"></i>
+                    Yes, it's me
+                </button>
+                <button class="confirm-btn no" onclick="resetScanner()">
+                    <i class="fas fa-times"></i>
+                    Not me
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Panel (Glassmorphism UI) -->
+        <div class="action-panel glass-modal" id="action-panel">
+            <div class="sheet-handle glass-handle"></div>
+            <div class="action-header center-header">
+                <div class="emp-avatar lg glass-avatar" id="action-avatar">?</div>
+                <h2 class="glass-title">Confirm Your Action</h2>
+                <p class="glass-subtitle" id="action-name">Employee Name</p>
+                <div id="current-state-badge" class="state-badge">Fetching state...</div>
+            </div>
+            
+            <div class="action-grid glass-grid">
+                <button class="action-btn glass-btn" onclick="submitAttendance('in')" id="btn-in">
+                    <div class="action-icon green"><i class="fas fa-sign-in-alt"></i></div>
+                    <span>Check In</span>
+                </button>
+                <button class="action-btn glass-btn" onclick="submitAttendance('break_start')" id="btn-break_start">
+                    <div class="action-icon amber"><i class="fas fa-coffee"></i></div>
+                    <span>Start Break</span>
+                </button>
+                <button class="action-btn glass-btn" onclick="submitAttendance('break_end')" id="btn-break_end">
+                    <div class="action-icon blue"><i class="fas fa-utensils"></i></div>
+                    <span>End Break</span>
+                </button>
+                <button class="action-btn glass-btn" onclick="submitAttendance('out')" id="btn-out">
+                    <div class="action-icon red"><i class="fas fa-sign-out-alt"></i></div>
+                    <span>Check Out</span>
+                </button>
+            </div>
+            <button class="cancel-btn glass-cancel" onclick="resetScanner()">
+                <i class="fas fa-arrow-left"></i> Cancel
+            </button>
+        </div>
+
+        <!-- Smart UX Auto-Fix Modal -->
+        <div class="confirm-sheet glass-smart-modal" id="smart-fix-modal">
+            <div class="smart-icon"><i class="fas fa-exclamation-circle text-amber"></i></div>
+            <h3 class="smart-title">Action Conflict</h3>
+            <p class="smart-message" id="smart-fix-message">You are already checked in. Do you want to check out and start a new session?</p>
+            <div class="smart-actions">
+                <button class="smart-btn yes" id="smart-fix-yes">
+                    <i class="fas fa-magic"></i> Yes, Fix It
+                </button>
+                <button class="smart-btn no" onclick="document.getElementById('smart-fix-modal').classList.remove('show')">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Initialising Overlay -->
+        <div class="init-overlay" id="status-overlay">
+            <div class="init-logo logo-spin">
+                <i class="fas fa-sun"></i>
+            </div>
+            <div class="init-text" id="status-text">INITIALIZING...</div>
+            <div class="init-bar"><div class="init-progress" id="loader-progress"></div></div>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="scan.js"></script>
+</body>
+</html>

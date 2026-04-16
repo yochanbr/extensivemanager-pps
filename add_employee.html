@@ -1,193 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namma Mart - Add Employee</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="add_employee.css">
+    <title>Add Employee | Namma Mart</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0A0A0A;
+            --accent: #F95A2C;
+            --bg: #F8FAFC;
+            --surface: #FFFFFF;
+            --text: #1A1A1A;
+            --text-secondary: #64748B;
+            --border: #E2E8F0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Nav */
+        .top-nav {
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            z-index: 10;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: var(--primary);
+        }
+
+        .nav-logo {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-logo i {
+            color: var(--accent);
+        }
+
+        /* Wizard Container */
+        .wizard-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            padding: 40px 24px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 4px;
+            margin-bottom: 60px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 20%;
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Step Styles */
+        .step {
+            width: 100%;
+            position: absolute;
+            top: 100px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .step.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            position: relative;
+            top: 0;
+        }
+
+        .step-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .step-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+
+        /* Form Inputs */
+        .input-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .input-group.row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .input-group.row>div {
+            flex: 1;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            color: var(--text);
+            background: var(--surface);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        select.input-field {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+        }
+
+        /* Checkbox Days */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .day-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .day-label input {
+            display: none;
+        }
+
+        .day-label:has(input:checked) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-prev {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-prev:hover {
+            color: var(--primary);
+            background: #F1F5F9;
+        }
+
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(10, 10, 10, 0.2);
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(10, 10, 10, 0.3);
+        }
+
+        .btn-submit {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #E04A20;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
+
 <body>
-    <header>
-        <div class="logo">
-            <h1>NAMMA MART</h1>
-            <p>Signature Of Quality</p>
+
+    <nav class="top-nav">
+        <a href="admin.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        <div class="nav-logo">Extensive Manager - Pinpoint Startups <i class="fas fa-certificate"></i></div>
+    </nav>
+
+    <div class="wizard-container">
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
         </div>
-        <div class="manager-info">
-            <h2>EXTENSIVE MANAGER</h2>
-            <p>Designed By Yochan</p>
-        </div>
-    </header>
-    <main>
-        <div class="form-container">
-            <h1>Add New Employee</h1>
-            <div class="tabs">
-                <button class="tab-link active" onclick="openTab(event, 'personal-details')">Personal Details</button>
-                <button class="tab-link" onclick="openTab(event, 'bank-details')">Bank Details</button>
-                <button class="tab-link" onclick="openTab(event, 'work-details')">Work Details</button>
-                <button class="tab-link" onclick="openTab(event, 'encryption')">Encryption</button>
-            </div>
-            <div id="personal-details" class="tab-content active">
-                <form>
-                    <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" name="name" required>
+
+        <form id="add-employee-form">
+            <!-- Step 1: Basic Information -->
+            <div class="step active" id="step-1">
+                <h2 class="step-title">Let's meet the new team member</h2>
+                <p class="step-desc">Start with their basic personal details. We'll use this to set up their profile.
+                </p>
+
+                <div class="input-group">
+                    <label class="input-label">Full Name *</label>
+                    <input type="text" name="name" class="input-field" placeholder="John Doe" required>
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Phone Number *</label>
+                        <input type="tel" name="phone" class="input-field" placeholder="10-digit number" required>
                     </div>
-                    <div class="form-group">
-                        <label for="employee-id">3 Digit Employee ID</label>
-                        <input type="text" id="employee-id" name="employee-id" required pattern="\d{3}">
+                    <div>
+                        <label class="input-label">Email Address</label>
+                        <input type="email" name="email" class="input-field" placeholder="john@example.com">
                     </div>
-                    <div class="form-group">
-                        <label for="address">Address</label>
-                        <textarea id="address" name="address" rows="3" required></textarea>
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Date of Birth</label>
+                        <input type="date" name="dob" class="input-field">
                     </div>
-                    <div class="form-group">
-                        <label for="blood-group">Blood Group</label>
-                        <select id="blood-group" name="blood-group" required>
-                            <option value="">Select Blood Group</option>
-                            <option value="A+">A+</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B-">B-</option>
-                            <option value="AB+">AB+</option>
-                            <option value="AB-">AB-</option>
-                            <option value="O+">O+</option>
-                            <option value="O-">O-</option>
+                    <div>
+                        <label class="input-label">Gender</label>
+                        <select name="gender" class="input-field">
+                            <option value="" disabled selected>Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" required>
+                </div>
+            </div>
+
+            <!-- Step 2: Job Details -->
+            <div class="step" id="step-2">
+                <h2 class="step-title">Role & Schedule</h2>
+                <p class="step-desc">Define their ID and working hours.</p>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Employee ID *</label>
+                        <input type="text" name="employee-id" class="input-field" placeholder="e.g. EMP001" required>
                     </div>
-                    <div class="form-group">
-                        <label for="guardian-name">Guardian / Parent Name</label>
-                        <input type="text" id="guardian-name" name="guardian-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="relationship">Relationship</label>
-                        <input type="text" id="relationship" name="relationship" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="guardian-phone">Guardian / Parent Phone Number</label>
-                        <input type="tel" id="guardian-phone" name="guardian-phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="aadhar-number">Your Aadhar Number</label>
-                        <input type="text" id="aadhar-number" name="aadhar-number" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dob">Date of Birth</label>
-                        <input type="date" id="dob" name="dob" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="gender">Gender</label>
-                        <select id="gender" name="gender" required>
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
+                    <div>
+                        <label class="input-label">Employment Type *</label>
+                        <select name="full-time" class="input-field" id="emp-type" required>
+                            <option value="yes">Full Time</option>
+                            <option value="no">Part Time</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="marital-status">Married or Unmarried</label>
-                        <select id="marital-status" name="marital-status" disabled>
-                            <option value="">Select Status</option>
-                            <option value="married">Married</option>
-                            <option value="unmarried">Unmarried</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                </form>
-            </div>
-            <div id="bank-details" class="tab-content">
-                <form>
-                    <div class="form-group">
-                        <label for="bank-name">Bank Name</label>
-                        <input type="text" id="bank-name" name="bank-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="bank-branch">Bank Branch</label>
-                        <input type="text" id="bank-branch" name="bank-branch" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ifsc-code">IFSC CODE</label>
-                        <input type="text" id="ifsc-code" name="ifsc-code" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="account-number">Account Number</label>
-                        <input type="text" id="account-number" name="account-number" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="account-holder-name">Account Holder Name</label>
-                        <input type="text" id="account-holder-name" name="account-holder-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="pan-number">PAN Number</label>
-                        <input type="text" id="pan-number" name="pan-number" required>
-                    </div>
-                </form>
-            </div>
-            <div id="work-details" class="tab-content">
-                <form>
-                    <div class="form-group">
-                        <label for="full-time">Full Time</label>
-                        <select id="full-time" name="full-time" required>
-                            <option value="">Select Option</option>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                        </select>
-                    </div>
-                    <div id="full-time-details" style="display: none;">
-                        <div class="form-group">
-                            <label for="start-time">Start Time</label>
-                            <input type="time" id="start-time" name="start-time">
+                </div>
+
+                <div id="shift-times">
+                    <div class="input-group row">
+                        <div>
+                            <label class="input-label">Start Time</label>
+                            <input type="time" name="start-time" class="input-field">
                         </div>
-                        <div class="form-group">
-                            <label for="end-time">End Time</label>
-                            <input type="time" id="end-time" name="end-time">
+                        <div>
+                            <label class="input-label">End Time</label>
+                            <input type="time" name="end-time" class="input-field">
                         </div>
-                        <div class="form-group">
-                            <label for="break-time">Break Time (in minutes)</label>
-                            <input type="number" id="break-time" name="break-time">
-                        </div>
-                        <div class="form-group">
-                            <label>Working Days</label>
-                            <div class="checkbox-group">
-                                <label><input type="checkbox" name="working-days" value="monday"> Monday</label>
-                                <label><input type="checkbox" name="working-days" value="tuesday"> Tuesday</label>
-                                <label><input type="checkbox" name="working-days" value="wednesday"> Wednesday</label>
-                                <label><input type="checkbox" name="working-days" value="thursday"> Thursday</label>
-                                <label><input type="checkbox" name="working-days" value="friday"> Friday</label>
-                                <label><input type="checkbox" name="working-days" value="saturday"> Saturday</label>
-                                <label><input type="checkbox" name="working-days" value="sunday"> Sunday</label>
-                            </div>
+                        <div>
+                            <label class="input-label">Break (Mins)</label>
+                            <input type="number" name="break-time" class="input-field" placeholder="45">
                         </div>
                     </div>
-                </form>
+                </div>
+
+                <label class="input-label" style="margin-bottom: 12px; display: block;">Working Days</label>
+                <div class="days-grid">
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Monday" checked>
+                        Mon</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Tuesday" checked>
+                        Tue</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Wednesday" checked>
+                        Wed</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Thursday" checked>
+                        Thu</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Friday" checked>
+                        Fri</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Saturday" checked>
+                        Sat</label>
+                    <label class="day-label"><input type="checkbox" name="working-days" value="Sunday"> Sun</label>
+                </div>
             </div>
-            <div id="encryption" class="tab-content">
-                <form>
-                    <div class="form-group">
-                        <label for="username">User Name</label>
-                        <input type="text" id="username" name="username" required>
+
+            <!-- Step 3: Emergency & Legal -->
+            <div class="step" id="step-3">
+                <h2 class="step-title">Emergency & Identity</h2>
+                <p class="step-desc">Information needed for safety and compliance.</p>
+
+                <div class="input-group">
+                    <label class="input-label">Residential Address</label>
+                    <input type="text" name="address" class="input-field" placeholder="Full Address">
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Aadhar Number</label>
+                        <input type="text" name="aadhar-number" class="input-field" placeholder="12-digit Aadhar">
                     </div>
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" title="Password must be at least 8 characters long and include at least one uppercase letter, one number, and one special character.">
+                    <div>
+                        <label class="input-label">Blood Group</label>
+                        <input type="text" name="blood-group" class="input-field" placeholder="e.g. O+">
                     </div>
-                </form>
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Emergency Contact Name</label>
+                        <input type="text" name="guardian-name" class="input-field" placeholder="Name">
+                    </div>
+                    <div>
+                        <label class="input-label">Relationship</label>
+                        <input type="text" name="relationship" class="input-field" placeholder="e.g. Father, Spouse">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Emergency Phone</label>
+                    <input type="tel" name="guardian-phone" class="input-field" placeholder="10-digit number">
+                </div>
             </div>
-            <div class="form-group">
-                <button type="submit" class="submit-btn">Submit</button>
+
+            <!-- Step 4: Bank Details -->
+            <div class="step" id="step-4">
+                <h2 class="step-title">Payroll Information</h2>
+                <p class="step-desc">Where should we send their salary?</p>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Bank Name</label>
+                        <input type="text" name="bank-name" class="input-field" placeholder="e.g. HDFC Bank">
+                    </div>
+                    <div>
+                        <label class="input-label">Branch</label>
+                        <input type="text" name="bank-branch" class="input-field" placeholder="Branch Name">
+                    </div>
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Account Number</label>
+                        <input type="text" name="account-number" class="input-field" placeholder="A/C Number">
+                    </div>
+                    <div>
+                        <label class="input-label">IFSC Code</label>
+                        <input type="text" name="ifsc-code" class="input-field" placeholder="IFSC Code">
+                    </div>
+                </div>
+
+                <div class="input-group row">
+                    <div>
+                        <label class="input-label">Account Holder Name</label>
+                        <input type="text" name="account-holder-name" class="input-field" placeholder="Name on account">
+                    </div>
+                    <div>
+                        <label class="input-label">PAN Number</label>
+                        <input type="text" name="pan-number" class="input-field" placeholder="PAN Number">
+                    </div>
+                </div>
             </div>
-        </div>
-    </main>
-    <footer>
-        <p>ADMIN PANEL</p>
-    </footer>
-    <script src="add_employee.js"></script>
+
+            <!-- Step 5: Credentials -->
+            <div class="step" id="step-5">
+                <h2 class="step-title">Secure Access</h2>
+                <p class="step-desc">Set up their initial system password. Username will be their Employee ID.</p>
+
+                <div class="input-group"
+                    style="background: #F1F5F9; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+                    <label class="input-label" style="color: var(--primary);">Assigned Username</label>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--primary);" id="display-username">Will be
+                        generated</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Temporary Password *</label>
+                    <input type="password" name="password" id="pass-1" class="input-field"
+                        placeholder="Create a password" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Confirm Password *</label>
+                    <input type="password" id="pass-2" class="input-field" placeholder="Confirm password" required>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button type="button" class="btn btn-prev" id="btn-prev" style="visibility: hidden;">Back</button>
+                <button type="button" class="btn btn-next" id="btn-next">Continue <i
+                        class="fas fa-arrow-right"></i></button>
+                <button type="submit" class="btn btn-submit" id="btn-submit" style="display: none;">Complete Setup <i
+                        class="fas fa-check"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const steps = document.querySelectorAll('.step');
+            const btnNext = document.getElementById('btn-next');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnSubmit = document.getElementById('btn-submit');
+            const progressBar = document.getElementById('progress-bar');
+            let currentStep = 0;
+
+            function updateUI() {
+                steps.forEach((step, index) => {
+                    step.classList.toggle('active', index === currentStep);
+                });
+
+                // Update Progress
+                const progress = ((currentStep + 1) / steps.length) * 100;
+                progressBar.style.width = `${progress}%`;
+
+                // Update Buttons
+                btnPrev.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+
+                if (currentStep === steps.length - 1) {
+                    btnNext.style.display = 'none';
+                    btnSubmit.style.display = 'flex';
+                } else {
+                    btnNext.style.display = 'flex';
+                    btnSubmit.style.display = 'none';
+                }
+
+                if (currentStep === 4) {
+                    const empIdInput = document.querySelector('input[name="employee-id"]').value;
+                    document.getElementById('display-username').textContent = empIdInput || 'Not Provided';
+                }
+            }
+
+            function validateStep() {
+                const activeStep = steps[currentStep];
+                const requiredFields = activeStep.querySelectorAll('[required]');
+                let valid = true;
+
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        valid = false;
+                        field.style.borderColor = '#EF4444';
+                    } else {
+                        field.style.borderColor = 'var(--border)';
+                    }
+                });
+
+                return valid;
+            }
+
+            btnNext.addEventListener('click', () => {
+                if (validateStep()) {
+                    currentStep++;
+                    updateUI();
+                }
+            });
+
+            btnPrev.addEventListener('click', () => {
+                currentStep--;
+                updateUI();
+            });
+
+            // Toggle Shift Times visibility
+            document.getElementById('emp-type').addEventListener('change', function (e) {
+                const shiftTimes = document.getElementById('shift-times');
+                if (e.target.value === 'yes') {
+                    shiftTimes.style.display = 'block';
+                } else {
+                    shiftTimes.style.display = 'none';
+                }
+            });
+
+            // Form Submit
+            document.getElementById('add-employee-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!validateStep()) return;
+
+                const pass1 = document.getElementById('pass-1').value;
+                const pass2 = document.getElementById('pass-2').value;
+
+                if (pass1 !== pass2) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                // Handle multiple checkboxes
+                data['working-days'] = formData.getAll('working-days').join(',');
+                data.isActive = true; // explicitly set as active
+
+                try {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = 'Saving <i class="fas fa-spinner fa-spin"></i>';
+
+                    const response = await fetch('/api/employees', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        alert(result.message || 'Error adding employee.');
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = 'Complete Setup <i class="fas fa-check"></i>';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Server communication error.');
+                    btnSubmit.disabled = false;
+                }
+            });
+        });
+    </script>
 </body>
+
 </html>

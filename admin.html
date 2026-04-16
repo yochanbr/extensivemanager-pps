@@ -1,156 +1,797 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namma Mart - Admin Panel</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Namma Mart | Admin Panel</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="face-api.min.js"></script>
     <link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
-    <header>
-        <div class="logo">
-            <h1>NAMMA MART</h1>
-            <p>Signature Of Quality</p>
-        </div>
-        <div class="manager-info">
-            <h2>EXTENSIVE MANAGER</h2>
-            <p>Designed By Yochan</p>
-        </div>
-    </header>
-    <main>
-        <div class="admin-container">
-            <div class="admin-buttons">
-                <button class="admin-btn view-report-btn">VIEW Report</button>
-                <button class="admin-btn view-esr-jpgs-btn">View Shift Summary</button>
-                <button class="admin-btn manage-employees-btn">Manage EMployees</button>
-                <button class="admin-btn logout-btn">Logout</button>
-
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon"><i class="fas fa-sun"></i></div>
+                <div class="sidebar-title">
+                    <span class="title-main">Extensive Manager</span>
+                    <span class="title-sub">by Pinpoint Startups</span>
+                </div>
             </div>
-            <div class="end-shift-container">
-                <button class="admin-btn end-shift-btn" style="background-color: red; color: white;">End Shift</button>
-                <button class="admin-btn start-shift-btn" style="display: none;">Start Shift</button>
+
+            <nav class="sidebar-nav">
+                <!-- Group 1 -->
+                <div class="nav-group-title">Core Operations</div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item dashboard-btn" onclick="location.reload()">
+                        <i class="fas fa-th-large"></i><span>Dashboard</span>
+                    </button>
+                </div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item update-btn">
+                        <i class="fas fa-cog"></i><span>Menu settings</span>
+                    </button>
+                </div>
+
+                <!-- Group 2 -->
+                <div class="nav-group-title" style="margin-top: 20px;">Staff & Time</div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item manage-employees-btn">
+                        <i class="fas fa-users"></i><span>Employees</span>
+                    </button>
+                </div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item attendance-btn">
+                        <i class="fas fa-user-clock"></i><span>Attendance</span>
+                    </button>
+                </div>
+
+                <!-- Group 3 -->
+                <div class="nav-group-title" style="margin-top: 20px;">Analytics & Shifts</div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item view-report-btn">
+                        <i class="fas fa-file-alt"></i><span>Reports</span>
+                    </button>
+                </div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item view-esr-jpgs-btn">
+                        <i class="fas fa-history"></i><span>Shift Summary</span>
+                    </button>
+                </div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item end-shift-btn text-danger">
+                        <i class="fas fa-power-off"></i><span>End Shift</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="nav-item-wrapper" style="margin-bottom: 20px;">
+                    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+                </div>
+                <button class="help-btn"><i class="fas fa-question"></i></button>
             </div>
-        </div>
-        <div class="update-container">
-            <button class="admin-btn update-btn">Update App</button>
-        </div>
-    </main>
-    <footer>
-        <p>Made with ❤️ By <a href="https://www.instagram.com/yochxn.__/" target="_blank">Yochan</a></p>
-    </footer>
+        </aside>
 
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 id="view-title">Dashboard</h1>
+                    <div id="store-status-badge"
+                        style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+                        <span style="width: 8px; height: 8px; background: #10B981; border-radius: 50%;"></span>STORE
+                        OPEN
+                    </div>
+                    <button class="start-shift-btn"
+                        style="display: none; background: #10B981; color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 20px; cursor: pointer;">
+                        <i class="fas fa-play"></i> START SHIFT
+                    </button>
+                </div>
+                <div class="topbar-right">
+                    <div
+                        style="width: 40px; height: 40px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="user-profile" id="user-profile-toggle">
+                        <div
+                            style="width: 36px; height: 36px; border-radius: 50%; background: #7C3AED; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                            YO</div>
+                        <div class="user-info"><span class="user-name">Yochan</span><span
+                                class="user-role">Developer</span></div>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
 
-    <!-- Update Warning Modal -->
-    <div id="update-warning-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="update-warning-close">&times;</span>
-            <h2>Warning: Update Application</h2>
-            <p>On confirm, the application update process will start. This may lead to server shutdown for a while and restart after update. Make sure not to do any action while update is in progress.</p>
-            <div class="modal-buttons">
-                <button id="confirm-update-btn" class="submit-btn">Confirm</button>
-                <button id="cancel-update-btn" class="cancel-btn">Cancel</button>
+                        <!-- Developer Profile Dropdown -->
+                        <div class="profile-dropdown-menu" id="profile-dropdown">
+                            <div style="padding: 16px; border-bottom: 1px solid #F1F5F9; margin-bottom: 8px;">
+                                <div style="font-weight: 700; font-size: 14px; color: #1E293B;">Yochan</div>
+                                <div style="font-size: 11px; color: #64748B;">Lead Developer</div>
+                            </div>
+                            <a href="https://yochan.site" target="_blank" class="profile-dropdown-item">
+                                <i class="fas fa-globe" style="color: #3B82F6;"></i> Website
+                            </a>
+                            <a href="https://www.linkedin.com/search/results/all/?keywords=yochan%20balekaje"
+                                target="_blank" class="profile-dropdown-item">
+                                <i class="fab fa-linkedin" style="color: #0077B5;"></i> Linkedin
+                            </a>
+                            <a href="https://github.com/yochanbr" target="_blank" class="profile-dropdown-item">
+                                <i class="fab fa-github" style="color: #181717;"></i> Git Hub
+                            </a>
+                            <div style="padding: 12px 16px; margin-top: 8px; border-top: 1px solid #F1F5F9;">
+                                <a href="mailto:yochanbr@gmail.com" class="action-btn secondary"
+                                    style="width: 100%; font-size: 12px; height: 36px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <i class="fas fa-envelope"></i> Message Developer
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <!-- HIGH VISIBILITY BETA WARNING BANNER -->
+                <div class="beta-notice-banner"
+                    style="margin: 20px 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
+                    <div
+                        style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <span
+                                style="font-weight: 800; font-size: 15px; color: #1E293B; letter-spacing: -0.01em;">BETA
+                                Version - Testing & Development</span>
+                            <span
+                                style="background: #3B82F6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase;">Active
+                                Review</span>
+                        </div>
+                        <div style="font-size: 13.5px; color: #475569; line-height: 1.6; font-weight: 500;">
+                            This is a beta version under testing development. The application service may show errors or
+                            even serious mismatching bugs. Reporting lets the developer know the bug quicker for
+                            resolving.
+                        </div>
+                        <div style="margin-top: 15px; display: flex; gap: 12px;">
+                            <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]"
+                                target="_blank"
+                                style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
+                                <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Dashboard View -->
+                <div id="dashboard-view">
+                    <!-- Alert Hub: Quick Analysis -->
+                    <div id="alert-hub-section" style="margin-bottom: 32px; display: none;">
+                        <div class="live-status-section"
+                            style="border-radius: 24px; background: rgba(254, 242, 242, 0.4); border: 1px solid #FCA5A5;">
+                            <div class="section-header"
+                                style="padding: 16px 24px; border-bottom: 1px solid rgba(252, 165, 165, 0.3);">
+                                <h3
+                                    style="color: #991B1B; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-exclamation-triangle"></i> Attention Required
+                                </h3>
+                                <span id="alert-count-badge"
+                                    style="background: #EF4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">0
+                                    Issues</span>
+                            </div>
+                            <div id="alert-list-container"
+                                style="padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+                                <!-- Alerts will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card active">
+                            <div class="stat-details"><span class="label">Working Now</span><span class="value"
+                                    id="dash-working">0</span></div>
+                            <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                        </div>
+                        <div class="summary-card break">
+                            <div class="stat-details"><span class="label">On Break</span><span class="value"
+                                    id="dash-break">0</span></div>
+                            <div class="stat-icon"><i class="fas fa-coffee"></i></div>
+                        </div>
+                        <div class="summary-card checkins">
+                            <div class="stat-details"><span class="label">Total Check-ins</span><span class="value"
+                                    id="dash-checkins">0</span></div>
+                            <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="live-status-section" style="grid-column: span 2;">
+                            <div class="section-header">
+                                <h3>Live Attendance Monitor</h3>
+                                <div style="display: flex; gap: 10px;">
+                                    <select id="live-status-filter" class="filter-dropdown">
+                                        <option value="all">All Staff</option>
+                                        <option value="working">Working Only</option>
+                                        <option value="break">On Break</option>
+                                        <option value="absent">Absent</option>
+                                    </select>
+                                    <input type="date" id="mainDateFilter" class="input-dark"
+                                        style="background: white; color: black; border: 1px solid #E2E8F0;">
+                                </div>
+                            </div>
+                            <div class="table-wrapper">
+                                <table class="status-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Type</th>
+                                            <th>In Time</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="live-status-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employees View -->
+                <div id="employees-view" style="display: none;">
+                    <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
+                        <div class="section-header" style="margin-bottom: 32px;">
+                            <h3 style="font-size: 22px; font-weight: 700;">Staff Management</h3>
+                            <button id="spa-add-employee-btn" class="action-btn"
+                                style="background: #F95A2C; border-radius: 12px; padding: 10px 20px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-plus"></i> Add New Employee
+                            </button>
+                        </div>
+                        <div id="spa-employee-list"></div>
+                    </div>
+                </div>
+
+                <!-- Reports View -->
+                <div id="reports-view" style="display: none;">
+                    <div class="live-status-section">
+                        <div class="section-header">
+                            <h3>Daily Activity Reports</h3>
+                        </div>
+                        <div id="reports-employee-list"></div>
+                    </div>
+                </div>
+
+                <!-- Shift Summary View -->
+                <div id="shift-summary-view" style="display: none;">
+                    <div class="live-status-section">
+                        <div class="section-header">
+                            <h3>Shift Summary Snapshots</h3>
+                        </div>
+                        <div id="shift-summary-employee-list"></div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="settings-view" style="display: none;">
+                    <div class="live-status-section">
+                        <div class="section-header">
+                            <h3>Advanced Settings Command Center</h3>
+                        </div>
+                        <div class="summary-grid">
+                            <div class="summary-card"
+                                style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div><strong>Security Hub</strong>
+                                </div>
+                                <form id="security-hub-form" style="width: 100%;">
+                                    <div class="modern-form-group"><label>Current Password</label><input type="password"
+                                            id="current-admin-password" class="modern-input" placeholder="••••••••">
+                                    </div>
+                                    <div class="modern-form-group"><label>New Password</label><input type="password"
+                                            id="new-admin-password" class="modern-input" placeholder="Min 6 chars">
+                                    </div>
+                                    <button type="submit" class="modern-btn accent" style="width: 100%;">Update
+                                        Credentials</button>
+                                </form>
+                            </div>
+                            <div class="summary-card"
+                                style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                                        <i class="fas fa-heartbeat"></i>
+                                    </div><strong>System Health</strong>
+                                </div>
+                                <div style="width: 100%; display: grid; grid-template-columns: 1fr; gap: 10px;">
+                                    <div
+                                        style="background: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
+                                        <div style="font-weight: 700; font-size: 13px; color: #10B981;">
+                                            <i class="fas fa-check-circle"></i> Local Database Operational
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="download-backup-btn" class="action-btn secondary" style="width: 100%;"><i
+                                        class="fas fa-cloud-download-alt"></i> Backup Database</button>
+                                <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;"><i
+                                        class="fas fa-undo"></i> Reset to Factory Defaults</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Timeline -->
+                <!-- Attendance Timeline Command Center -->
+                <div id="attendance-view" style="display: none;">
+                    <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
+                        <div class="section-header" style="margin-bottom: 24px;">
+                            <h3 style="font-size: 22px; font-weight: 700;">Attendance Command Center</h3>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <input type="text" id="log-search-input" class="modern-input"
+                                    placeholder="Search employee..." style="width: 200px;">
+                                <select id="log-date-filter" class="modern-input">
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="all">All</option>
+                                </select>
+                                <button class="action-btn secondary" onclick="window.refreshAttendanceLogs()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Summary Panel -->
+                        <div class="summary-grid" style="margin-bottom: 32px; grid-template-columns: repeat(6, 1fr);">
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">Total Emps</span>
+                                    <span class="stat-value" id="kpi-total-emps">0</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">Working</span>
+                                    <span class="stat-value" id="kpi-working" style="color: #10B981;">0</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">On Break</span>
+                                    <span class="stat-value" id="kpi-break" style="color: #F59E0B;">0</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">Total Hrs</span>
+                                    <span class="stat-value" id="kpi-total-hrs">0h</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">Overtime</span>
+                                    <span class="stat-value" id="kpi-total-ot">0h</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="stat-info">
+                                    <span class="stat-label">Less Time</span>
+                                    <span class="stat-value" id="kpi-total-lt" style="color: #EF4444;">0h</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View Toggle Segment -->
+                        <div class="view-toggle-container"
+                            style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px;">
+                            <button id="toggle-sessions-btn"
+                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #6366F1; color: white; border: none; cursor: pointer; transition: 0.2s;"
+                                onclick="window.switchAttendanceView('sessions')"><i class="fas fa-calendar-day"></i>
+                                Daily Sessions</button>
+                            <button id="toggle-raw-btn"
+                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; cursor: pointer; transition: 0.2s;"
+                                onclick="window.switchAttendanceView('raw')"><i class="fas fa-list-ul"></i> Raw Action
+                                Logs</button>
+                        </div>
+
+                        <!-- SESSIONS VIEW (Default) -->
+                        <div id="sessions-view-wrapper">
+                            <div class="table-wrapper">
+                                <table class="status-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Name</th>
+                                            <th>Check In</th>
+                                            <th>Break Used</th>
+                                            <th>Work Hr</th>
+                                            <th>Extra Work</th>
+                                            <th>Late Time</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-sessions-tbody">
+                                        <tr id="sessions-loading-row">
+                                            <td colspan="8" style="text-align: center; padding: 60px; color: #64748B;">
+                                                <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                                                <div style="margin-top: 12px; font-weight: 600;">Calibrating Daily
+                                                    Sessions...</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- RAW LOGS VIEW (Hidden) -->
+                        <div id="raw-logs-view-wrapper" style="display: none;">
+                            <!-- Bulk Action Toolbar -->
+                            <div id="bulk-action-toolbar"
+                                style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
+                                <div style="font-weight: 600; color: #1E293B;"><span id="bulk-count">0</span> logs
+                                    selected</div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="action-btn"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10B981; font-size: 12px;"
+                                        onclick="window.bulkChangeAction()">
+                                        <i class="fas fa-exchange-alt"></i> Change Type
+                                    </button>
+                                    <button class="action-btn"
+                                        style="background: rgba(239, 68, 68, 0.1); color: #EF4444; font-size: 12px;"
+                                        onclick="window.bulkDeleteLogs()">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                    <button class="action-btn secondary" style="font-size: 12px;"
+                                        onclick="window.exportToExcel()">
+                                        <i class="fas fa-file-excel"></i> Export Selected
+                                    </button>
+                                    <button class="action-btn accent" style="font-size: 12px;"
+                                        onclick="window.rebuildSessions()">
+                                        <i class="fas fa-cogs"></i> Recalculate Sessions
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-wrapper">
+                                <table class="status-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px; text-align: center;"><input type="checkbox"
+                                                    id="selectAllLogs" onclick="window.toggleAllLogs(this)"></th>
+                                            <th>Timestamp</th>
+                                            <th>Employee</th>
+                                            <th>Event Type</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-logs-tbody">
+                                        <tr id="logs-loading-row">
+                                            <td colspan="6" style="text-align: center; padding: 60px; color: #64748B;">
+                                                <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                                                <div style="margin-top: 12px; font-weight: 600;">Streaming real-time
+                                                    logs...</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- REPORT DATE PICKER MODAL (Crucial for admin_reports.js) -->
+    <div class="modal-overlay" id="date-modal">
+        <div class="modern-modal" style="max-width: 450px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Select Report Period</h2>
+                    <p>Choose the time range for analysis</p>
+                </div>
+                <button class="close-modal-btn"
+                    onclick="document.getElementById('date-modal').classList.remove('show'); setTimeout(()=>document.getElementById('date-modal').style.display='none', 300)">&times;</button>
+            </div>
+            <div class="modern-modal-body">
+                <form id="date-form">
+                    <div class="modern-form-group">
+                        <label>Range Type</label>
+                        <select id="report-range-type" class="modern-input" onchange="toggleReportInputs()">
+                            <option value="daily">Single Day</option>
+                            <option value="monthly">Full Month</option>
+                            <option value="custom">Custom Range</option>
+                            <option value="all">All-Time Statistics</option>
+                        </select>
+                    </div>
+
+                    <div id="daily-input-group" class="report-input-group">
+                        <div class="modern-form-group"><label>Select Date</label><input type="date" id="report-date"
+                                class="modern-input"></div>
+                    </div>
+                    <div id="monthly-input-group" class="report-input-group" style="display: none;">
+                        <div class="modern-form-group"><label>Select Month</label><input type="month" id="report-month"
+                                class="modern-input"></div>
+                    </div>
+                    <div id="custom-input-group" class="report-input-group" style="display: none;">
+                        <div class="modern-form-group"><label>From</label><input type="date" id="report-start-date"
+                                class="modern-input"></div>
+                        <div class="modern-form-group" style="margin-top: 10px;"><label>To</label><input type="date"
+                                id="report-end-date" class="modern-input"></div>
+                    </div>
+                    <div id="all-info-group" class="report-input-group" style="display: none;">
+                        <p
+                            style="color: #64748B; font-size: 13px; background: #F8FAFC; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                            <i class="fas fa-info-circle"></i> This will fetch every record ever created for this
+                            employee.
+                        </p>
+                    </div>
+
+                    <button type="submit" class="modern-btn accent" style="width: 100%; margin-top: 20px;">Generate
+                        Activity Report</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Update Details Modal -->
-    <div id="update-details-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="update-details-close">&times;</span>
-            <h2>Update Details</h2>
-            <div id="update-details-content">
-                <p>Loading update details...</p>
+    <!-- EMPLOYEE EDIT MODAL -->
+    <div class="modal-overlay" id="spa-edit-employee-modal">
+        <div class="modern-modal" style="max-width: 800px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Edit Employee Details</h2>
+                    <p>Update profile, permissions, and shifts</p>
+                </div>
+                <button class="close-modal-btn close-spa-edit">&times;</button>
             </div>
-            <button id="proceed-update-btn" class="submit-btn">Proceed with Update</button>
-        </div>
-    </div>
+            <div class="modern-modal-body">
+                <form id="spa-edit-employee-form" class="modern-grid-form"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-height: 70vh; overflow-y: auto; padding: 10px;">
+                    <input type="hidden" id="spa-edit-id" name="id">
 
-    <!-- Employee Selection Modal for Shift Summary -->
-    <div id="employee-selection-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="employee-selection-close">&times;</span>
-            <h2>Select Employee for Shift Summary</h2>
-            <form id="employee-selection-form">
-                <div class="form-group">
-                    <label for="employee-select">Choose Employee:</label>
-                    <select id="employee-select" name="employee-select" required>
-                        <option value="">Loading employees...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="shift-summary-date">Select Date:</label>
-                    <input type="date" id="shift-summary-date" name="shift-summary-date" required>
-                </div>
-                <button type="submit" class="submit-btn">View Shift Summary</button>
-            </form>
-        </div>
-    </div>
+                    <!-- Section: Basic Information -->
+                    <div
+                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 10px;">
+                        <span
+                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Personal
+                            Information</span>
+                    </div>
+                    <div class="modern-form-group"><label>Full Name</label><input type="text" id="spa-edit-name"
+                            name="name" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Employee ID</label><input type="text"
+                            id="spa-edit-employee-id" name="employee-id" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Phone Number</label><input type="text" id="spa-edit-phone"
+                            name="phone" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Role / Position</label><input type="text"
+                            id="spa-edit-blood-group" name="blood-group" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Base Salary</label><input type="text"
+                            id="spa-edit-aadhar-number" name="aadhar-number" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Personal Email</label><input type="email" id="spa-edit-email"
+                            name="email" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Date of Birth</label><input type="date" id="spa-edit-dob"
+                            name="dob" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Gender</label>
+                        <select id="spa-edit-gender" name="gender" class="modern-input">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="modern-form-group"><label>Marital Status</label>
+                        <select id="spa-edit-marital-status" name="marital-status" class="modern-input">
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                        </select>
+                    </div>
+                    <div class="modern-form-group" style="grid-column: span 2;"><label>Full Address</label><textarea
+                            id="spa-edit-address" name="address" class="modern-input" style="height: 60px;"></textarea>
+                    </div>
 
-    <!-- Employee Selection Modal for ESR JPGs -->
-    <div id="esr-jpg-employee-selection-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="esr-jpg-employee-selection-close">&times;</span>
-            <h2>Select Employee To View Shift Summary</h2>
-            <form id="esr-jpg-employee-selection-form">
-                <div class="form-group">
-                    <label for="esr-jpg-employee-select">Choose Employee:</label>
-                    <select id="esr-jpg-employee-select" name="esr-jpg-employee-select" required>
-                        <option value="">Loading employees...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="esr-jpg-date-select">Select Date:</label>
-                    <select id="esr-jpg-date-select" name="esr-jpg-date-select" required>
-                        <option value="">Select employee first</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="esr-jpg-shift-id-select">Choose Shift ID:</label>
-                    <select id="esr-jpg-shift-id-select" name="esr-jpg-shift-id-select" required>
-                        <option value="">Select date first</option>
-                    </select>
-                </div>
-                <button type="submit" class="submit-btn">View Shift Summary</button>
-            </form>
-        </div>
-    </div>
+                    <!-- Section: Work & Access -->
+                    <div
+                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
+                        <span
+                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Work
+                            & Access</span>
+                    </div>
+                    <div class="modern-form-group"><label>Login Username</label><input type="text"
+                            id="spa-edit-username" name="username" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Login Password</label><input type="password"
+                            id="spa-edit-password" name="password" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Full Time Status</label>
+                        <select id="spa-edit-full-time" name="full-time" class="modern-input">
+                            <option value="yes">Full Time</option>
+                            <option value="no">Part Time</option>
+                        </select>
+                    </div>
 
-    <!-- ESR JPGs Display Modal -->
-    <div id="esr-jpgs-modal" class="modal">
-        <div class="modal-content large-modal">
-            <span class="close" id="esr-jpgs-close">&times;</span>
-            <h2>End Shift Report JPGs</h2>
-            <h3>Right Click On The Image To Save Or View </h3>
-            <div class="filter-container">
-                <label for="esr-jpg-date-filter">Filter by Date:</label>
-                <input type="date" id="esr-jpg-date-filter" name="esr-jpg-date-filter">
-                <button id="apply-date-filter-btn" class="filter-btn">Apply Filter</button>
-                <button id="clear-date-filter-btn" class="filter-btn">Clear Filter</button>
+                    <div class="modern-form-group spa-edit-time-group"><label>Shift Start Time</label><input type="time"
+                            id="spa-edit-start-time" name="start-time" class="modern-input"></div>
+                    <div class="modern-form-group spa-edit-time-group"><label>Shift End Time</label><input type="time"
+                            id="spa-edit-end-time" name="end-time" class="modern-input"></div>
+                    <div class="modern-form-group spa-edit-time-group" style="grid-column: span 2;"><label>Break
+                            Duration (Mins)</label><input type="number" id="spa-edit-break-time" name="break-time"
+                            class="modern-input"></div>
+
+                    <!-- Section: Working Days -->
+                    <div
+                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
+                        <span
+                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Weekly
+                            Working Days</span>
+                    </div>
+                    <div
+                        style="grid-column: span 2; display: flex; flex-wrap: wrap; gap: 15px; padding: 10px; background: #F8FAFC; border-radius: 12px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Monday"> Mon</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Tuesday"> Tue</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Wednesday"> Wed</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Thursday"> Thu</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Friday"> Fri</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Saturday"> Sat</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
+                                type="checkbox" name="working-days" value="Sunday"> Sun</label>
+                    </div>
+
+                    <!-- Section: Emergency Information -->
+                    <div
+                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
+                        <span
+                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Emergency
+                            Information</span>
+                    </div>
+                    <div class="modern-form-group"><label>Guardian / Emergency Name</label><input type="text"
+                            id="spa-edit-guardian-name" name="guardian-name" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Relationship</label><input type="text"
+                            id="spa-edit-relationship" name="relationship" class="modern-input"></div>
+                    <div class="modern-form-group" style="grid-column: span 2;"><label>Guardian / Emergency
+                            Phone</label><input type="text" id="spa-edit-guardian-phone" name="guardian-phone"
+                            class="modern-input"></div>
+
+                    <!-- Section: Bank Account Details -->
+                    <div
+                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
+                        <span
+                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Bank
+                            Account Details</span>
+                    </div>
+                    <div class="modern-form-group"><label>Bank Name</label><input type="text" id="spa-edit-bank-name"
+                            name="bank-name" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Bank Branch</label><input type="text"
+                            id="spa-edit-bank-branch" name="bank-branch" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Account Number</label><input type="text"
+                            id="spa-edit-account-number" name="account-number" class="modern-input"></div>
+                    <div class="modern-form-group"><label>IFSC Code</label><input type="text" id="spa-edit-ifsc-code"
+                            name="ifsc-code" class="modern-input"></div>
+                    <div class="modern-form-group"><label>Account Holder Name</label><input type="text"
+                            id="spa-edit-account-holder-name" name="account-holder-name" class="modern-input"></div>
+                    <div class="modern-form-group"><label>PAN Number</label><input type="text" id="spa-edit-pan-number"
+                            name="pan-number" class="modern-input"></div>
+                </form>
             </div>
-            <div id="esr-jpgs-grid" class="jpg-grid">
-                <!-- JPGs will be loaded here -->
+            <div class="modern-modal-footer">
+                <button class="modern-btn secondary close-spa-edit-btn">Cancel</button>
+                <button id="spa-edit-save-btn" class="modern-btn accent">Save Changes</button>
             </div>
         </div>
     </div>
 
-    <!-- Update Progress Modal -->
-    <div id="update-progress-modal" class="modal">
-        <div class="modal-content">
-            <h2>System Update in Progress</h2>
-            <p>The system is under update. Please wait for the update to complete.</p>
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
+    <!-- SHIFT SNAPSHOT PICKER MODAL -->
+    <div class="modal-overlay" id="employee-selection-modal">
+        <div class="modern-modal" style="max-width: 450px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Shift Summary Picker</h2>
+                    <p>Select date to view snapshots</p>
                 </div>
-                <div class="progress-text">
-                    <span id="progress-percentage">0%</span>
-                    <span id="remaining-time">Time remaining: Calculating...</span>
+                <button class="close-modal-btn"
+                    onclick="document.getElementById('employee-selection-modal').classList.remove('show'); setTimeout(()=>document.getElementById('employee-selection-modal').style.display='none', 300)">&times;</button>
+            </div>
+            <div class="modern-modal-body">
+                <form id="employee-selection-form">
+                    <input type="hidden" id="employee-select">
+                    <div class="modern-form-group"><label>Select Shift Date</label><input type="date"
+                            id="shift-summary-date" class="modern-input"></div>
+                    <button type="submit" class="modern-btn accent" style="width: 100%; margin-top: 20px;">Load
+                        Snapshots</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN SNAPSHOT MODAL -->
+    <div class="modal-overlay" id="esr-fullscreen-modal">
+        <div class="modern-modal" style="max-width: 90vw; background: rgba(0,0,0,0.9); border: none;">
+            <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">
+                <button class="close-modal-btn" style="background: white; color: black;"
+                    onclick="document.getElementById('esr-fullscreen-modal').classList.remove('show'); setTimeout(()=>document.getElementById('esr-fullscreen-modal').style.display='none', 300)">&times;</button>
+            </div>
+            <div class="modern-modal-body"
+                style="padding: 0; display: flex; justify-content: center; align-items: center; height: 90vh;">
+                <img id="esr-fullscreen-img" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                <div style="position: absolute; bottom: 30px; display: flex; gap: 20px;">
+                    <button id="esr-download-btn" class="modern-btn accent"><i class="fas fa-download"></i>
+                        Download</button>
+                    <button id="esr-share-btn" class="modern-btn secondary"><i class="fas fa-share-alt"></i>
+                        Share</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="admin.js"></script>
+    <!-- SHIFT REPORT DISPLAY MODAL -->
+    <div class="modal-overlay" id="shift-summary-report-modal">
+        <div class="modern-modal large-modal" style="width: 90%; max-width: 1200px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Shift Snapshots</h2>
+                    <p id="shift-report-modal-subtitle">Report results</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeShiftReportModal()">&times;</button>
+            </div>
+            <div class="modern-modal-body">
+                <div id="shift-report-images-container" class="jpg-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FACE REGISTRATION MODAL -->
+    <div class="modal-overlay" id="face-register-modal">
+        <div class="modern-modal" style="max-width: 500px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Face Registration</h2>
+                    <p id="face-reg-subtitle">Register biometric data for Staff</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeFaceRegistration()">&times;</button>
+            </div>
+            <div class="modern-modal-body"
+                style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <div id="face-reg-container"
+                    style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                    <video id="face-reg-video" autoplay muted playsinline
+                        style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <canvas id="face-reg-overlay"
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                    <div id="face-reg-scanner-line"
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #F95A2C, transparent); animation: scan 2s linear infinite; display: none;">
+                    </div>
+                </div>
+                <div id="face-reg-status"
+                    style="width: 100%; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #64748B; font-size: 13px; font-weight: 500; text-align: center;">
+                    Waiting for camera...
+                </div>
+                <button id="capture-face-btn" class="modern-btn accent" style="width: 100%;" disabled>
+                    <i class="fas fa-camera"></i> Capture & Register
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js?v=20260416c"></script>
+    <script src="admin_reports.js"></script>
 </body>
+
 </html>

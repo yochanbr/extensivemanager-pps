@@ -34,3 +34,12 @@ h1 {
 .options button:hover {
     background-color: #0056b3;
 }
+
+/* Global Invisible Scrollbar Pattern */
+::-webkit-scrollbar {
+    display: none !important;
+}
+body {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
