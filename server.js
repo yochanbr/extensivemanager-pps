@@ -1719,25 +1719,10 @@ app.post('/api/settings/change-password', async (req, res) => {
 app.get('/api/system/status', (req, res) => {
     const fs = require('fs');
     const uptimeSeconds = process.uptime();
-    
-    // Calculate storage usage
-    let dbSize = 0;
-    let esrDbSize = 0;
-    try {
-        dbSize = fs.statSync('db.json').size;
-        if (fs.existsSync('esrjpg.db')) {
-            esrDbSize = fs.statSync('esrjpg.db').size;
-        }
-    } catch (e) {
-        console.error('Error reading file sizes:', e);
-    }
-
     res.json({
         success: true,
         data: {
             uptimeSeconds: Math.floor(uptimeSeconds),
-            databaseSize: (dbSize / (1024 * 1024)).toFixed(2) + ' MB',
-            snapshotsSize: (esrDbSize / (1024 * 1024)).toFixed(2) + ' MB',
             memory: (process.memoryUsage().heapUsed / (1024 * 1024)).toFixed(2) + ' MB'
         }
     });
@@ -1750,21 +1735,11 @@ app.get('/api/system/backup', (req, res) => {
 
 // Reset settings to defaults
 app.post('/api/settings/reset', (req, res) => {
-    const defaults = {
-        accentColor: "#F95A2C",
-        theme: "light",
-        adminPassword: "admin12nammamart",
-        sidebarCollapsed: false
-        // Identity fields removed from here as well per user request
-    };
-    db.set('settings', defaults).write();
-    res.json({ success: true, message: 'Settings reset to factory defaults.' });
+    // Reset functionality moved to Firestore settings init if needed
+    res.json({ success: true, message: 'Settings reset functionality is currently disabled for security.' });
 });
 // --- FACE ATTENDANCE NATIVE RECONSTRUCTION V3 ---
 
-// Ensure core attendance tables exist
-if (!db.has('daily_sessions').value()) db.set('daily_sessions', []).write();
-if (!db.has('attendance_logs').value()) db.set('attendance_logs', []).write();
 
 /**
  * Endpoint: Register Face Descriptor
