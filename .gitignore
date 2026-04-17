@@ -1,5 +1,21 @@
+# Dependencies
 node_modules/
-.env
+
+# Database and Data Files
+db.json
+esrjpg.db
+login.json
+
+# Large Files and Archives
+*.zip
+*.db
+
+# Sensitive Info and Certificates
+.env 
+*.pem
+*.key
+
+# System and Temp Files
 .DS_Store
 Thumbs.db
 *.log
