@@ -9,7 +9,12 @@ const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const Database = require('better-sqlite3');
 
-const adapter = new FileSync('db.json');
+// Detect Vercel environment
+const isVercel = process.env.VERCEL === '1';
+const dbPath = isVercel ? path.join('/tmp', 'db.json') : path.join(__dirname, 'db.json');
+const esrDbPath = isVercel ? path.join('/tmp', 'esrjpg.db') : path.join(__dirname, 'esrjpg.db');
+
+const adapter = new FileSync(dbPath);
 const db = low(adapter);
 
 // Set up the database defaults
@@ -29,7 +34,7 @@ db.defaults({
 // Set up SQLite database for ESR Reports - with fallback for Node.js v24 compatibility
 let esrDb;
 try {
-    esrDb = new Database('esrjpg.db');
+    esrDb = new Database(esrDbPath);
 } catch (dbError) {
     console.warn('Warning: better-sqlite3 failed to load (Node.js version incompatibility). Using fallback mode.');
     console.warn('ESR Reports functionality will be limited. The server will continue to run.');
@@ -2761,4 +2766,9 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
         console.log(`Example: http://192.168.1.100:${port}`);
         checkScheduledOpenClose();
     });
+}
+
+// Export for Vercel
+if (isVercel) {
+    module.exports = app;
 }
