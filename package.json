@@ -16,7 +16,6 @@
     "express": "^4.17.1",
     "firebase-admin": "^13.8.0",
     "nodemailer": "^7.0.10",
-    "puppeteer": "^24.31.0",
     "selfsigned": "^2.4.1",
     "shortid": "^2.2.16"
   }

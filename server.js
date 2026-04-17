@@ -22,13 +22,8 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Heavy dependencies wrapped for serverless compatibility
-let puppeteer;
-try {
-    puppeteer = require('puppeteer');
-} catch (e) {
-    console.warn('Puppeteer not available in this environment');
-}
+// Heavy dependencies (Deferred for serverless compatibility)
+let puppeteer; 
 
 // Firebase Configuration
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key_change_me';
@@ -1218,6 +1213,9 @@ app.post('/api/verify-employee-otp', async (req, res) => {
 
         // Generate and save ESR JPG to Firestore
         try {
+            if (!puppeteer) {
+                try { puppeteer = require('puppeteer'); } catch (e) { console.warn('Puppeteer load failed'); }
+            }
             if (puppeteer) {
                 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
                 const page = await browser.newPage();
@@ -1339,6 +1337,9 @@ Namma Mart
 
         // Generate and save ESR JPG
         try {
+            if (!puppeteer) {
+                try { puppeteer = require('puppeteer'); } catch (e) { console.warn('Puppeteer load failed'); }
+            }
             const browser = await puppeteer.launch({ headless: true });
             const page = await browser.newPage();
             await page.setViewport({ width: 1200, height: 800 });
