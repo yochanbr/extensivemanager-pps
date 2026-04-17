@@ -66,8 +66,9 @@
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
-                    <button class="nav-item view-esr-jpgs-btn">
+                    <button class="nav-item view-esr-jpgs-btn" style="opacity: 0.6; cursor: not-allowed;" disabled>
                         <i class="fas fa-history"></i><span>Shift Summary</span>
+                        <span style="font-size: 8px; background: #64748B; color: white; padding: 2px 6px; border-radius: 6px; margin-left: auto;">SOON</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
@@ -271,11 +272,17 @@
 
                 <!-- Shift Summary View -->
                 <div id="shift-summary-view" style="display: none;">
-                    <div class="live-status-section">
-                        <div class="section-header">
-                            <h3>Shift Summary Snapshots</h3>
+                    <div class="live-status-section" style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
+                        <div style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                            <i class="fas fa-tools"></i>
                         </div>
-                        <div id="shift-summary-employee-list"></div>
+                        <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature Coming Soon</h2>
+                        <p style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
+                            We are currently refining the Shift Summary snapshot engine to provide more detailed visual reports and biometric verification history.
+                        </p>
+                        <div style="display: inline-flex; items-center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
+                            <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
+                        </div>
                     </div>
                 </div>
 
