@@ -6,8 +6,20 @@ const FileSync = require('lowdb/adapters/FileSync');
 const shortid = require('shortid');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-const puppeteer = require('puppeteer');
-const Database = require('better-sqlite3');
+// Heavy dependencies wrapped for serverless compatibility
+let puppeteer;
+try {
+    puppeteer = require('puppeteer');
+} catch (e) {
+    console.warn('Puppeteer not available in this environment');
+}
+
+let Database;
+try {
+    Database = require('better-sqlite3');
+} catch (e) {
+    console.warn('better-sqlite3 not available in this environment');
+}
 
 // Detect Vercel environment
 const isVercel = process.env.VERCEL === '1';
@@ -34,6 +46,7 @@ db.defaults({
 // Set up SQLite database for ESR Reports - with fallback for Node.js v24 compatibility
 let esrDb;
 try {
+    if (!Database) throw new Error('better-sqlite3 module not loaded');
     esrDb = new Database(esrDbPath);
 } catch (dbError) {
     console.warn('Warning: better-sqlite3 failed to load (Node.js version incompatibility). Using fallback mode.');
