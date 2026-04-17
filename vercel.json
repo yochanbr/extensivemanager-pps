@@ -1,26 +1,19 @@
 {
   "version": 2,
-  "functions": {
-    "server.js": {
-      "includeFiles": "*.{html,css,js,json,db,png,jpg,svg,gif,ico,min.js}"
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/(admin|employee|counter_selection|scan|login|register)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/",
-      "dest": "server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "server.js"
-    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/server.js" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/employee", "destination": "/employee.html" },
+    { "source": "/counter_selection", "destination": "/counter_selection.html" },
+    { "source": "/scan", "destination": "/scan.html" },
+    { "source": "/login", "destination": "/index.html" }
   ]
 }
