@@ -1,18 +1,26 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
+  "functions": {
+    "server.js": {
+      "includeFiles": "*.{html,css,js,json,db,png,jpg,svg,gif,ico,min.js}"
     }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/admin", "destination": "/server.js" },
-    { "source": "/employee", "destination": "/server.js" },
-    { "source": "/counter_selection", "destination": "/server.js" },
-    { "source": "/scan", "destination": "/server.js" },
-    { "source": "/login", "destination": "/server.js" },
-    { "source": "/", "destination": "/server.js" }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(admin|employee|counter_selection|scan|login|register)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
+    }
   ]
 }
