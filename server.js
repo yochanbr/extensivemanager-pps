@@ -12,6 +12,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1';
 
+// Export for Vercel (Must be early)
+if (isVercel) {
+    module.exports = app;
+}
+
 // Diagnostic route (no DB dependency)
 app.get('/api/health', (req, res) => {
     res.json({ 
@@ -2551,7 +2556,7 @@ setInterval(checkScheduledOpenClose, 60 * 1000);
 
 const https = require('https');
 const fs = require('fs');
-if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
+if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
     const options = {
         key: fs.readFileSync('key.pem'),
         cert: fs.readFileSync('cert.pem')
@@ -2562,7 +2567,7 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
         console.log(`Example: https://192.168.1.100:${port}`);
         checkScheduledOpenClose();
     });
-} else {
+} else if (!isVercel) {
     app.listen(port, "0.0.0.0", () => {
         console.log(`Server is running on http://localhost:${port}`);
         console.log('To access from other devices on your network, use your local IP address.');
@@ -2571,7 +2576,7 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
     });
 }
 
-// Export for Vercel
+// Export for Vercel (Cleanup)
 if (isVercel) {
-    module.exports = app;
+    console.log('📦 Vercel Module Exported');
 }
