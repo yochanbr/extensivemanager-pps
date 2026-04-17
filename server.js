@@ -102,7 +102,12 @@ let employeeEndShiftOtp = {
 let updateInProgress = false;
 let updateStartTime = null;
 
-// Admin approval OTP functionality removed - employees can login directly
+// In-memory OTP store for admin approvals
+let adminApprovalOtp = {
+    otp: null,
+    expiresAt: 0,
+    employeeId: null
+};
 
 // Test close flag
 let testCloseDone = false;
@@ -263,9 +268,6 @@ app.get('/api/broadcast', async (req, res) => {
         res.json({ message: "", timestamp: 0 });
     }
 });
-    const broadcast = db.get('broadcast').value() || { message: "", timestamp: 0 };
-    res.json({ success: true, broadcast });
-});
 
 // Get store status
 app.get('/api/store-status', (req, res) => {
@@ -281,18 +283,18 @@ app.post('/api/store-status', (req, res) => {
 });
 
 // Get a single employee by ID
-app.get('/api/employees/:id', (req, res) => {
-    const employeeId = req.params.id;
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (employee) {
-        res.json(employee);
-    } else {
-        res.status(404).json({ success: false, message: 'Employee not found.' });
-    }
+app.get('/api/employees/:id', async (req, res) => {
+    try {
+        const employeeId = req.params.id;
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            res.json(doc.data());
+        } else {
+            res.status(404).json({ success: false, message: 'Employee not found.' });
+        }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// Update an employee
-app.put('/api/employees/:id', (req, res) => {
 // Update an employee's details
 app.put('/api/employees/:id', async (req, res) => {
     const employeeId = req.params.id;
