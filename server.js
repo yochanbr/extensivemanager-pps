@@ -322,7 +322,7 @@ app.get('/api/store-status', async (req, res) => {
     try {
         const doc = await db.broadcast().get();
         const storeClosed = doc.exists ? doc.data().store_closed : false;
-        res.json({ success: true, store_closed: !!storeClosed });
+        res.json({ success: true, closed: !!storeClosed });
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
@@ -1882,7 +1882,10 @@ app.get('/api/attendance/logs/raw', async (req, res) => {
         const snapshot = await query.orderBy('timestamp', 'desc').limit(500).get();
         const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.json({ success: true, logs });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) {
+        console.error('Error in /api/attendance/logs/raw:', e);
+        res.status(500).json({ success: false });
+    }
 });
 
 /**
