@@ -32,7 +32,7 @@ let puppeteer;
 
 // Firebase Configuration
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key_change_me';
-const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json';
+const FIREBASE_KEY_PATH = path.join(__dirname, '..', 'extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json');
 
 // Initialize Firebase Admin
 let firestore;
@@ -115,8 +115,8 @@ const db = {
 };
 
 
-// Serve static files from the current directory
-app.use(express.static(__dirname));
+// Static files resolution (Vercel handles this automatically in production, this is for local/legacy compatibility)
+app.use(express.static(path.join(__dirname, '..')));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -241,15 +241,8 @@ app.post('/login', ensureDb, async (req, res) => {
     }
 });
 
-// Serve the main page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Serve the admin page
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
+// Page routes are now handled natively by Vercel for better performance and CSS/JS reliability.
+// Root and /admin will correctly serve index.html and admin.html from the root folder.
 
 // Handle add employee requests
 app.post('/api/employees', async (req, res) => {
