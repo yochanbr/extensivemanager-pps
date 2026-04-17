@@ -1,11 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
 const shortid = require('shortid');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const admin = require('firebase-admin');
+const crypto = require('crypto-js');
+
 // Heavy dependencies wrapped for serverless compatibility
 let puppeteer;
 try {
@@ -14,84 +15,57 @@ try {
     console.warn('Puppeteer not available in this environment');
 }
 
-let Database;
+// Firebase Configuration
+const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key_change_me';
+const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json';
+
+// Initialize Firebase Admin
+let firestore;
 try {
-    Database = require('better-sqlite3');
-} catch (e) {
-    console.warn('better-sqlite3 not available in this environment');
-}
-
-// Detect Vercel environment
-const isVercel = process.env.VERCEL === '1';
-const dbPath = isVercel ? path.join('/tmp', 'db.json') : path.join(__dirname, 'db.json');
-const esrDbPath = isVercel ? path.join('/tmp', 'esrjpg.db') : path.join(__dirname, 'esrjpg.db');
-
-const adapter = new FileSync(dbPath);
-const db = low(adapter);
-
-// Set up the database defaults
-db.defaults({ 
-    store_closed: false, 
-    employees: [], 
-    nextShiftId: 1, 
-    broadcast: { message: "", timestamp: 0 },
-    settings: {
-        accentColor: "#F95A2C",
-        theme: "light",
-        sidebarCollapsed: false,
-        adminPassword: "admin12nammamart" 
-    }
-}).write();
-
-// Set up SQLite database for ESR Reports - with fallback for Node.js v24 compatibility
-let esrDb;
-try {
-    if (!Database) throw new Error('better-sqlite3 module not loaded');
-    esrDb = new Database(esrDbPath);
-} catch (dbError) {
-    console.warn('Warning: better-sqlite3 failed to load (Node.js version incompatibility). Using fallback mode.');
-    console.warn('ESR Reports functionality will be limited. The server will continue to run.');
-    // Create a mock database object that won't crash the server
-    esrDb = {
-        prepare: () => ({
-            run: () => { },
-            all: () => [],
-            get: () => null
-        }),
-        exec: () => { }
-    };
-}
-esrDb.exec(`
-    CREATE TABLE IF NOT EXISTS esr_reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee_id TEXT NOT NULL,
-        date TEXT NOT NULL,
-        shift_id TEXT NOT NULL,
-        report_data TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(employee_id, date, shift_id)
-    );
-`);
-// Ensure table exists without dropping it every time
-esrDb.exec(`
-    CREATE TABLE IF NOT EXISTS esr_jpgs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee_id TEXT NOT NULL,
-        date TEXT NOT NULL,
-        shift_id TEXT NOT NULL,
-        jpg_data BLOB NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-`);
-// Add shift_id column if not exists (for existing databases)
-try {
-    esrDb.exec(`ALTER TABLE esr_reports ADD COLUMN shift_id TEXT;`);
+    const serviceAccount = require(FIREBASE_KEY_PATH);
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+    firestore = admin.firestore();
+    console.log('✅ Firebase initialized successfully');
 } catch (error) {
-    // Ignore if column already exists
+    console.error('❌ Failed to initialize Firebase:', error.message);
 }
+
+// Encryption Utilities
+const encrypt = (text) => {
+    if (!text) return text;
+    if (typeof text !== 'string') text = JSON.stringify(text);
+    return crypto.AES.encrypt(text, ENCRYPTION_SECRET).toString();
+};
+
+const decrypt = (text) => {
+    if (!text || typeof text !== 'string') return text;
+    if (!text.startsWith('U2FsdGVkX1')) return text;
+    try {
+        const bytes = crypto.AES.decrypt(text, ENCRYPTION_SECRET);
+        const originalText = bytes.toString(crypto.enc.Utf8);
+        return originalText || text;
+    } catch (e) {
+        return text;
+    }
+};
+
+// Firestore Collection Wrappers
+const db = {
+    settings: () => firestore.collection('settings'),
+    employees: () => firestore.collection('employees'),
+    broadcast: () => firestore.collection('settings').doc('state'),
+    attendance_logs: () => firestore.collection('attendance_logs'),
+    daily_sessions: () => firestore.collection('daily_sessions'),
+    esr_reports: () => firestore.collection('esr_reports'),
+    esr_jpgs: () => firestore.collection('esr_jpgs'),
+    leave_swaps: () => firestore.collection('leave_swaps')
+};
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+const isVercel = process.env.VERCEL === '1';
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
@@ -137,27 +111,25 @@ let testCloseDone = false;
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // Validate input
-    if (!username || !username.trim()) {
-        return res.status(400).json({ success: false, message: 'Username is required.' });
-    }
-    if (!password || !password.trim()) {
-        return res.status(400).json({ success: false, message: 'Password is required.' });
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: 'Username and password are required.' });
     }
 
     const trimmedUsername = username.trim();
 
-    // Check admin credentials from database
-    const adminSettings = db.get('settings').value() || { adminPassword: 'admin12nammamart' };
+    // 1. Check Admin Credentials
+    const settingsDoc = await db.settings().doc('config').get();
+    const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminPassword: 'admin12nammamart' };
+    
     if ((trimmedUsername === 'nammamart' || trimmedUsername === 'admin') && password === adminSettings.adminPassword) {
         return res.json({ success: true, redirectUrl: '/admin' });
     }
 
-    const storeClosed = db.get('store_closed').value();
-    console.log(`Login attempt - Username: "${trimmedUsername}", Store closed: ${storeClosed}`);
+    // 2. Check Store State
+    const stateDoc = await db.broadcast().get();
+    const storeClosed = stateDoc.exists ? stateDoc.data().store_closed : false;
 
     if (storeClosed) {
-        console.log(`Login failed for "${trimmedUsername}": Store is closed`);
         return res.status(403).json({
             success: false,
             message: 'Store is temporarily CLOSED. Contact admin to open the store.',
@@ -165,68 +137,48 @@ app.post('/login', async (req, res) => {
         });
     }
 
-    const employee = db.get('employees').find({ username: trimmedUsername }).value();
-
-    if (!employee) {
-        console.log(`Login failed for "${trimmedUsername}": User not found`);
+    // 3. Find Employee (Username is primary key or we query by field)
+    // In our migration, we used employee.id as document ID, but we should search by username
+    const empQuery = await db.employees().where('username', '==', trimmedUsername).get();
+    
+    if (empQuery.empty) {
         return res.status(401).json({
             success: false,
-            message: `No account found with username "${trimmedUsername}". Use your Employee-ID as username.`,
+            message: `No account found with username "${trimmedUsername}".`,
             code: 'USER_NOT_FOUND'
         });
     }
 
+    const employeeDoc = empQuery.docs[0];
+    let employee = employeeDoc.data();
+
+    // 4. Decrypt sensitive fields for comparison
+    employee.password = decrypt(employee.password);
+    
     if (employee.isActive === false) {
-        console.log(`Login failed for "${trimmedUsername}": User deactivated`);
-        return res.status(403).json({
-            success: false,
-            message: 'You are not allowed by admin',
-            code: 'USER_DEACTIVATED'
-        });
+        return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
     }
 
+    // Password check (bcrypt is handled before encryption in our logic usually)
     const validPassword = bcrypt.compareSync(password, employee.password);
 
     if (!validPassword) {
-        console.log(`Login failed for "${trimmedUsername}": Incorrect password`);
-        return res.status(401).json({
-            success: false,
-            message: 'Incorrect password. Please try again.',
-            code: 'INVALID_PASSWORD'
-        });
+        return res.status(401).json({ success: false, message: 'Incorrect password.', code: 'INVALID_PASSWORD' });
     }
 
-    console.log(`Login successful for user "${trimmedUsername}"`);
-
+    // Initialize counter_selections if missing
     if (!employee.counter_selections) {
         employee.counter_selections = [];
-        db.get('employees').find({ id: employee.id }).assign({ counter_selections: [] }).write();
+        await employeeDoc.ref.update({ counter_selections: [] });
     }
 
     const today = new Date().toISOString().split('T')[0];
-    
     let hasActiveShift = false;
     if (employee.counter_selections.length > 0) {
         const lastShift = employee.counter_selections[employee.counter_selections.length - 1];
         if (!lastShift.shiftEndTime && lastShift.shiftStartTime && lastShift.shiftStartTime.startsWith(today)) {
             hasActiveShift = true;
         }
-    }
-
-    // Self-healing legacy check: if root shiftEnded flag is somehow true from legacy sessions, force close the anomaly.
-    if (employee.shiftEnded) {
-        hasActiveShift = false;
-        if (employee.counter_selections.length > 0) {
-            const lastShift = employee.counter_selections[employee.counter_selections.length - 1];
-            if (!lastShift.shiftEndTime) {
-                lastShift.shiftEndTime = new Date().toISOString(); // Patch database leak
-            }
-        }
-        db.get('employees').find({ id: employee.id }).assign({ 
-            shiftEnded: false,
-            startShiftTime: new Date().toISOString(),
-            counter_selections: employee.counter_selections
-        }).write();
     }
 
     if (hasActiveShift) {
@@ -247,57 +199,70 @@ app.get('/admin', (req, res) => {
 });
 
 // Handle add employee requests
-app.post('/api/employees', (req, res) => {
+app.post('/api/employees', async (req, res) => {
     const employeeData = req.body;
 
     // Set username to employee-id
     employeeData.username = employeeData['employee-id'];
     delete employeeData['employee-id'];
 
-    // Encrypt the password
+    // Encrypt the password BEFORE encryption wrapper
     const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(employeeData.password, salt);
-    employeeData.password = hashedPassword;
+    employeeData.password = bcrypt.hashSync(employeeData.password, salt);
 
-    // Generate a unique ID for the employee
     employeeData.id = shortid.generate();
-
-    // Initialize shiftEnded to false for new employees
     employeeData.shiftEnded = false;
-
-    // Initialize counter_selections as empty array
     employeeData.counter_selections = [];
 
-    // Save the employee to the database
-    db.get('employees').push(employeeData).write();
+    // Encrypt sensitive fields before Firestore
+    ['password', 'phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+        if (employeeData[field]) employeeData[field] = encrypt(employeeData[field]);
+    });
 
+    await db.employees().doc(employeeData.id).set(employeeData);
     res.json({ success: true, message: 'Employee added successfully.' });
 });
 
 // Get all employees
-app.get('/api/employees', (req, res) => {
-    const employees = db.get('employees').value();
+app.get('/api/employees', async (req, res) => {
+    const snapshot = await db.employees().get();
+    const employees = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Decrypt sensitive fields
+        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+            if (data[field]) data[field] = decrypt(data[field]);
+        });
+        return data;
+    });
     res.json(employees);
 });
 
 // Delete an employee
-app.delete('/api/employees/:id', (req, res) => {
+app.delete('/api/employees/:id', async (req, res) => {
     const employeeId = req.params.id;
-    db.get('employees').remove({ id: employeeId }).write();
+    await db.employees().doc(employeeId).delete();
     res.json({ success: true, message: 'Employee deleted successfully.' });
 });
 
 // Post a new broadcast message
-app.post('/api/broadcast', (req, res) => {
+app.post('/api/broadcast', async (req, res) => {
     const { message } = req.body;
     const timestamp = Date.now();
-    // Update db.json
-    db.set('broadcast', { message: message || "", timestamp }).write();
+    await db.broadcast().update({ 
+        broadcast: { message: message || "", timestamp } 
+    });
     res.json({ success: true, message: 'Broadcast updated successfully.', timestamp });
 });
 
 // Get current broadcast message
-app.get('/api/broadcast', (req, res) => {
+app.get('/api/broadcast', async (req, res) => {
+    const doc = await db.broadcast().get();
+    if (doc.exists) {
+        res.json(doc.data().broadcast || { message: "", timestamp: 0 });
+    } else {
+        res.json({ message: "", timestamp: 0 });
+    }
+});
     const broadcast = db.get('broadcast').value() || { message: "", timestamp: 0 };
     res.json({ success: true, broadcast });
 });
@@ -328,26 +293,30 @@ app.get('/api/employees/:id', (req, res) => {
 
 // Update an employee
 app.put('/api/employees/:id', (req, res) => {
+// Update an employee's details
+app.put('/api/employees/:id', async (req, res) => {
     const employeeId = req.params.id;
     const employeeData = req.body;
 
-    // If the password is being updated, re-encrypt it
+    // If the password is being updated, hash it then encrypt it
     if (employeeData.password && employeeData.password.trim() !== '') {
         const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(employeeData.password, salt);
-        employeeData.password = hashedPassword;
+        employeeData.password = encrypt(bcrypt.hashSync(employeeData.password, salt));
     } else {
-        // Remove password from payload so we don't overwrite the existing hash with empty string
         delete employeeData.password;
     }
 
-    db.get('employees').find({ id: employeeId }).assign(employeeData).write();
+    // Encrypt other sensitive fields
+    ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+        if (employeeData[field]) employeeData[field] = encrypt(employeeData[field]);
+    });
 
+    await db.employees().doc(employeeId).update(employeeData);
     res.json({ success: true, message: 'Employee updated successfully.' });
 });
 
 // Register or update an employee's face descriptor
-app.post('/api/employees/:id/face', (req, res) => {
+app.post('/api/employees/:id/face', async (req, res) => {
     const employeeId = req.params.id;
     const { descriptor } = req.body;
     
@@ -355,32 +324,34 @@ app.post('/api/employees/:id/face', (req, res) => {
         return res.status(400).json({ success: false, message: 'Invalid face descriptor data provided.' });
     }
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
-    db.get('employees').find({ id: employeeId }).assign({ faceDescriptor: descriptor }).write();
+    await doc.ref.update({ faceDescriptor: descriptor });
     res.json({ success: true, message: 'Face descriptor recorded successfully.' });
 });
 
 // Handle counter selection data submission (FIXED SHIFT START)
-app.post('/api/counter-selection', (req, res) => {
+app.post('/api/counter-selection', async (req, res) => {
     const { employeeId, counter, pineLabValue, timestamp } = req.body;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    // Ensure counter_selections exists
-    let selections = employee.counter_selections || [];
-
-    // Generate shift ID (3 digits + 3 letters from name in caps)
-    const shiftNumber = db.get('nextShiftId').value();
-    const namePart = employee.name.replace(/\s/g, '').substr(0, 3).toUpperCase();
+    // Generate shift ID safely from settings/state
+    const stateDoc = await db.broadcast().get();
+    const shiftNumber = stateDoc.exists ? (stateDoc.data().nextShiftId || 1) : 1;
+    
+    const namePart = (employee.name || "EMP").replace(/\s/g, '').substr(0, 3).toUpperCase();
     const shiftId = shiftNumber.toString().padStart(3, '0') + namePart;
-    db.set('nextShiftId', shiftNumber + 1).write();
+    
+    // Increment global shift ID
+    await db.broadcast().update({ nextShiftId: admin.firestore.FieldValue.increment(1) });
 
     // Create new shift entry
     const newShift = {
@@ -393,35 +364,30 @@ app.post('/api/counter-selection', (req, res) => {
         timestamp,
     };
 
-    // Push safely
+    const selections = employee.counter_selections || [];
     selections.push(newShift);
 
-    // Save back properly (THIS is the part your original code broke)
-    db.get('employees')
-        .find({ id: employeeId })
-        .assign({ counter_selections: selections, shiftEnded: false })
-        .write();
+    await doc.ref.update({ 
+        counter_selections: selections, 
+        shiftEnded: false 
+    });
 
     return res.json({ success: true, message: 'Shift started successfully.' });
 });
 
 // Handle extra data submission
-app.post('/api/extra', (req, res) => {
+app.post('/api/extra', async (req, res) => {
     const extraData = req.body;
-    const employeeId = extraData.employeeId; // Assume employeeId is sent from client
+    const employeeId = extraData.employeeId;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    // Initialize extra array if not exists
-    if (!employee.extra) {
-        employee.extra = [];
-    }
-
-    // Add the extra data
-    employee.extra.push({
+    const extra = employee.extra || [];
+    extra.push({
         id: shortid.generate(),
         itemName: extraData.itemName,
         billNumber: extraData.billNumber,
@@ -430,19 +396,18 @@ app.post('/api/extra', (req, res) => {
         timestamp: new Date().toISOString()
     });
 
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
-
+    await doc.ref.update({ extra });
     res.json({ success: true, message: 'Extra data saved successfully.' });
 });
 
 // Get extra data for an employee
-app.get('/api/extra', (req, res) => {
+app.get('/api/extra', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.extra || [];
-            // Filter out invalid items
             data = data.filter(item => item && typeof item === 'object' && item.timestamp);
             
             if (date) {
@@ -485,20 +450,18 @@ app.get('/api/extra', (req, res) => {
 });
 
 // Handle delivery data submission
-app.post('/api/delivery', (req, res) => {
+app.post('/api/delivery', async (req, res) => {
     const deliveryData = req.body;
     const employeeId = deliveryData.employeeId;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    if (!employee.delivery) {
-        employee.delivery = [];
-    }
-
-    employee.delivery.push({
+    const delivery = employee.delivery || [];
+    delivery.push({
         id: shortid.generate(),
         billNumber: deliveryData.billNumber,
         amount: deliveryData.amount,
@@ -509,17 +472,17 @@ app.post('/api/delivery', (req, res) => {
         timestamp: new Date().toISOString()
     });
 
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
-
+    await doc.ref.update({ delivery });
     res.json({ success: true, message: 'Delivery data saved successfully.' });
 });
 
 // Get delivery data for an employee
-app.get('/api/delivery', (req, res) => {
+app.get('/api/delivery', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.delivery || [];
             
             if (date) {
@@ -562,37 +525,35 @@ app.get('/api/delivery', (req, res) => {
 });
 
 // Handle bill_paid data submission
-app.post('/api/bill_paid', (req, res) => {
+app.post('/api/bill_paid', async (req, res) => {
     const billPaidData = req.body;
     const employeeId = billPaidData.employeeId;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    if (!employee.bill_paid) {
-        employee.bill_paid = [];
-    }
-
-    employee.bill_paid.push({
+    const bill_paid = employee.bill_paid || [];
+    bill_paid.push({
         id: shortid.generate(),
         vendorSupplier: billPaidData.vendorSupplier,
         amountPaid: billPaidData.amountPaid,
         timestamp: new Date().toISOString()
     });
 
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
-
+    await doc.ref.update({ bill_paid });
     res.json({ success: true, message: 'Bill paid data saved successfully.' });
 });
 
 // Get bill_paid data for an employee
-app.get('/api/bill_paid', (req, res) => {
+app.get('/api/bill_paid', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.bill_paid || [];
             
             if (date) {
@@ -633,39 +594,41 @@ app.get('/api/bill_paid', (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+        console.error('Error in /api/bill_paid:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 // Handle issue data submission
-app.post('/api/issue', (req, res) => {
+app.post('/api/issue', async (req, res) => {
     const issueData = req.body;
     const employeeId = issueData.employeeId;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    if (!employee.issue) {
-        employee.issue = [];
-    }
-
-    employee.issue.push({
+    const issue = employee.issue || [];
+    issue.push({
         id: shortid.generate(),
         billNumber: issueData.billNumber,
         issueDescription: issueData.issueDescription,
         timestamp: new Date().toISOString()
     });
 
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
-
+    await doc.ref.update({ issue });
     res.json({ success: true, message: 'Issue data saved successfully.' });
 });
 
 // Get issue data for an employee
-app.get('/api/issue', (req, res) => {
+app.get('/api/issue', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.issue || [];
             
             if (date) {
@@ -708,20 +671,18 @@ app.get('/api/issue', (req, res) => {
 });
 
 // Handle retail_credit data submission
-app.post('/api/retail_credit', (req, res) => {
+app.post('/api/retail_credit', async (req, res) => {
     const retailCreditData = req.body;
     const employeeId = retailCreditData.employeeId;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
 
-    if (!employee.retail_credit) {
-        employee.retail_credit = [];
-    }
-
-    employee.retail_credit.push({
+    const retail_credit = employee.retail_credit || [];
+    retail_credit.push({
         id: shortid.generate(),
         phoneNumber: retailCreditData.phoneNumber,
         amount: retailCreditData.amount,
@@ -729,17 +690,17 @@ app.post('/api/retail_credit', (req, res) => {
         timestamp: new Date().toISOString()
     });
 
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
-
+    await doc.ref.update({ retail_credit });
     res.json({ success: true, message: 'Retail credit data saved successfully.' });
 });
 
 // Get retail_credit data for an employee
-app.get('/api/retail_credit', (req, res) => {
+app.get('/api/retail_credit', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.retail_credit || [];
             
             if (date) {
@@ -782,26 +743,21 @@ app.get('/api/retail_credit', (req, res) => {
 });
 
 // Get Activity History Endpoint
-app.get('/api/history', (req, res) => {
+app.get('/api/history', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
         if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
 
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee) return res.status(404).json({ message: 'Employee not found' });
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ message: 'Employee not found' });
+        const employee = doc.data();
 
         let history = [];
-        
-        // Helper to map record arrays directly into the history timeline
         const addHistory = (arr, type) => {
             if (arr && Array.isArray(arr)) {
                 arr.forEach(item => {
                     if (item && item.timestamp) {
-                        history.push({
-                            ...item,
-                            type: type,
-                            action: item.action || 'add' // default to 'add' for legacy records
-                        });
+                        history.push({ ...item, type: type, action: item.action || 'add' });
                     }
                 });
             }
@@ -813,47 +769,32 @@ app.get('/api/history', (req, res) => {
         addHistory(employee.issue, 'issue');
         addHistory(employee.retail_credit, 'retail_credit');
 
-        // Include any explicit audit logs if they exist
         if (employee.audit_history && Array.isArray(employee.audit_history)) {
             employee.audit_history.forEach(log => history.push(log));
         }
 
-        // Apply new range filters to history
-        if (date) {
-            history = history.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
-        } else if (month) {
-            history = history.filter(item => item.timestamp && item.timestamp.startsWith(month));
-        } else if (startDate && endDate) {
-            history = history.filter(item => {
-                if (!item.timestamp) return false;
-                const ts = item.timestamp.split('T')[0];
-                return ts >= startDate && ts <= endDate;
-            });
-        }
+        if (date) history = history.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
+        else if (month) history = history.filter(item => item.timestamp && item.timestamp.startsWith(month));
+        else if (startDate && endDate) history = history.filter(item => {
+            if (!item.timestamp) return false;
+            const ts = item.timestamp.split('T')[0];
+            return ts >= startDate && ts <= endDate;
+        });
 
-        // Filter by shift bounds if provided
         if (shiftStartTime) {
             const start = new Date(shiftStartTime);
             if (!isNaN(start.getTime())) {
-                history = history.filter(item => {
-                    const ts = new Date(item.timestamp);
-                    return ts >= start;
-                });
+                history = history.filter(item => new Date(item.timestamp) >= start);
                 if (shiftEndTime) {
                     const end = new Date(shiftEndTime);
                     if (!isNaN(end.getTime())) {
-                        history = history.filter(item => {
-                            const ts = new Date(item.timestamp);
-                            return ts <= end;
-                        });
+                        history = history.filter(item => new Date(item.timestamp) <= end);
                     }
                 }
             }
         }
 
-        // Sort globally by timestamp, newest first
         history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
         res.json(history);
     } catch (error) {
         console.error('Error in /api/history:', error);
@@ -862,20 +803,24 @@ app.get('/api/history', (req, res) => {
 });
 
 // Formalize shift termination
-app.post('/api/end-shift', (req, res) => {
+app.post('/api/end-shift', async (req, res) => {
     try {
         const { employeeId } = req.body;
         if (!employeeId) return res.status(400).json({ success: false, message: 'Missing employeeId' });
         
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee) return res.status(404).json({ success: false, message: 'Employee not found' });
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found' });
+        const employee = doc.data();
         
         if (employee.counter_selections && employee.counter_selections.length > 0) {
-            const activeShift = employee.counter_selections[employee.counter_selections.length - 1];
+            const selections = [...employee.counter_selections];
+            const activeShift = selections[selections.length - 1];
             if (!activeShift.shiftEndTime) {
                 activeShift.shiftEndTime = new Date().toISOString();
-                employee.shiftEnded = true;
-                db.get('employees').find({ id: employeeId }).assign(employee).write();
+                await doc.ref.update({ 
+                    counter_selections: selections,
+                    shiftEnded: true 
+                });
                 return res.json({ success: true, message: 'Shift strictly terminated.' });
             }
         }
@@ -887,7 +832,7 @@ app.post('/api/end-shift', (req, res) => {
 });
 
 // Generalized Update Record Route
-app.put('/api/:type/:id', (req, res) => {
+app.put('/api/:type/:id', async (req, res) => {
     try {
         const { type, id } = req.params;
         const validTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
@@ -897,18 +842,21 @@ app.put('/api/:type/:id', (req, res) => {
         const employeeId = data.employeeId;
         if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
 
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee || !employee[type]) return res.status(404).json({ message: 'Record array not found' });
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ message: 'Employee not found' });
+        const employee = doc.data();
+        if (!employee[type]) return res.status(404).json({ message: 'Record array not found' });
 
-        const index = employee[type].findIndex(item => item && item.id === id);
+        const records = [...employee[type]];
+        const index = records.findIndex(item => item && item.id === id);
         if (index === -1) return res.status(404).json({ message: 'Record not found' });
 
-        const original = employee[type][index];
+        const original = records[index];
         const updated = { ...original, ...data, timestamp: original.timestamp, id: original.id };
-        employee[type][index] = updated;
+        records[index] = updated;
 
-        if(!employee.audit_history) employee.audit_history = [];
-        employee.audit_history.push({
+        const audit_history = employee.audit_history || [];
+        audit_history.push({
             id: shortid.generate(),
             action: 'edit',
             type: type,
@@ -918,7 +866,7 @@ app.put('/api/:type/:id', (req, res) => {
             newRecord: Object.keys(data).reduce((acc, k) => { if(original[k] !== data[k] && typeof original[k] !== 'undefined') acc[k] = data[k]; return acc; }, {})
         });
 
-        db.get('employees').find({ id: employeeId }).assign(employee).write();
+        await doc.ref.update({ [type]: records, audit_history });
         res.json({ success: true });
     } catch(err) {
         console.error('PUT Error:', err);
@@ -927,7 +875,7 @@ app.put('/api/:type/:id', (req, res) => {
 });
 
 // Generalized Delete Record Route
-app.delete('/api/:type/:id', (req, res) => {
+app.delete('/api/:type/:id', async (req, res) => {
     try {
         const { type, id } = req.params;
         const { employeeId, reason } = req.query;
@@ -936,17 +884,20 @@ app.delete('/api/:type/:id', (req, res) => {
         if (!validTypes.includes(type)) return res.status(400).json({ message: 'Invalid record type' });
         if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
 
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee || !employee[type]) return res.status(404).json({ message: 'Record array not found' });
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ message: 'Employee not found' });
+        const employee = doc.data();
+        if (!employee[type]) return res.status(404).json({ message: 'Record array not found' });
 
-        const index = employee[type].findIndex(item => item && item.id === id);
+        const records = [...employee[type]];
+        const index = records.findIndex(item => item && item.id === id);
         if (index === -1) return res.status(404).json({ message: 'Record not found' });
 
-        const original = employee[type][index];
-        employee[type].splice(index, 1);
+        const original = records[index];
+        records.splice(index, 1);
 
-        if(!employee.audit_history) employee.audit_history = [];
-        employee.audit_history.push({
+        const audit_history = employee.audit_history || [];
+        audit_history.push({
             id: shortid.generate(),
             action: 'delete',
             type: type,
@@ -955,7 +906,7 @@ app.delete('/api/:type/:id', (req, res) => {
             originalRecord: original
         });
 
-        db.get('employees').find({ id: employeeId }).assign(employee).write();
+        await doc.ref.update({ [type]: records, audit_history });
         res.json({ success: true });
     } catch(err) {
         console.error('DELETE Error:', err);
@@ -964,66 +915,71 @@ app.delete('/api/:type/:id', (req, res) => {
 });
 
 // Restore deleted item
-app.post('/api/restore/:historyId', (req, res) => {
+app.post('/api/restore/:historyId', async (req, res) => {
     try {
         const { historyId } = req.params;
-        const employees = db.get('employees').value();
-        for (let i = 0; i < employees.length; i++) {
-            let emp = employees[i];
+        const snapshot = await db.employees().get();
+        for (const empDoc of snapshot.docs) {
+            let emp = empDoc.data();
             if (emp.audit_history) {
                 const histIndex = emp.audit_history.findIndex(h => h.id === historyId);
                 if (histIndex !== -1) {
                     const log = emp.audit_history[histIndex];
                     if (log.action === 'delete') {
-                        if(!emp[log.type]) emp[log.type] = [];
-                        emp[log.type].push(log.originalRecord);
-                        emp.audit_history.splice(histIndex, 1);
-                        db.get('employees').find({ id: emp.id }).assign(emp).write();
+                        const records = emp[log.type] || [];
+                        records.push(log.originalRecord);
+                        const audit = [...emp.audit_history];
+                        audit.splice(histIndex, 1);
+                        await empDoc.ref.update({ [log.type]: records, audit_history: audit });
                         return res.json({ success: true });
                     }
                 }
             }
         }
         res.status(404).json({ message: 'Audit log not found' });
-    } catch(err) { res.status(500).json({ message: 'Error restoring' }); }
+    } catch(err) { console.error(err); res.status(500).json({ message: 'Error restoring' }); }
 });
 
 // Revert edit item
-app.post('/api/revert-edit/:historyId', (req, res) => {
+app.post('/api/revert-edit/:historyId', async (req, res) => {
     try {
         const { historyId } = req.params;
-        const employees = db.get('employees').value();
-        for (let i = 0; i < employees.length; i++) {
-            let emp = employees[i];
+        const snapshot = await db.employees().get();
+        for (const empDoc of snapshot.docs) {
+            let emp = empDoc.data();
             if (emp.audit_history) {
                 const histIndex = emp.audit_history.findIndex(h => h.id === historyId);
                 if (histIndex !== -1) {
                     const log = emp.audit_history[histIndex];
                     if (log.action === 'edit') {
-                        const mainIndex = emp[log.type].findIndex(r => r && r.id === log.originalRecord.id);
+                        const records = emp[log.type] || [];
+                        const mainIndex = records.findIndex(r => r && r.id === log.originalRecord.id);
                         if (mainIndex !== -1) {
-                            emp[log.type][mainIndex] = log.originalRecord;
+                            records[mainIndex] = log.originalRecord;
                         } else {
-                            if(!emp[log.type]) emp[log.type] = [];
-                            emp[log.type].push(log.originalRecord);
+                            records.push(log.originalRecord);
                         }
-                        emp.audit_history.splice(histIndex, 1);
-                        db.get('employees').find({ id: emp.id }).assign(emp).write();
+                        const audit = [...emp.audit_history];
+                        audit.splice(histIndex, 1);
+                        await empDoc.ref.update({ [log.type]: records, audit_history: audit });
                         return res.json({ success: true });
                     }
                 }
             }
         }
         res.status(404).json({ message: 'Audit log not found' });
-    } catch(err) { res.status(500).json({ message: 'Error reverting' }); }
+    } catch(err) { console.error(err); res.status(500).json({ message: 'Error reverting' }); }
 });
 
 // Get counter_data for an employee
-app.get('/api/counter_data', (req, res) => {
+app.get('/api/counter_data', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
+
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.counter_selections || [];
             
             if (date) {
@@ -1107,37 +1063,34 @@ app.post('/api/send-employee-otp', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Employee ID is required.' });
     }
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employee = doc.data();
+    const employeeEmail = decrypt(employee.email);
 
-    if (!employee.email) {
+    if (!employeeEmail) {
         return res.status(400).json({ success: false, message: 'Employee email not found.' });
     }
 
-    // Generate 5-digit OTP
     const otp = Math.floor(10000 + Math.random() * 90000).toString();
     employeeEndShiftOtp.otp = otp;
-    employeeEndShiftOtp.expiresAt = Date.now() + 5 * 60 * 1000; // valid for 5 minutes
+    employeeEndShiftOtp.expiresAt = Date.now() + 5 * 60 * 1000;
     employeeEndShiftOtp.employeeId = employeeId;
 
-    // Prepare email
     const mailOptions = {
         from: emailConfig.from,
-        to: employee.email,
+        to: employeeEmail,
         subject: 'Namma Mart - Employee End Shift OTP',
         text: `Your End Shift OTP is: ${otp}. It is valid for 5 minutes.`
     };
 
     try {
         await emailConfig.transporter.sendMail(mailOptions);
-
-        const responseBody = { success: true, message: 'OTP sent to your email.' };
-        return res.json(responseBody);
+        return res.json({ success: true, message: 'OTP sent to your email.' });
     } catch (err) {
         console.error('Error sending employee OTP email:', err);
-        // Clear OTP on failure
         employeeEndShiftOtp.otp = null;
         employeeEndShiftOtp.expiresAt = 0;
         employeeEndShiftOtp.employeeId = null;
@@ -1149,16 +1102,15 @@ app.post('/api/send-employee-otp', async (req, res) => {
  * Verify employee OTP for end-shift
  * Additionally, record employee endShiftTime and set shiftEnded to true
  */
+// Verify employee OTP for end-shift
 app.post('/api/verify-employee-otp', async (req, res) => {
     const { otp, employeeId } = req.body;
-    if (isEmpty(otp) || isEmpty(employeeId)) {
+    if (!otp || !employeeId) {
         return res.status(400).json({ success: false, message: 'OTP and Employee ID are required.' });
     }
 
     if (!employeeEndShiftOtp.otp || Date.now() > employeeEndShiftOtp.expiresAt || employeeEndShiftOtp.employeeId !== employeeId) {
         employeeEndShiftOtp.otp = null;
-        employeeEndShiftOtp.expiresAt = 0;
-        employeeEndShiftOtp.employeeId = null;
         return res.status(400).json({ success: false, message: 'OTP expired or not requested.' });
     }
 
@@ -1167,140 +1119,82 @@ app.post('/api/verify-employee-otp', async (req, res) => {
     }
 
     employeeEndShiftOtp.otp = null;
-    employeeEndShiftOtp.expiresAt = 0;
-    employeeEndShiftOtp.employeeId = null;
 
-    // Record endShiftTime and set shiftEnded true
     const endShiftTime = new Date().toISOString();
-    const employeeForShiftEnd = db.get('employees').find({ id: employeeId }).value();
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found.' });
+    let employee = doc.data();
+
     let lastShiftIndex = -1;
-    if (employeeForShiftEnd && employeeForShiftEnd.counter_selections) {
+    if (employee.counter_selections) {
         const today = new Date().toISOString().split('T')[0];
-        lastShiftIndex = employeeForShiftEnd.counter_selections.reduce((lastIndex, selection, currentIndex) => {
-            if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) {
-                return currentIndex;
-            }
+        lastShiftIndex = employee.counter_selections.reduce((lastIndex, selection, currentIndex) => {
+            if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) return currentIndex;
             return lastIndex;
         }, -1);
 
         if (lastShiftIndex !== -1) {
-            employeeForShiftEnd.counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
+            employee.counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
         }
     }
-    db.get('employees').find({ id: employeeId }).assign({ shiftEnded: true, counter_selections: employeeForShiftEnd.counter_selections }).write();
-
-    // Fetch employee data for report
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
-        return res.status(404).json({ success: false, message: 'Employee not found after verification.' });
-    }
+    await doc.ref.update({ shiftEnded: true, counter_selections: employee.counter_selections || [] });
 
     const employeeName = employee.name || 'Employee';
-
-    // Generate and save ESR Text Report
     const date = endShiftTime.split('T')[0];
     let reportText = '';
+    
     try {
-        // Get shift details
-        const shiftStartTime = employeeForShiftEnd.counter_selections[lastShiftIndex].shiftStartTime;
-        const shiftEndTimeFormatted = endShiftTime;
-        const shiftId = employeeForShiftEnd.counter_selections[lastShiftIndex].shiftId;
+        const shift = employee.counter_selections[lastShiftIndex];
+        const shiftStartTime = shift.shiftStartTime;
+        const shiftId = shift.shiftId;
 
-        // Fetch today's report summary
-        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${shiftEndTimeFormatted}`);
+        // Use helper functions or logic instead of internal fetch if possible
+        // For now, I'll keep the internal fetch to avoid massive refactoring of summary logic
+        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
         const reportSummary = await reportSummaryResponse.json();
-
-        // Fetch data activity summary
-        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${shiftEndTimeFormatted}`);
+        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
         const activitySummary = await activitySummaryResponse.json();
 
-        // Generate text report
-        reportText = `
-End Shift Report for ${employeeName}
+        reportText = `End Shift Report for ${employeeName}\n\nShift Details:\n- Start: ${new Date(shiftStartTime).toLocaleString()}\n- End: ${new Date(endShiftTime).toLocaleString()}\n- ID: ${shiftId}\n\nSummary:\n- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}\n- Cash: ₹${reportSummary.cash || 0}\n- Retail Credit: ₹${reportSummary.retailCredit || 0}\n\nActivity:\n- Added: ${activitySummary.inputed || 0}, Edited: ${activitySummary.edited || 0}, Deleted: ${activitySummary.deleted || 0}`;
 
-Shift Details:
-- Shift Start Time: ${new Date(shiftStartTime).toLocaleString()}
-- Shift End Time: ${new Date(shiftEndTimeFormatted).toLocaleString()}
-- Shift ID: ${shiftId}
+        // Save Text Report to Firestore (Encrypted)
+        await db.esr_reports().doc(`${employeeId}_${date}_${shiftId}`).set({
+            employee_id: employeeId,
+            date,
+            shift_id: shiftId,
+            report_data: encrypt(reportText.trim()),
+            created_at: new Date().toISOString()
+        });
 
-Today's Report Summary:
-- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}
-- Card Pinelab: ₹${reportSummary.cardPinelab || 0}
-- UPI Paytm: ₹${reportSummary.upiPaytm || 0}
-- Card Paytm: ₹${reportSummary.cardPaytm || 0}
-- Cash: ₹${reportSummary.cash || 0}
-- Retail Credit: ₹${reportSummary.retailCredit || 0}
-
-Data Activity Summary:
-- Entries Added: ${activitySummary.inputed || 0}
-- Entries Edited: ${activitySummary.edited || 0}
-- Entries Deleted: ${activitySummary.deleted || 0}
-
-Thank you for your work today.
-Regards,
-Namma Mart
-        `;
-
-        // Save the text report
-        const stmt = esrDb.prepare('INSERT OR REPLACE INTO esr_reports (employee_id, date, shift_id, report_data) VALUES (?, ?, ?, ?)');
-        stmt.run(employeeId, date, shiftId, reportText.trim());
-        console.log(`ESR Text Report generated and saved for employee ${employeeId} on ${date} with shift ID ${shiftId}`);
-
-        // Generate and save ESR JPG
+        // Generate and save ESR JPG to Firestore
         try {
-            const browser = await puppeteer.launch({ headless: true });
-            const page = await browser.newPage();
-            await page.setViewport({ width: 1200, height: 800 });
-            const reportUrl = `http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`;
-            await page.goto(reportUrl, { waitUntil: 'networkidle2' });
-            const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 90 });
-            await browser.close();
+            if (puppeteer) {
+                const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+                const page = await browser.newPage();
+                await page.goto(`http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`, { waitUntil: 'networkidle2' });
+                const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 90 });
+                await browser.close();
 
-            // Save the JPG to database
-            const jpgStmt = esrDb.prepare('INSERT OR REPLACE INTO esr_jpgs (employee_id, date, shift_id, jpg_data) VALUES (?, ?, ?, ?)');
-            jpgStmt.run(employeeId, date, shiftId, screenshotBuffer);
-            console.log(`ESR JPG generated and saved for employee ${employeeId} on ${date} with shift ID ${shiftId}`);
-        } catch (jpgError) {
-            console.error('Error generating ESR JPG:', jpgError);
-        }
-    } catch (error) {
-        console.error('Error generating ESR Text Report:', error);
-    }
+                await db.esr_jpgs().doc(`${employeeId}_${date}_${shiftId}`).set({
+                    employee_id: employeeId,
+                    date,
+                    shift_id: shiftId,
+                    jpg_data_encrypted: encrypt(screenshotBuffer.toString('base64')),
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (jpgError) { console.error('ESR JPG error:', jpgError); }
+    } catch (error) { console.error('ESR Report error:', error); }
 
-    // Compose email content for shift end report
-    const startShiftTime = employee.startShiftTime || 'N/A';
-
-    const emailText = `
-Hello ${employeeName},
-
-Your shift has ended successfully.
-
-Shift Start Time: ${startShiftTime}
-Shift End Time: ${endShiftTime}
-
-${reportText}
-
-Regards,
-Namma Mart
-    `;
-
-    // Send email with nodemailer
     const mailOptions = {
         from: emailConfig.from,
-        to: employee.email,
+        to: decrypt(employee.email),
         subject: 'Namma Mart - Shift End Report',
-        text: emailText
+        text: `Hello ${employeeName},\n\nYour shift has ended.\n\n${reportText}\n\nRegards,\nNamma Mart`
     };
+    try { await emailConfig.transporter.sendMail(mailOptions); } catch (e) { console.error('Mail error:', e); }
 
-    try {
-        await emailConfig.transporter.sendMail(mailOptions);
-        console.log(`Shift end report email with attachment sent to ${employee.email}`);
-    } catch (err) {
-        console.error('Error sending shift end report email:', err);
-        // Not failing the API call, just logging
-    }
-
-    return res.json({ success: true, message: 'OTP verified. Shift ended and email sent.' });
+    return res.json({ success: true, message: 'OTP verified. Shift ended and report generated.' });
 });
 
 /**
@@ -1487,14 +1381,13 @@ app.post('/api/verify-admin-approval-otp', (req, res) => {
 });
 
 // Confirm the OTP and then close the store (end shift)
-app.post('/api/confirm-endshift-otp', (req, res) => {
+app.post('/api/confirm-endshift-otp', async (req, res) => {
     const { otp } = req.body;
     if (!otp) {
         return res.status(400).json({ success: false, message: 'OTP is required.' });
     }
 
     if (!endShiftOtp.otp || Date.now() > endShiftOtp.expiresAt) {
-        // Clear stale OTP
         endShiftOtp.otp = null;
         endShiftOtp.expiresAt = 0;
         return res.status(400).json({ success: false, message: 'OTP expired or not requested.' });
@@ -1504,28 +1397,26 @@ app.post('/api/confirm-endshift-otp', (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid OTP.' });
     }
 
-    // OTP valid — close the store
     endShiftOtp.otp = null;
     endShiftOtp.expiresAt = 0;
-    db.set('store_closed', true).write();
+    await db.broadcast().update({ store_closed: true });
     return res.json({ success: true, message: 'Shift ended, store closed.' });
 });
 
 /**
  * Confirm admin password and close the store (end shift)
  */
-app.post('/api/confirm-endshift-password', (req, res) => {
+// Confirm admin password and close the store (end shift)
+app.post('/api/confirm-endshift-password', async (req, res) => {
     const { password } = req.body;
-    if (!password) {
-        return res.status(400).json({ success: false, message: 'Password is required.' });
-    }
+    const settingsDoc = await db.settings().doc('config').get();
+    const adminPassword = settingsDoc.exists ? settingsDoc.data().adminPassword : 'admin12nammamart';
 
-    if (password !== 'admin12nammamart') {
+    if (password !== adminPassword) {
         return res.status(401).json({ success: false, message: 'Invalid password.' });
     }
 
-    // Password valid — close the store
-    db.set('store_closed', true).write();
+    await db.broadcast().update({ store_closed: true });
     return res.json({ success: true, message: 'Shift ended, store closed.' });
 });
 
@@ -1544,15 +1435,20 @@ app.get('/api/debug-current-otp', (req, res) => {
     return res.json({ success: true, otp: endShiftOtp.otp, expiresAt: endShiftOtp.expiresAt });
 });
 
-const { isEmpty } = require('lodash');
 
 // Verify admin password for start shift and record startShiftTime
-app.post('/api/start-shift', (req, res) => {
+// Verify admin password for start shift and record startShiftTime
+app.post('/api/start-shift', async (req, res) => {
     const { password } = req.body;
-    if (password === 'admin12nammamart') {
+    const settingsDoc = await db.settings().doc('config').get();
+    const adminPassword = settingsDoc.exists ? settingsDoc.data().adminPassword : 'admin12nammamart';
+
+    if (password === adminPassword) {
         const startShiftTime = new Date().toISOString();
-        db.set('store_closed', false).write();
-        db.set('startShiftTime', startShiftTime).write();
+        await db.broadcast().update({ 
+            store_closed: false,
+            startShiftTime: startShiftTime 
+        });
         res.json({ success: true, startShiftTime });
     } else {
         res.json({ success: false });
@@ -1566,29 +1462,26 @@ app.get('/api/today-date', (req, res) => {
 });
 
 // Get store status
-app.get('/api/store-status', (req, res) => {
-    const storeClosed = db.get('store_closed').value();
+app.get('/api/store-status', async (req, res) => {
+    const doc = await db.broadcast().get();
+    const storeClosed = doc.exists ? doc.data().store_closed : false;
     res.json({ storeClosed });
 });
 
 // Toggle store status (open/close) - requires admin password
-app.post('/api/toggle-store', (req, res) => {
+// Toggle store status (open/close) - requires admin password
+app.post('/api/toggle-store', async (req, res) => {
     const { password, action } = req.body;
+    const settingsDoc = await db.settings().doc('config').get();
+    const adminPassword = settingsDoc.exists ? settingsDoc.data().adminPassword : 'admin12nammamart';
 
-    // Validate password
-    if (password !== 'admin12nammamart') {
+    if (password !== adminPassword) {
         return res.status(401).json({ success: false, message: 'Invalid admin password.' });
     }
 
-    if (action === 'open') {
-        db.set('store_closed', false).write();
-        return res.json({ success: true, message: 'Store is now OPEN.', storeClosed: false });
-    } else if (action === 'close') {
-        db.set('store_closed', true).write();
-        return res.json({ success: true, message: 'Store is now CLOSED.', storeClosed: true });
-    } else {
-        return res.status(400).json({ success: false, message: 'Invalid action. Use "open" or "close".' });
-    }
+    const isClosed = (action === 'close');
+    await db.broadcast().update({ store_closed: isClosed });
+    return res.json({ success: true, message: `Store is now ${isClosed ? 'CLOSED' : 'OPEN'}.`, storeClosed: isClosed });
 });
 
 
@@ -1607,10 +1500,11 @@ app.put('/api/:type/:id', (req, res) => {
         return res.status(400).json({ success: false, message: 'editReason is required when editing an entry.' });
     }
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ message: 'Employee not found' });
     }
+    const employee = doc.data();
 
     const dataArray = employee[type];
     if (!dataArray) {
@@ -1642,7 +1536,7 @@ app.put('/api/:type/:id', (req, res) => {
     delete updateData.editReason;
 
     dataArray[index] = { ...dataArray[index], ...updateData };
-    db.get('employees').find({ id: employeeId }).assign(employee).write();
+    await doc.ref.update({ [type]: dataArray, history: employee.history || [] });
 
     res.json({ success: true, message: 'Data updated successfully.' });
 });
@@ -1674,7 +1568,7 @@ app.delete('/api/permanently-delete-history/:id', (req, res) => {
     }
 });
 
-app.delete('/api/:type/:id', (req, res) => {
+app.delete('/api/:type/:id', async (req, res) => {
     let { type, id } = req.params;
     if (type === 'counter_data') {
         type = 'counter_selections';
@@ -1687,12 +1581,13 @@ app.delete('/api/:type/:id', (req, res) => {
         return res.status(400).json({ message: 'A reason is required to delete an entry.' });
     }
 
-    const employee = db.get('employees').find({ id: employeeId });
-    if (!employee.value()) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ message: 'Employee not found' });
     }
+    const employeeData = doc.data();
 
-    const dataArray = employee.get(type).value();
+    const dataArray = employeeData[type];
     if (!dataArray) {
         return res.status(404).json({ message: 'Data type not found' });
     }
@@ -1703,11 +1598,11 @@ app.delete('/api/:type/:id', (req, res) => {
     }
 
     // Store original data in history before deletion (include provided reason)
-    if (!employee.value().history) {
-        employee.value().history = [];
+    if (!employeeData.history) {
+        employeeData.history = [];
     }
     const originalData = { ...dataArray[index] };
-    employee.value().history.push({
+    employeeData.history.push({
         id: shortid.generate(),
         timestamp: new Date().toISOString(),
         action: 'delete',
@@ -1719,17 +1614,20 @@ app.delete('/api/:type/:id', (req, res) => {
     });
 
     dataArray.splice(index, 1);
-    db.write();
+    await doc.ref.update({ [type]: dataArray, history: employeeData.history });
 
     res.json({ success: true, message: 'Data deleted successfully.' });
 });
 
 // Get history data for an employee
-app.get('/api/history', (req, res) => {
+app.get('/api/history', async (req, res) => {
     try {
         const { employeeId, date, type } = req.query;
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (employee) {
+        if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
+
+        const doc = await db.employees().doc(employeeId).get();
+        if (doc.exists) {
+            const employee = doc.data();
             let data = employee.history || [];
             if (date) {
                 // date is in YYYY-MM-DD format
@@ -1811,98 +1709,48 @@ app.post('/api/revert-edit/:id', (req, res) => {
     res.status(404).json({ message: 'History entry not found' });
 });
 
-app.get('/api/todays-report-summary', (req, res) => {
+app.get('/api/todays-report-summary', async (req, res) => {
     try {
         const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
-        if (!employeeId || !date) {
-            return res.status(400).json({ success: false, message: 'employeeId and date are required.' });
-        }
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee) {
-            return res.status(404).json({ success: false, message: 'Employee not found.' });
-        }
-        const extraData = employee.extra || [];
-        const retailCreditData = employee.retail_credit || [];
+        if (!employeeId || !date) return res.status(400).json({ success: false });
 
-        // Filter extra data by date (YYYY-MM-DD)
-        let filteredExtraData = extraData.filter(item => {
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ success: false });
+        const employee = doc.data();
+
+        let extraData = employee.extra || [];
+        let retailCreditData = employee.retail_credit || [];
+
+        const start = shiftStartTime ? new Date(shiftStartTime) : null;
+        const end = shiftEndTime ? new Date(shiftEndTime) : null;
+
+        const filter = (arr) => arr.filter(item => {
             if (!item.timestamp) return false;
-            const itemDate = new Date(item.timestamp);
-            if (isNaN(itemDate.getTime())) return false;
-            return itemDate.toISOString().split('T')[0] === date;
+            const itemTs = new Date(item.timestamp);
+            if (itemTs.toISOString().split('T')[0] !== date) return false;
+            if (start && itemTs < start) return false;
+            if (end && itemTs > end) return false;
+            return true;
         });
 
-        // Filter retail_credit data by date
-        let filteredRetailCreditData = retailCreditData.filter(item => {
-            if (!item.timestamp) return false;
-            const itemDate = new Date(item.timestamp);
-            if (isNaN(itemDate.getTime())) return false;
-            return itemDate.toISOString().split('T')[0] === date;
-        });
+        extraData = filter(extraData);
+        retailCreditData = filter(retailCreditData);
 
-        // Further filter by shift times if provided
-        if (shiftStartTime) {
-            const start = new Date(shiftStartTime);
-            if (!isNaN(start.getTime())) {
-                filteredExtraData = filteredExtraData.filter(item => {
-                    const ts = new Date(item.timestamp);
-                    return ts >= start;
-                });
-                filteredRetailCreditData = filteredRetailCreditData.filter(item => {
-                    const ts = new Date(item.timestamp);
-                    return ts >= start;
-                });
-                if (shiftEndTime) {
-                    const end = new Date(shiftEndTime);
-                    if (!isNaN(end.getTime())) {
-                        filteredExtraData = filteredExtraData.filter(item => {
-                            const ts = new Date(item.timestamp);
-                            return ts <= end;
-                        });
-                        filteredRetailCreditData = filteredRetailCreditData.filter(item => {
-                            const ts = new Date(item.timestamp);
-                            return ts <= end;
-                        });
-                    }
-                }
-            }
-        }
-
-        // Aggregate totals by payment type from extra data
-        let upiPinelab = 0;
-        let cardPinelab = 0;
-        let upiPaytm = 0;
-        let cardPaytm = 0;
-        let cash = 0;
-        let retailCredit = 0;
-
-        filteredExtraData.forEach(item => {
+        let totals = { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
+        extraData.forEach(item => {
             const mode = (item.modeOfPay || '').toLowerCase();
             const amount = parseFloat(item.extraAmount) || 0;
-            if (mode === 'upi pinelab') {
-                upiPinelab += amount;
-            } else if (mode === 'card pinelab') {
-                cardPinelab += amount;
-            } else if (mode === 'upi paytm') {
-                upiPaytm += amount;
-            } else if (mode === 'card paytm') {
-                cardPaytm += amount;
-            } else if (mode === 'cash') {
-                cash += amount;
-            }
+            if (mode.includes('upi pinelab')) totals.upiPinelab += amount;
+            else if (mode.includes('card pinelab')) totals.cardPinelab += amount;
+            else if (mode.includes('upi paytm')) totals.upiPaytm += amount;
+            else if (mode.includes('card paytm')) totals.cardPaytm += amount;
+            else if (mode.includes('cash')) totals.cash += amount;
         });
+        retailCreditData.forEach(item => totals.retailCredit += (parseFloat(item.amount) || 0));
 
-        // Aggregate total retail credit from retail_credit data
-        filteredRetailCreditData.forEach(item => {
-            const amount = parseFloat(item.amount) || 0;
-            retailCredit += amount;
-        });
-
-        res.json({
-            upiPinelab,
-            cardPinelab,
-            upiPaytm,
-            cardPaytm,
+        res.json(totals);
+    } catch (error) { res.status(500).json({ message: 'Error' }); }
+});
             cash,
             retailCredit
         });
@@ -1944,47 +1792,37 @@ app.get('/api/data-activity-summary', (req, res) => {
             }
             return true;
         });
+app.get('/api/data-activity-summary', async (req, res) => {
+    try {
+        const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ success: false });
+        const employee = doc.data();
 
-        // Count deleted and edited from history
-        const deleted = filteredHistory.filter(item => item.action === 'delete').length;
-        const edited = filteredHistory.filter(item => item.action === 'edit').length;
+        let edited = 0, deleted = 0;
+        if (employee.audit_history) {
+            employee.audit_history.forEach(log => {
+                const ts = new Date(log.timestamp);
+                if (ts.toISOString().split('T')[0] === date) {
+                    if (log.action === 'edit') edited++;
+                    if (log.action === 'delete') deleted++;
+                }
+            });
+        }
 
-        // Count inputed (added) data: count entries in data arrays filtered by date and shift
         const dataTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
         let inputed = 0;
         dataTypes.forEach(type => {
             const data = employee[type] || [];
-            const filteredData = data.filter(item => {
+            inputed += data.filter(item => {
                 if (!item.timestamp) return false;
-                const itemDate = new Date(item.timestamp);
-                if (isNaN(itemDate.getTime())) return false;
-                const matchesDate = itemDate.toISOString().split('T')[0] === date;
-                if (!matchesDate) return false;
-
-                if (shiftStartTime) {
-                    const start = new Date(shiftStartTime);
-                    if (!isNaN(start.getTime())) {
-                        if (itemDate < start) return false;
-                        if (shiftEndTime) {
-                            const end = new Date(shiftEndTime);
-                            if (!isNaN(end.getTime()) && itemDate > end) return false;
-                        }
-                    }
-                }
-                return true;
-            });
-            inputed += filteredData.length;
+                const ts = new Date(item.timestamp);
+                return ts.toISOString().split('T')[0] === date;
+            }).length;
         });
 
-        res.json({
-            deleted,
-            edited,
-            inputed
-        });
-    } catch (error) {
-        console.error('Error in /api/data-activity-summary:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
+        res.json({ deleted, edited, inputed });
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 // Update app endpoint
@@ -2227,37 +2065,26 @@ app.get('/api/update-details', (req, res) => {
 
 
 // Get ESR JPGs for an employee
-app.get('/api/esr-jpgs', (req, res) => {
+app.get('/api/esr-jpgs', async (req, res) => {
     const { employeeId, date } = req.query;
-
-    if (!employeeId) {
-        return res.status(400).json({ success: false, message: 'employeeId is required.' });
-    }
+    if (!employeeId) return res.status(400).json({ success: false });
 
     try {
-        let stmt;
-        let rows;
-        if (date) {
-            stmt = esrDb.prepare('SELECT id, date, shift_id, jpg_data FROM esr_jpgs WHERE employee_id = ? AND date = ? ORDER BY date DESC');
-            rows = stmt.all(employeeId, date);
-        } else {
-            stmt = esrDb.prepare('SELECT id, date, shift_id, jpg_data FROM esr_jpgs WHERE employee_id = ? ORDER BY date DESC');
-            rows = stmt.all(employeeId);
-        }
-
-        // Convert BLOB to base64 for JSON response
-        const jpgs = rows.map(row => ({
-            id: row.id,
-            date: row.date,
-            shift_id: row.shift_id,
-            jpgData: row.jpg_data.toString('base64')
-        }));
-
+        let query = db.esr_jpgs().where('employee_id', '==', employeeId);
+        if (date) query = query.where('date', '==', date);
+        const snapshot = await query.orderBy('date', 'desc').get();
+        
+        const jpgs = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                date: data.date,
+                shift_id: data.shift_id,
+                jpgData: decrypt(data.jpg_data_encrypted)
+            };
+        });
         res.json({ success: true, jpgs });
-    } catch (error) {
-        console.error('Error retrieving ESR JPGs:', error);
-        res.status(500).json({ success: false, message: 'Failed to retrieve ESR JPGs.' });
-    }
+    } catch (error) { res.status(500).json({ success: false }); }
 });
 
 // Save ESR JPG
@@ -2282,28 +2109,27 @@ app.post('/api/save-esr-jpg', (req, res) => {
 // --- ADVANCED SETTINGS APIS ---
 
 // Get current settings
-app.get('/api/settings', (req, res) => {
-    const settings = db.get('settings').value();
-    // Don't leak the password in simple GET
+app.get('/api/settings', async (req, res) => {
+    const doc = await db.settings().doc('config').get();
+    const settings = doc.exists ? doc.data() : {};
     const publicSettings = { ...settings };
     delete publicSettings.adminPassword;
     res.json({ success: true, data: publicSettings });
 });
 
 // Update settings
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
     const newSettings = req.body;
-    // Prevent updating password via this endpoint for safety
     delete newSettings.adminPassword;
-    
-    db.get('settings').assign(newSettings).write();
+    await db.settings().doc('config').set(newSettings, { merge: true });
     res.json({ success: true, message: 'Settings updated successfully.' });
 });
 
 // Change admin password
-app.post('/api/settings/change-password', (req, res) => {
+app.post('/api/settings/change-password', async (req, res) => {
     const { currentPassword, newPassword } = req.body;
-    const settings = db.get('settings').value();
+    const doc = await db.settings().doc('config').get();
+    const settings = doc.exists ? doc.data() : { adminPassword: 'admin12nammamart' };
 
     if (currentPassword !== settings.adminPassword) {
         return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
@@ -2313,7 +2139,7 @@ app.post('/api/settings/change-password', (req, res) => {
         return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
     }
 
-    db.get('settings').assign({ adminPassword: newPassword }).write();
+    await db.settings().doc('config').update({ adminPassword: newPassword });
     res.json({ success: true, message: 'Admin password updated successfully.' });
 });
 
@@ -2372,43 +2198,42 @@ if (!db.has('attendance_logs').value()) db.set('attendance_logs', []).write();
  * Endpoint: Register Face Descriptor
  * Saves high-precision face model data directly to the employee record.
  */
-app.post('/api/employees/:id/face', (req, res) => {
+app.post('/api/employees/:id/face', async (req, res) => {
     const { id } = req.params;
     const { descriptor } = req.body;
 
     if (!descriptor) return res.status(400).json({ success: false, message: 'No face descriptor provided.' });
 
-    const employee = db.get('employees').find({ id }).value();
-    if (!employee) return res.status(404).json({ success: false, message: 'Employee not found.' });
+    const doc = await db.employees().doc(id).get();
+    if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found.' });
+    const employee = doc.data();
 
-    db.get('employees').find({ id }).assign({ faceDescriptor: descriptor }).write();
+    await doc.ref.update({ faceDescriptor: descriptor });
     res.json({ success: true, message: 'Face registered successfully!' });
 });
 
 /**
  * Endpoint: Get Employee Current State
- * Used by the scanner UI to determine available actions.
  */
-app.get('/api/attendance/state/:employeeId', (req, res) => {
+app.get('/api/attendance/state/:employeeId', async (req, res) => {
     const { employeeId } = req.params;
     const dateStr = new Date().toISOString().split('T')[0];
     
-    // Find the LATEST session for today (since there can be multiple)
-    const sessions = db.get('daily_sessions')
-        .filter(s => s.employeeId === employeeId && s.date === dateStr)
-        .value() || [];
+    const snapshot = await db.daily_sessions()
+        .where('employeeId', '==', employeeId)
+        .where('date', '==', dateStr)
+        .orderBy('checkIn', 'desc')
+        .limit(1)
+        .get();
         
-    const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
-
+    const lastSession = !snapshot.empty ? snapshot.docs[0].data() : null;
     let currentState = 'IDLE';
     let sessionId = null;
 
     if (lastSession) {
         if (!lastSession.checkOut) {
             currentState = lastSession.onBreak ? 'ON_BREAK' : 'WORKING';
-            sessionId = lastSession.id;
-        } else {
-            currentState = 'IDLE'; // They checked out, ready for a completely new session
+            sessionId = snapshot.docs[0].id;
         }
     }
 
@@ -2417,343 +2242,257 @@ app.get('/api/attendance/state/:employeeId', (req, res) => {
 
 /**
  * Endpoint: Attendance Scan (Kiosk Mode)
- * Ensures absolutely strict state transitions and supports Auto-Fix bulk arrays.
  */
-app.post('/api/attendance/scan', (req, res) => {
+app.post('/api/attendance/scan', async (req, res) => {
     const { employeeId, actionType } = req.body;
-    const emp = db.get('employees').find({ id: employeeId }).value();
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) return res.status(404).json({ success: false, message: 'Identity not recognized.' });
+    const emp = doc.data();
+    if (emp.isActive === false) return res.status(403).json({ success: false, message: 'Access denied.' });
 
-    if (!emp) return res.status(404).json({ success: false, message: 'Identity not recognized.' });
-    if (emp.isActive === false) return res.status(403).json({ success: false, message: 'Access denied by administrator.' });
-
-    const processAction = (empId, empName, action) => {
+    const processAction = async (empId, empName, action) => {
         const now = new Date();
         const dateStr = now.toISOString().split('T')[0];
         const timestamp = now.toISOString();
 
-        // Get the latest session to determine state
-        const sessions = db.get('daily_sessions').filter(s => s.employeeId === empId && s.date === dateStr).value() || [];
-        let session = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+        const snapshot = await db.daily_sessions()
+            .where('employeeId', '==', empId)
+            .where('date', '==', dateStr)
+            .orderBy('checkIn', 'desc')
+            .limit(1)
+            .get();
+        
+        let sessionDoc = !snapshot.empty ? snapshot.docs[0] : null;
+        let session = sessionDoc ? sessionDoc.data() : null;
 
         let currentState = 'IDLE';
-        if (session && !session.checkOut) {
-            currentState = session.onBreak ? 'ON_BREAK' : 'WORKING';
-        }
+        if (session && !session.checkOut) currentState = session.onBreak ? 'ON_BREAK' : 'WORKING';
 
-        // 1. Initial/New Clock In
         if (action === 'in') {
-            if (currentState !== 'IDLE') {
-                return { success: false, code: 'STATE_MISMATCH', currentState, expected: 'IDLE', message: 'You are already checked in.' };
-            }
-            session = {
-                id: shortid.generate(),
-                employeeId: empId,
-                employeeName: empName,
-                date: dateStr,
-                checkIn: timestamp,
-                checkOut: null,
-                onBreak: false,
-                breakHistory: [],
-                totalBreakMinutes: 0,
-                status: 'active'
+            if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
+            const newSession = {
+                employeeId: empId, employeeName: empName, date: dateStr, checkIn: timestamp,
+                checkOut: null, onBreak: false, breakHistory: [], totalBreakMinutes: 0, status: 'active'
             };
-            db.get('daily_sessions').push(session).write();
-            logAttendance(empId, empName, 'CLOCK_IN', timestamp);
-            return { success: true, message: `Welcome, ${empName}! Session started.`, action: 'IN' };
+            await db.daily_sessions().add(newSession);
+            await logAttendance(empId, empName, 'CLOCK_IN', timestamp);
+            return { success: true, message: `Welcome ${empName}!`, action: 'IN' };
         }
 
-        if (currentState === 'IDLE') {
-            return { success: false, code: 'STATE_MISMATCH', currentState, expected: 'WORKING', message: 'No active session found. Please Clock In first.' };
-        }
+        if (currentState === 'IDLE') return { success: false, message: 'No active session.' };
 
-        // 2. Break Management
         if (action === 'break_start') {
-            if (currentState !== 'WORKING') {
-                return { success: false, code: 'STATE_MISMATCH', currentState, expected: 'WORKING', message: 'You must be actively working to start a break.' };
-            }
-            session.onBreak = true;
-            session.status = 'on_break';
-            session.breakHistory.push({ start: timestamp, end: null });
-            db.get('daily_sessions').find({ id: session.id }).assign(session).write();
-            logAttendance(empId, empName, 'BREAK_START', timestamp);
-            return { success: true, message: 'Break started. Enjoy your rest!', action: 'BREAK_START' };
+            if (currentState !== 'WORKING') return { success: false, message: 'Not working.' };
+            await sessionDoc.ref.update({ onBreak: true, status: 'on_break', breakHistory: admin.firestore.FieldValue.arrayUnion({ start: timestamp, end: null }) });
+            await logAttendance(empId, empName, 'BREAK_START', timestamp);
+            return { success: true, message: 'Break started.', action: 'BREAK_START' };
         }
 
         if (action === 'break_end') {
-            if (currentState !== 'ON_BREAK') {
-                return { success: false, code: 'STATE_MISMATCH', currentState, expected: 'ON_BREAK', message: 'You are not currently on a break.' };
-            }
-            session.onBreak = false;
-            session.status = 'active';
-            const lastBreak = session.breakHistory[session.breakHistory.length - 1];
+            if (currentState !== 'ON_BREAK') return { success: false, message: 'Not on break.' };
+            const history = [...session.breakHistory];
+            const lastBreak = history[history.length - 1];
             if (lastBreak && !lastBreak.end) {
                 lastBreak.end = timestamp;
-                const diff = new Date(timestamp) - new Date(lastBreak.start);
-                session.totalBreakMinutes += Math.floor(diff / 60000);
+                const diff = (new Date(timestamp) - new Date(lastBreak.start)) / 60000;
+                await sessionDoc.ref.update({ onBreak: false, status: 'active', breakHistory: history, totalBreakMinutes: admin.firestore.FieldValue.increment(Math.floor(diff)) });
             }
-            db.get('daily_sessions').find({ id: session.id }).assign(session).write();
-            logAttendance(empId, empName, 'BREAK_END', timestamp);
-            return { success: true, message: 'Break ended. Welcome back!', action: 'BREAK_END' };
+            await logAttendance(empId, empName, 'BREAK_END', timestamp);
+            return { success: true, message: 'Break ended.', action: 'BREAK_END' };
         }
 
-        // 3. Clock Out
         if (action === 'out') {
-            session.checkOut = timestamp;
-            session.status = 'completed';
-            if (session.onBreak) {
-                const lastBreak = session.breakHistory[session.breakHistory.length - 1];
-                if (lastBreak && !lastBreak.end) lastBreak.end = timestamp;
-                session.onBreak = false;
-            }
-            db.get('daily_sessions').find({ id: session.id }).assign(session).write();
-            logAttendance(empId, empName, 'CLOCK_OUT', timestamp);
-            return { success: true, message: `Goodbye, ${empName}! Shift completed.`, action: 'OUT' };
+            await sessionDoc.ref.update({ checkOut: timestamp, status: 'completed', onBreak: false });
+            await logAttendance(empId, empName, 'CLOCK_OUT', timestamp);
+            return { success: true, message: 'Goodbye!', action: 'OUT' };
         }
-
-        return { success: false, message: 'Invalid scan operation.' };
+        return { success: false, message: 'Invalid action.' };
     };
 
-    // Auto-fix support: actionType can be an array of actions to execute sequentially
     if (Array.isArray(actionType)) {
-        let lastResult = null;
+        let result = null;
         for (const action of actionType) {
-            lastResult = processAction(employeeId, emp.name, action);
-            if (!lastResult.success) break; // Abort if any action in chain fails
+            result = await processAction(employeeId, emp.name, action);
+            if (!result.success) break;
         }
-        if (lastResult.success) {
-             return res.json({ success: true, message: 'Auto-fix cascade successful.', sequences: actionType });
-        } else {
-             return res.status(400).json(lastResult);
-        }
+        return res.json(result);
     } else {
-        // Single normal action
-        const result = processAction(employeeId, emp.name, actionType);
-        if (result.success) return res.json(result);
-        else return res.status(400).json(result);
+        const result = await processAction(employeeId, emp.name, actionType);
+        return res.status(result.success ? 200 : 400).json(result);
     }
 });
 
 
 /**
-/**
  * Endpoint: Fetch Raw Attendance Logs
- * High-performance log retrieval for the localized command center.
  */
-app.get('/api/attendance/logs/raw', (req, res) => {
-    const { filter } = req.query; // 'today', 'week', 'month', 'all'
-    let logs = db.get('attendance_logs').value() || [];
-    
-    const now = new Date();
-    
-    if (filter === 'today') {
-        const todayStr = now.toISOString().split('T')[0];
-        logs = logs.filter(l => l.timestamp && String(l.timestamp).startsWith(todayStr));
-    } else if (filter === 'week') {
-        const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        logs = logs.filter(l => l.timestamp && String(l.timestamp) >= lastWeek);
-    } else if (filter === 'month') {
-        const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        logs = logs.filter(l => l.timestamp && String(l.timestamp) >= lastMonth);
-    }
-    
-    // Sort by most recent
-    logs.sort((a, b) => {
-        const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return tB - tA;
-    });
-    res.json({ success: true, logs });
+app.get('/api/attendance/logs/raw', async (req, res) => {
+    const { filter } = req.query;
+    try {
+        let query = db.attendance_logs();
+        const now = new Date();
+        if (filter === 'today') query = query.where('timestamp', '>=', now.toISOString().split('T')[0]);
+        const snapshot = await query.orderBy('timestamp', 'desc').limit(500).get();
+        const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ success: true, logs });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 /**
  * Endpoint: Fetch Daily Sessions
  * Returns aggregated shift session data used by the Dashboard UI
  */
-app.get('/api/daily-sessions', (req, res) => {
-    const { date } = req.query;
-    let sessions = db.get('daily_sessions').value() || [];
-    
-    if (date) {
-        sessions = sessions.filter(s => s.date === date);
-    }
-    
-    // Map the new backend schema to the structure expected by the legacy Dashboard
-    const mappedSessions = sessions.map(s => ({
-        ...s,
-        checkInTime: s.checkIn,
-        checkOutTime: s.checkOut,
-        isOnBreak: s.onBreak,
-        totalBreakDuration: s.totalBreakMinutes * 60000 // UI expects MS
-    }));
-
-    res.json({ success: true, sessions: mappedSessions });
+app.get('/api/daily-sessions', async (req, res) => {
+    try {
+        const { date } = req.query;
+        let query = db.daily_sessions();
+        if (date) query = query.where('date', '==', date);
+        const snapshot = await query.orderBy('checkIn', 'desc').get();
+        
+        const sessions = snapshot.docs.map(doc => {
+            const s = doc.data();
+            return {
+                ...s,
+                id: doc.id,
+                checkInTime: s.checkIn,
+                checkOutTime: s.checkOut,
+                isOnBreak: s.onBreak,
+                totalBreakDuration: (s.totalBreakMinutes || 0) * 60000 // UI expects MS
+            };
+        });
+        res.json({ success: true, sessions });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 /**
  * Endpoint: Bulk Edit Logs
  */
-app.put('/api/attendance/logs/bulk-edit', (req, res) => {
+app.put('/api/attendance/logs/bulk-edit', async (req, res) => {
     const { logIds, newAction } = req.body;
     if (!logIds || !Array.isArray(logIds)) return res.status(400).json({ success: false });
 
-    const logsColl = db.get('attendance_logs');
-    logIds.forEach(id => {
-        const trg = logsColl.find({ id });
-        if (trg.value()) trg.assign({ action: newAction, type: newAction }).write(); // Update both new and legacy schema keys
-    });
-    
-    res.json({ success: true });
+    try {
+        const batch = firestore.batch();
+        logIds.forEach(id => {
+            const ref = db.attendance_logs().doc(id);
+            batch.update(ref, { action: newAction, type: newAction });
+        });
+        await batch.commit();
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 /**
  * Endpoint: Bulk Delete Logs
  */
-app.delete('/api/attendance/logs', (req, res) => {
+app.delete('/api/attendance/logs', async (req, res) => {
     const { logIds } = req.body;
     if (!logIds || !Array.isArray(logIds)) return res.status(400).json({ success: false });
 
-    // Using lodash to remove matching ids
-    db.get('attendance_logs').remove(log => logIds.includes(log.id)).write();
-    
-    res.json({ success: true });
+    try {
+        const batch = firestore.batch();
+        logIds.forEach(id => {
+            const ref = db.attendance_logs().doc(id);
+            batch.delete(ref);
+        });
+        await batch.commit();
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 /**
- * RECONSTRUCTION ALGORITHM
  * Endpoint: Recalculate Sessions
- * Destroys current day daily_sessions and meticulously rebuilds them chronologically from logs_table to resolve conflicting overrides.
  */
-app.post('/api/attendance/sessions/recalculate', (req, res) => {
-    // 1. Erase all daily_sessions entirely to purge corrupt data
-    db.set('daily_sessions', []).write();
+app.post('/api/attendance/sessions/recalculate', async (req, res) => {
+    // 1. Clear daily_sessions
+    const snapshot = await db.daily_sessions().get();
+    const batch = firestore.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
     
-    // 2. Load all raw logs chronologically
-    const allLogs = db.get('attendance_logs').value() || [];
-    allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Oldest first
-    
+    // 2. Load all logs chronologically
+    const logsSnapshot = await db.attendance_logs().orderBy('timestamp', 'asc').get();
     const activeSessions = {};
 
-    allLogs.forEach(log => {
-        const empId = log.employeeId;
-        const empName = log.employeeName;
-        const dateStr = log.timestamp.split('T')[0];
+    for (const logDoc of logsSnapshot.docs) {
+        const log = logDoc.data();
+        const empId = log.employeeId, empName = log.employeeName;
         const action = log.action || log.type;
 
         if (action === 'CLOCK_IN' || action === 'IN') {
             const sid = shortid.generate();
-            const session = {
-                id: sid, employeeId: empId, employeeName: empName, date: dateStr,
-                checkIn: log.timestamp, checkOut: null, onBreak: false,
-                breakHistory: [], totalBreakMinutes: 0, status: 'active'
-            };
-            activeSessions[empId] = session;
-            db.get('daily_sessions').push(session).write();
-        } 
-        else if (action === 'BREAK_START' && activeSessions[empId]) {
+            activeSessions[empId] = { id: sid, employeeId: empId, employeeName: empName, date: log.timestamp.split('T')[0], checkIn: log.timestamp, checkOut: null, onBreak: false, breakHistory: [], totalBreakMinutes: 0, status: 'active' };
+        } else if (action === 'BREAK_START' && activeSessions[empId]) {
             const s = activeSessions[empId];
-            s.onBreak = true;
-            s.status = 'on_break';
-            s.breakHistory.push({ start: log.timestamp, end: null });
-            db.get('daily_sessions').find({ id: s.id }).assign(s).write();
-        }
-        else if (action === 'BREAK_END' && activeSessions[empId]) {
+            s.onBreak = true; s.breakHistory.push({ start: log.timestamp, end: null });
+        } else if (action === 'BREAK_END' && activeSessions[empId]) {
             const s = activeSessions[empId];
+            const last = s.breakHistory[s.breakHistory.length-1];
+            if (last && !last.end) { last.end = log.timestamp; s.totalBreakMinutes += Math.floor((new Date(log.timestamp)-new Date(last.start))/60000); }
             s.onBreak = false;
-            s.status = 'active';
-            const lastBreak = s.breakHistory[s.breakHistory.length - 1];
-            if (lastBreak && !lastBreak.end) {
-                lastBreak.end = log.timestamp;
-                s.totalBreakMinutes += Math.floor((new Date(log.timestamp) - new Date(lastBreak.start)) / 60000);
-            }
-            db.get('daily_sessions').find({ id: s.id }).assign(s).write();
+        } else if ((action === 'CLOCK_OUT' || action === 'OUT') && activeSessions[empId]) {
+            const s = activeSessions[empId];
+            s.checkOut = log.timestamp; s.status = 'completed';
+            await db.daily_sessions().add(s);
+            delete activeSessions[empId];
         }
-        else if (action === 'CLOCK_OUT' || action === 'OUT') {
-            if (activeSessions[empId]) {
-                const s = activeSessions[empId];
-                s.checkOut = log.timestamp;
-                s.status = 'completed';
-                if (s.onBreak) {
-                    const lastBreak = s.breakHistory[s.breakHistory.length - 1];
-                    if (lastBreak && !lastBreak.end) lastBreak.end = log.timestamp;
-                    s.onBreak = false;
-                }
-                db.get('daily_sessions').find({ id: s.id }).assign(s).write();
-                delete activeSessions[empId]; // Session finalized
-            }
-        }
-    });
-
-    res.json({ success: true, message: 'Sessions completely regenerated' });
-});
-
-/**
- * Helper: Log Attendance Event
- * Mirrors Firebase Document writing locally.
- */
-function logAttendance(employeeId, employeeName, type, timestamp) {
-    let statusAfter = 'IDLE';
-    if (type === 'CLOCK_IN' || type === 'BREAK_END') statusAfter = 'WORKING';
-    if (type === 'BREAK_START') statusAfter = 'ON_BREAK';
-
-    db.get('attendance_logs').push({
-        id: shortid.generate(),
-        employeeId,
-        employeeName,
-        action: type,
-        type: type, // Legacy support
-        statusAfter,
-        timestamp
-    }).write();
-}
-
-// Support for Leave/Swap logic remains distinct
-if (!db.has('leave_swaps').value()) db.set('leave_swaps', []).write();
-
-app.get('/api/leave-swaps', (req, res) => {
-    res.json(db.get('leave_swaps').value() || []);
-});
-
-app.post('/api/leave-swaps', (req, res) => {
-    const { employeeId, original_date, new_date, reason } = req.body;
-    const reqData = {
-        id: shortid.generate(),
-        employeeId,
-        original_date: original_date || null,
-        new_date,
-        reason,
-        status: 'pending',
-        timestamp: new Date().toISOString()
-    };
-    db.get('leave_swaps').push(reqData).write();
-    res.json({ success: true, message: 'Leave Request Issued' });
-});
-
-app.put('/api/leave-swaps/:id', (req, res) => {
-    const { action } = req.body;
-    if (action === 'approve') {
-        db.get('leave_swaps').find({ id: req.params.id }).assign({ status: 'approved' }).write();
-    } else if (action === 'reject') {
-        db.get('leave_swaps').find({ id: req.params.id }).assign({ status: 'rejected' }).write();
     }
     res.json({ success: true });
 });
 
-// Scheduled auto open/close functionality
-function checkScheduledOpenClose(testHour = null, testMinute = null) {
-    const now = new Date();
-    const currentHour = testHour !== null ? testHour : now.getHours();
-    const currentMinute = testMinute !== null ? testMinute : now.getMinutes();
+/**
+ * Helper: Log Attendance Event
+ */
+async function logAttendance(employeeId, employeeName, type, timestamp) {
+    let statusAfter = 'IDLE';
+    if (type === 'CLOCK_IN' || type === 'BREAK_END') statusAfter = 'WORKING';
+    if (type === 'BREAK_START') statusAfter = 'ON_BREAK';
 
-    // Close at 11:30 PM
-    if (currentHour === 23 && currentMinute >= 30) {
-        db.set('store_closed', true).write();
-        console.log('Store automatically closed at 11:30 PM');
-    }
-    // Open at 5:30 AM
-    else if (currentHour === 5 && currentMinute >= 30) {
-        db.set('store_closed', false).write();
-        console.log('Store automatically opened at 5:30 AM');
-    }
+    await db.attendance_logs().add({
+        employeeId, employeeName, action: type, type, statusAfter, timestamp
+    });
+}
+
+// Support for Leave/Swap logic remains distinct
+app.get('/api/leave-swaps', async (req, res) => {
+    try {
+        const snapshot = await db.leave_swaps().orderBy('timestamp', 'desc').get();
+        const swaps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(swaps);
+    } catch (e) { res.status(500).json([]); }
+});
+
+app.post('/api/leave-swaps', async (req, res) => {
+    try {
+        const { employeeId, original_date, new_date, reason } = req.body;
+        const reqData = {
+            employeeId,
+            original_date: original_date || null,
+            new_date,
+            reason: reason || '',
+            status: 'pending',
+            timestamp: new Date().toISOString()
+        };
+        await db.leave_swaps().add(reqData);
+        res.json({ success: true, message: 'Leave Request Issued' });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+app.put('/api/leave-swaps/:id', async (req, res) => {
+    try {
+        const { action } = req.body;
+        const status = action === 'approve' ? 'approved' : 'rejected';
+        await db.leave_swaps().doc(req.params.id).update({ status });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
+// Scheduled auto open/close functionality
+async function checkScheduledOpenClose() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes();
+    if (h === 23 && m >= 30) await db.broadcast().update({ store_closed: true });
+    else if (h === 5 && m >= 30) await db.broadcast().update({ store_closed: false });
 }
 
 // Run scheduled check every minute
