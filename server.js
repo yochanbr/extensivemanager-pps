@@ -1902,7 +1902,7 @@ app.get('/api/daily-sessions', async (req, res) => {
         const { date } = req.query;
         let query = db.daily_sessions();
         if (date) query = query.where('date', '==', date);
-        const snapshot = await query.orderBy('checkIn', 'desc').get();
+        const snapshot = await query.get();
         
         const sessions = snapshot.docs.map(doc => {
             const s = doc.data();
@@ -1915,6 +1915,10 @@ app.get('/api/daily-sessions', async (req, res) => {
                 totalBreakDuration: (s.totalBreakMinutes || 0) * 60000 // UI expects MS
             };
         });
+
+        // Sort in-memory to avoid Firestore Composite Index requirements
+        sessions.sort((a, b) => new Date(b.checkInTime) - new Date(a.checkInTime));
+
         res.json({ success: true, sessions });
     } catch (e) { res.status(500).json({ success: false }); }
 });

@@ -132,32 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* viewReportBtn is now SPA routed */
 
-    viewEsrJpgsBtn.addEventListener('click', () => {
-        const modal = document.getElementById('esr-jpg-employee-selection-modal');
-        modal.style.display = 'block';
-
-        // Fetch employees and populate select
-        fetch('/api/employees')
-            .then(response => response.json())
-            .then(employees => {
-                const select = document.getElementById('esr-jpg-employee-select');
-                select.innerHTML = '<option value="">Select an employee</option>';
-                employees.forEach(employee => {
-                    const option = document.createElement('option');
-                    option.value = employee.id;
-                    option.textContent = employee.name;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching employees:', error);
-                alert('Error loading employees.');
-            });
-
-        // Reset date and shift ID selects
-        document.getElementById('esr-jpg-date-select').innerHTML = '<option value="">Select employee first</option>';
-        document.getElementById('esr-jpg-shift-id-select').innerHTML = '<option value="">Select date first</option>';
-    });
+    /* viewEsrJpgsBtn is now SPA routed */
 
     /* manageEmployeesBtn is now SPA routed */
 
