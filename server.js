@@ -1,3 +1,4 @@
+const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -6,6 +7,20 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const crypto = require('crypto-js');
+
+const app = express();
+const port = process.env.PORT || 3000;
+const isVercel = process.env.VERCEL === '1';
+
+// Diagnostic route (no DB dependency)
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'online', 
+        time: new Date().toISOString(),
+        firebaseInitialized: !!firestore,
+        nodeVersion: process.version
+    });
+});
 
 // Heavy dependencies wrapped for serverless compatibility
 let puppeteer;
@@ -23,22 +38,50 @@ const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482
 let firestore;
 try {
     let serviceAccount;
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        // Handle both raw JSON string and base64 encoded JSON
-        const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-        serviceAccount = JSON.parse(raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString());
+    const rawAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+    
+    if (rawAccount) {
+        console.log('📡 Attempting to initialize Firebase from environment variable...');
+        try {
+            // Trim and handle base64 or raw JSON
+            const cleaned = rawAccount.trim();
+            const jsonString = cleaned.startsWith('{') ? cleaned : Buffer.from(cleaned, 'base64').toString();
+            serviceAccount = JSON.parse(jsonString);
+            console.log('✅ Service account JSON parsed successfully');
+        } catch (parseError) {
+            console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:', parseError.message);
+            throw parseError;
+        }
     } else {
-        serviceAccount = require(FIREBASE_KEY_PATH);
+        console.log('📂 Attempting to initialize Firebase from local file...');
+        if (fs.existsSync(FIREBASE_KEY_PATH)) {
+            serviceAccount = require(FIREBASE_KEY_PATH);
+        } else {
+            console.warn('⚠️ Local firebase-key.json not found.');
+        }
     }
     
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    firestore = admin.firestore();
-    console.log('✅ Firebase initialized successfully');
+    if (serviceAccount && !admin.apps.length) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        firestore = admin.firestore();
+        console.log('🚀 Firebase Admin initialized successfully');
+    }
 } catch (error) {
-    console.error('❌ Failed to initialize Firebase:', error.message);
+    console.error('🔥 CRITICAL: Firebase Initialization Error:', error.message);
 }
+
+// Global check for firestore availability
+const ensureDb = (req, res, next) => {
+    if (!firestore) {
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Database not initialized. Check server logs for FIREBASE_SERVICE_ACCOUNT errors.' 
+        });
+    }
+    next();
+};
 
 // Encryption Utilities
 const encrypt = (text) => {
@@ -71,9 +114,6 @@ const db = {
     leave_swaps: () => firestore.collection('leave_swaps')
 };
 
-const app = express();
-const port = process.env.PORT || 3000;
-const isVercel = process.env.VERCEL === '1';
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
@@ -121,7 +161,7 @@ let adminApprovalOtp = {
 let testCloseDone = false;
 
 // Handle login requests
-app.post('/login', async (req, res) => {
+app.post('/login', ensureDb, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
