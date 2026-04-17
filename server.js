@@ -611,6 +611,8 @@ app.post('/api/bill_paid', async (req, res) => {
 app.get('/api/bill_paid', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
+        if (!employeeId) return res.json([]); 
+
         const doc = await db.employees().doc(employeeId).get();
         if (doc.exists) {
             const employee = doc.data();
@@ -2056,6 +2058,13 @@ async function checkScheduledOpenClose() {
 
 // Run scheduled check every minute
 setInterval(checkScheduledOpenClose, 60 * 1000);
+
+// Stub Update Endpoints to prevent frontend 404s on Vercel
+app.get('/api/check-update', (req, res) => res.json({ updateAvailable: false }));
+app.get('/api/update-details', (req, res) => res.json({ details: "System is up to date on Vercel." }));
+app.get('/api/update-status', (req, res) => res.json({ updateInProgress: false }));
+app.post('/api/update-app', (req, res) => res.status(403).json({ success: false, message: "Cloud updates are managed via GitHub/Vercel." }));
+app.get('/api/system/status', (req, res) => res.json({ status: "Online", platform: "Vercel", database: "Firebase Firestore" }));
 
 if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
     const options = {
