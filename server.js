@@ -317,17 +317,22 @@ app.get('/api/broadcast', async (req, res) => {
     }
 });
 
-// Get store status
-app.get('/api/store-status', (req, res) => {
-    const closed = db.get('store_closed').value();
-    res.json({ success: true, store_closed: !!closed });
+// Get store status (Cloud Native)
+app.get('/api/store-status', async (req, res) => {
+    try {
+        const doc = await db.broadcast().get();
+        const storeClosed = doc.exists ? doc.data().store_closed : false;
+        res.json({ success: true, store_closed: !!storeClosed });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// Toggle store status
-app.post('/api/store-status', (req, res) => {
-    const { store_closed } = req.body;
-    db.set('store_closed', !!store_closed).write();
-    res.json({ success: true, store_closed: !!store_closed });
+// Toggle store status (Cloud Native)
+app.post('/api/store-status', async (req, res) => {
+    try {
+        const { store_closed } = req.body;
+        await db.broadcast().update({ store_closed: !!store_closed });
+        res.json({ success: true, store_closed: !!store_closed });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 // Get a single employee by ID
@@ -640,10 +645,6 @@ app.get('/api/bill_paid', async (req, res) => {
             res.status(404).json({ message: 'Employee not found' });
         }
     } catch (error) {
-        console.error('Error in /api/bill_paid:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
         console.error('Error in /api/bill_paid:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
@@ -1543,7 +1544,7 @@ app.post('/api/toggle-store', async (req, res) => {
 
 
 // Update data entry
-app.put('/api/:type/:id', (req, res) => {
+app.put('/api/:type/:id', async (req, res) => {
     let { type, id } = req.params;
     if (type === 'counter_data') {
         type = 'counter_selections';
@@ -1597,573 +1598,88 @@ app.put('/api/:type/:id', (req, res) => {
     res.json({ success: true, message: 'Data updated successfully.' });
 });
 
-// Delete data entry
-// Permanently delete a history entry by id (specific route placed before generic delete)
-app.delete('/api/permanently-delete-history/:id', (req, res) => {
-    const { id } = req.params;
+// --- DIAGNOSTICS & SUMMARY APIS (Migrated) ---
 
-    const employees = db.get('employees').value();
-    let found = false;
-
-    for (let emp of employees) {
-        if (emp.history && Array.isArray(emp.history)) {
-            const index = emp.history.findIndex(h => h.id === id);
-            if (index !== -1) {
-                emp.history.splice(index, 1);
-                found = true;
-                break;
-            }
-        }
-    }
-
-    if (found) {
-        db.write();
-        res.json({ success: true, message: 'History entry deleted permanently.' });
-    } else {
-        res.status(404).json({ success: false, message: 'History entry not found.' });
-    }
-});
-
-app.delete('/api/:type/:id', async (req, res) => {
-    let { type, id } = req.params;
-    if (type === 'counter_data') {
-        type = 'counter_selections';
-    }
-    const { employeeId } = req.query;
-    // Reason can be passed as query or body (DELETE bodies are allowed by some clients)
-    const reason = (req.query.reason) || (req.body && req.body.reason) || '';
-
-    if (!reason || String(reason).trim() === '') {
-        return res.status(400).json({ message: 'A reason is required to delete an entry.' });
-    }
-
-    const doc = await db.employees().doc(employeeId).get();
-    if (!doc.exists) {
-        return res.status(404).json({ message: 'Employee not found' });
-    }
-    const employeeData = doc.data();
-
-    const dataArray = employeeData[type];
-    if (!dataArray) {
-        return res.status(404).json({ message: 'Data type not found' });
-    }
-
-    const index = dataArray.findIndex(item => item && item.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: 'Data entry not found' });
-    }
-
-    // Store original data in history before deletion (include provided reason)
-    if (!employeeData.history) {
-        employeeData.history = [];
-    }
-    const originalData = { ...dataArray[index] };
-    employeeData.history.push({
-        id: shortid.generate(),
-        timestamp: new Date().toISOString(),
-        action: 'delete',
-        type: type,
-        itemId: id,
-        reason: String(reason),
-        originalData: originalData,
-        modifiedData: null
-    });
-
-    dataArray.splice(index, 1);
-    await doc.ref.update({ [type]: dataArray, history: employeeData.history });
-
-    res.json({ success: true, message: 'Data deleted successfully.' });
-});
-
-// Get history data for an employee
-app.get('/api/history', async (req, res) => {
-    try {
-        const { employeeId, date, type } = req.query;
-        if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
-
-        const doc = await db.employees().doc(employeeId).get();
-        if (doc.exists) {
-            const employee = doc.data();
-            let data = employee.history || [];
-            if (date) {
-                // date is in YYYY-MM-DD format
-                data = data.filter(item => {
-                    if (!item.timestamp) return false;
-                    const parsed = new Date(item.timestamp);
-                    if (isNaN(parsed.getTime())) return false;
-                    return parsed.toISOString().split('T')[0] === date;
-                });
-            }
-            if (type) {
-                data = data.filter(item => item.type === type);
-            }
-            res.json(data);
-        } else {
-            res.status(404).json({ message: 'Employee not found' });
-        }
-    } catch (error) {
-        console.error('Error in /api/history:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// Restore data entry
-app.post('/api/restore/:id', (req, res) => {
-    const { id } = req.params;
-
-    // Find the history entry
-    let historyEntry;
-    const employees = db.get('employees').value();
-    for (let emp of employees) {
-        if (emp.history) {
-            historyEntry = emp.history.find(h => h.id === id);
-            if (historyEntry) {
-                // Restore the data to the appropriate array
-                if (!emp[historyEntry.type]) {
-                    emp[historyEntry.type] = [];
-                }
-                emp[historyEntry.type].push(historyEntry.originalData);
-                // Remove the history entry
-                emp.history = emp.history.filter(h => h.id !== id);
-                db.write();
-                return res.json({ success: true, message: 'Data restored successfully.' });
-            }
-        }
-    }
-
-    res.status(404).json({ message: 'History entry not found' });
-});
-
-// Revert edit entry
-app.post('/api/revert-edit/:id', (req, res) => {
-    const { id } = req.params;
-
-    // Find the history entry
-    let historyEntry;
-    const employees = db.get('employees').value();
-    for (let emp of employees) {
-        if (emp.history) {
-            historyEntry = emp.history.find(h => h.id === id);
-            if (historyEntry) {
-                // Find the current data entry and revert it
-                const dataArray = emp[historyEntry.type];
-                if (dataArray) {
-                    const index = dataArray.findIndex(item => item.id === historyEntry.itemId);
-                    if (index !== -1) {
-                        // Revert to original data
-                        dataArray[index] = { ...historyEntry.originalData };
-                        // Remove the history entry
-                        emp.history = emp.history.filter(h => h.id !== id);
-                        db.write();
-                        return res.json({ success: true, message: 'Edit reverted successfully.' });
-                    }
-                }
-            }
-        }
-    }
-
-    res.status(404).json({ message: 'History entry not found' });
-});
-
+/**
+ * Endpoint: Get Today's Report Summary (Aggregate Sales/Collection)
+ */
 app.get('/api/todays-report-summary', async (req, res) => {
     try {
-        const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
+        const { date } = req.query;
+        if (!date) return res.status(400).json({ success: false, message: 'Date is required.' });
+
+        const snapshot = await db.employees().get();
+        let totals = { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
+
+        snapshot.forEach(doc => {
+            const emp = doc.data();
+            const processGroup = (arr, modeField, amountField) => {
+                if (arr && Array.isArray(arr)) {
+                    arr.forEach(item => {
+                        if (item && item.timestamp && item.timestamp.split('T')[0] === date) {
+                            const mode = (item[modeField] || '').toLowerCase();
+                            const amount = parseFloat(item[amountField]) || 0;
+                            if (mode.includes('upi pinelab')) totals.upiPinelab += amount;
+                            else if (mode.includes('card pinelab')) totals.cardPinelab += amount;
+                            else if (mode.includes('upi paytm')) totals.upiPaytm += amount;
+                            else if (mode.includes('card paytm')) totals.cardPaytm += amount;
+                            else if (mode.includes('cash')) totals.cash += amount;
+                        }
+                    });
+                }
+            };
+            processGroup(emp.extra, 'modeOfPay', 'extraAmount');
+            processGroup(emp.bill_paid, 'modeOfPayment', 'amount');
+            if (emp.retail_credit && Array.isArray(emp.retail_credit)) {
+                emp.retail_credit.forEach(item => {
+                    if (item.timestamp && item.timestamp.split('T')[0] === date) {
+                        totals.retailCredit += (parseFloat(item.amount) || 0);
+                    }
+                });
+            }
+        });
+        res.json(totals);
+    } catch (error) {
+        console.error('Error in /api/todays-report-summary:', error);
+        res.status(500).json({ success: false });
+    }
+});
+
+/**
+ * Endpoint: Get Data Activity Summary (Audit Counts)
+ */
+app.get('/api/data-activity-summary', async (req, res) => {
+    try {
+        const { employeeId, date } = req.query;
         if (!employeeId || !date) return res.status(400).json({ success: false });
 
         const doc = await db.employees().doc(employeeId).get();
         if (!doc.exists) return res.status(404).json({ success: false });
-        const employee = doc.data();
+        const emp = doc.data();
 
-        let extraData = employee.extra || [];
-        let retailCreditData = employee.retail_credit || [];
-
-        const start = shiftStartTime ? new Date(shiftStartTime) : null;
-        const end = shiftEndTime ? new Date(shiftEndTime) : null;
-
-        const filter = (arr) => arr.filter(item => {
-            if (!item.timestamp) return false;
-            const itemTs = new Date(item.timestamp);
-            if (itemTs.toISOString().split('T')[0] !== date) return false;
-            if (start && itemTs < start) return false;
-            if (end && itemTs > end) return false;
-            return true;
-        });
-
-        extraData = filter(extraData);
-        retailCreditData = filter(retailCreditData);
-
-        let totals = { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
-        extraData.forEach(item => {
-            const mode = (item.modeOfPay || '').toLowerCase();
-            const amount = parseFloat(item.extraAmount) || 0;
-            if (mode.includes('upi pinelab')) totals.upiPinelab += amount;
-            else if (mode.includes('card pinelab')) totals.cardPinelab += amount;
-            else if (mode.includes('upi paytm')) totals.upiPaytm += amount;
-            else if (mode.includes('card paytm')) totals.cardPaytm += amount;
-            else if (mode.includes('cash')) totals.cash += amount;
-        });
-        retailCreditData.forEach(item => totals.retailCredit += (parseFloat(item.amount) || 0));
-
-        res.json(totals);
-    } catch (error) { res.status(500).json({ message: 'Error' }); }
-});
-            cash,
-            retailCredit
-        });
-    } catch (error) {
-        console.error('Error in /api/todays-report-summary:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-});
-
-// Get data activity summary (deleted, edited, inputed counts)
-app.get('/api/data-activity-summary', (req, res) => {
-    try {
-        const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
-        if (!employeeId || !date) {
-            return res.status(400).json({ success: false, message: 'employeeId and date are required.' });
-        }
-        const employee = db.get('employees').find({ id: employeeId }).value();
-        if (!employee) {
-            return res.status(404).json({ success: false, message: 'Employee not found.' });
-        }
-
-        // Filter history by date and shift
-        let filteredHistory = (employee.history || []).filter(item => {
-            if (!item.timestamp) return false;
-            const itemDate = new Date(item.timestamp);
-            if (isNaN(itemDate.getTime())) return false;
-            const matchesDate = itemDate.toISOString().split('T')[0] === date;
-            if (!matchesDate) return false;
-
-            if (shiftStartTime) {
-                const start = new Date(shiftStartTime);
-                if (!isNaN(start.getTime())) {
-                    if (itemDate < start) return false;
-                    if (shiftEndTime) {
-                        const end = new Date(shiftEndTime);
-                        if (!isNaN(end.getTime()) && itemDate > end) return false;
-                    }
-                }
+        let stats = { edited: 0, deleted: 0, inputed: 0 };
+        const check = (arr) => {
+            if (arr && Array.isArray(arr)) {
+                arr.forEach(item => {
+                    if (item && item.timestamp && item.timestamp.split('T')[0] === date) stats.inputed++;
+                });
             }
-            return true;
-        });
-app.get('/api/data-activity-summary', async (req, res) => {
-    try {
-        const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
-        const doc = await db.employees().doc(employeeId).get();
-        if (!doc.exists) return res.status(404).json({ success: false });
-        const employee = doc.data();
+        };
+        check(emp.extra); check(emp.delivery); check(emp.bill_paid); check(emp.issue); check(emp.retail_credit);
 
-        let edited = 0, deleted = 0;
-        if (employee.audit_history) {
-            employee.audit_history.forEach(log => {
-                const ts = new Date(log.timestamp);
-                if (ts.toISOString().split('T')[0] === date) {
-                    if (log.action === 'edit') edited++;
-                    if (log.action === 'delete') deleted++;
+        if (emp.history && Array.isArray(emp.history)) {
+            emp.history.forEach(log => {
+                if (log.timestamp && log.timestamp.split('T')[0] === date) {
+                    if (log.action === 'edit') stats.edited++;
+                    if (log.action === 'delete') stats.deleted++;
                 }
             });
         }
-
-        const dataTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
-        let inputed = 0;
-        dataTypes.forEach(type => {
-            const data = employee[type] || [];
-            inputed += data.filter(item => {
-                if (!item.timestamp) return false;
-                const ts = new Date(item.timestamp);
-                return ts.toISOString().split('T')[0] === date;
-            }).length;
-        });
-
-        res.json({ deleted, edited, inputed });
+        res.json({ success: true, stats });
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
-// Update app endpoint
-app.post('/api/update-app', (req, res) => {
-    const { exec, spawn } = require('child_process');
-    const path = require('path');
-    const fs = require('fs');
-
-    updateInProgress = true;
-    updateStartTime = new Date();
-
-    // Function to get current branch
-    const getCurrentBranch = () => {
-        return new Promise((resolve, reject) => {
-            exec('git branch --show-current', (error, stdout) => {
-                if (error) {
-                    exec('git rev-parse --abbrev-ref HEAD', (error2, stdout2) => {
-                        if (error2) {
-                            resolve('main');
-                        } else {
-                            resolve(stdout2.trim());
-                        }
-                    });
-                } else {
-                    resolve(stdout.trim());
-                }
-            });
-        });
-    };
-
-    // Function to restart server
-    const restartServer = () => {
-        return new Promise((resolve, reject) => {
-            console.log('Checking for running server processes...');
-
-            // On Windows, use taskkill instead of pgrep/kill
-            const isWindows = process.platform === 'win32';
-            if (isWindows) {
-                exec('tasklist /FI "IMAGENAME eq node.exe" /FO CSV', (error, stdout) => {
-                    if (!error && stdout.includes('node.exe')) {
-                        console.log('Stopping existing server processes...');
-                        exec('taskkill /F /IM node.exe /FI "WINDOWTITLE eq Namma Mart*"', () => {
-                            setTimeout(() => {
-                                console.log('Starting server...');
-                                const serverProcess = spawn('node', ['server.js'], {
-                                    detached: true,
-                                    stdio: 'ignore'
-                                });
-                                serverProcess.unref();
-                                console.log('Server started in background');
-                                resolve();
-                            }, 2000);
-                        });
-                    } else {
-                        console.log('Starting server...');
-                        const serverProcess = spawn('node', ['server.js'], {
-                            detached: true,
-                            stdio: 'ignore'
-                        });
-                        serverProcess.unref();
-                        console.log('Server started in background');
-                        resolve();
-                    }
-                });
-            } else {
-                // Unix-like systems
-                exec('pgrep -f "node.*server.js"', (error, stdout) => {
-                    if (!error && stdout.trim()) {
-                        const pids = stdout.trim().split('\n');
-                        console.log('Stopping existing server processes:', pids.join(', '));
-                        exec(`kill ${pids.join(' ')}`, () => {
-                            setTimeout(() => {
-                                console.log('Starting server...');
-                                const serverProcess = spawn('node', ['server.js'], {
-                                    detached: true,
-                                    stdio: 'ignore'
-                                });
-                                serverProcess.unref();
-                                console.log('Server started in background');
-                                resolve();
-                            }, 2000);
-                        });
-                    } else {
-                        console.log('Starting server...');
-                        const serverProcess = spawn('node', ['server.js'], {
-                            detached: true,
-                            stdio: 'ignore'
-                        });
-                        serverProcess.unref();
-                        console.log('Server started in background');
-                        resolve();
-                    }
-                });
-            }
-        });
-    };
-
-    // Check if it's a Git repository
-    if (fs.existsSync(path.join(__dirname, '.git'))) {
-        console.log('Git repository detected. Checking for updates...');
-
-        getCurrentBranch().then(branch => {
-            console.log('Current branch:', branch);
-
-            // Fetch latest changes
-            console.log('Fetching latest changes...');
-            exec('git fetch origin', (error) => {
-                if (error) {
-                    updateInProgress = false;
-                    updateStartTime = null;
-                    console.error('Error: Failed to fetch from remote repository.');
-                    return res.status(500).json({ success: false, message: 'Update failed: Failed to fetch from remote repository.' });
-                }
-
-                // Check if there are updates
-                exec('git rev-parse HEAD', (error, localStdout) => {
-                    if (error) {
-                        updateInProgress = false;
-                        updateStartTime = null;
-                        return res.status(500).json({ success: false, message: 'Update failed: Could not get local commit.' });
-                    }
-
-                    const local = localStdout.trim();
-                    exec(`git rev-parse origin/${branch}`, (error, remoteStdout) => {
-                        let remote = remoteStdout ? remoteStdout.trim() : null;
-                        if (error || !remote) {
-                            // Try main or master
-                            exec('git rev-parse origin/main', (error2, remoteStdout2) => {
-                                if (error2) {
-                                    exec('git rev-parse origin/master', (error3, remoteStdout3) => {
-                                        remote = error3 ? null : remoteStdout3.trim();
-                                        checkForUpdates(local, remote, branch);
-                                    });
-                                } else {
-                                    remote = remoteStdout2.trim();
-                                    checkForUpdates(local, remote, branch);
-                                }
-                            });
-                        } else {
-                            checkForUpdates(local, remote, branch);
-                        }
-                    });
-                });
-            });
-        });
-    } else {
-        updateInProgress = false;
-        updateStartTime = null;
-        console.log('This directory is not a Git repository.');
-        return res.status(500).json({ success: false, message: 'Update failed: Not a Git repository. Please initialize Git and add remote origin.' });
-    }
-
-    function checkForUpdates(local, remote, branch) {
-        if (!remote || local === remote) {
-            updateInProgress = false;
-            updateStartTime = null;
-            console.log('No updates available. Application is up to date.');
-            return res.json({ success: true, message: 'No updates available. Application is up to date.' });
-        }
-
-        console.log('Updates found. Pulling latest changes...');
-        exec(`git pull origin ${branch}`, (error, pullStdout) => {
-            if (error) {
-                updateInProgress = false;
-                updateStartTime = null;
-                console.error('Error: Failed to pull updates from remote repository.');
-                return res.status(500).json({ success: false, message: 'Update failed: Failed to pull updates from remote repository.' });
-            }
-
-            console.log('Update successful.');
-
-            // Check if package.json exists and run npm install
-            if (fs.existsSync(path.join(__dirname, 'package.json'))) {
-                console.log('Installing/updating dependencies...');
-                exec('npm install', (npmError) => {
-                    if (npmError) {
-                        console.log('Warning: Failed to install dependencies. Please run \'npm install\' manually.');
-                    }
-
-                    // Restart the server
-                    restartServer().then(() => {
-                        updateInProgress = false;
-                        updateStartTime = null;
-                        console.log('Update completed successfully!');
-                        res.json({ success: true, message: 'Update completed successfully! Application has been updated and restarted.' });
-                    }).catch(() => {
-                        updateInProgress = false;
-                        updateStartTime = null;
-                        res.json({ success: true, message: 'Update completed successfully! Please restart the server manually.' });
-                    });
-                });
-            } else {
-                // Restart the server
-                restartServer().then(() => {
-                    updateInProgress = false;
-                    updateStartTime = null;
-                    console.log('Update completed successfully!');
-                    res.json({ success: true, message: 'Update completed successfully! Application has been updated and restarted.' });
-                }).catch(() => {
-                    updateInProgress = false;
-                    updateStartTime = null;
-                    res.json({ success: true, message: 'Update completed successfully! Please restart the server manually.' });
-                });
-            }
-        });
-    }
-});
-
-// Get update status endpoint
-app.get('/api/update-status', (req, res) => {
-    res.json({ updateInProgress, updateStartTime });
-});
-
-// Check for updates endpoint
-app.get('/api/check-update', (req, res) => {
-    const { exec } = require('child_process');
-    exec('git status -uno', (error, stdout, stderr) => {
-        if (error) {
-            // console.error(`Error checking for updates silently ignored`);
-            return res.json({ updateAvailable: false });
-        }
-        const hasUpdates = stdout.includes('Your branch is behind') || stdout.includes('have diverged');
-        res.json({ updateAvailable: hasUpdates });
-    });
-});
-
-// Get update details endpoint
-app.get('/api/update-details', (req, res) => {
-    const { exec } = require('child_process');
-    exec('git log --oneline -10', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error getting update details: ${error}`);
-            return res.json({ details: 'Unable to fetch update details.', error: error.message });
-        }
-        const details = stdout.split('\n').filter(line => line.trim()).join('\n');
-        res.json({ details });
-    });
-});
-
-
-
-// Get ESR JPGs for an employee
-app.get('/api/esr-jpgs', async (req, res) => {
-    const { employeeId, date } = req.query;
-    if (!employeeId) return res.status(400).json({ success: false });
-
-    try {
-        let query = db.esr_jpgs().where('employee_id', '==', employeeId);
-        if (date) query = query.where('date', '==', date);
-        const snapshot = await query.orderBy('date', 'desc').get();
-        
-        const jpgs = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                date: data.date,
-                shift_id: data.shift_id,
-                jpgData: decrypt(data.jpg_data_encrypted)
-            };
-        });
-        res.json({ success: true, jpgs });
-    } catch (error) { res.status(500).json({ success: false }); }
-});
-
-// Save ESR JPG
-app.post('/api/save-esr-jpg', (req, res) => {
-    const { employeeId, date, shiftId, jpgData } = req.body;
-
-    if (!employeeId || !date || !shiftId || !jpgData) {
-        return res.status(400).json({ success: false, message: 'employeeId, date, shiftId, and jpgData are required.' });
-    }
-
-    try {
-        // Assume jpgData is base64 encoded
-        const buffer = Buffer.from(jpgData, 'base64');
-        const stmt = esrDb.prepare('INSERT INTO esr_jpgs (employee_id, date, shift_id, jpg_data) VALUES (?, ?, ?, ?)');
-        stmt.run(employeeId, date, shiftId, buffer);
-        res.json({ success: true, message: 'ESR JPG saved successfully.' });
-    } catch (error) {
-        console.error('Error saving ESR JPG:', error);
-        res.status(500).json({ success: false, message: 'Failed to save ESR JPG.' });
-    }
-});
-// --- ADVANCED SETTINGS APIS ---
-
+// --- END OF CORE ROUTING ---
 // Get current settings
 app.get('/api/settings', async (req, res) => {
     const doc = await db.settings().doc('config').get();
@@ -2554,8 +2070,6 @@ async function checkScheduledOpenClose() {
 // Run scheduled check every minute
 setInterval(checkScheduledOpenClose, 60 * 1000);
 
-const https = require('https');
-const fs = require('fs');
 if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
     const options = {
         key: fs.readFileSync('key.pem'),
