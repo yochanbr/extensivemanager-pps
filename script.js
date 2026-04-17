@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     if (data.redirectUrl) {
                         localStorage.setItem('username', username);
+                        // Set the guard flag for admin access
+                        if (data.redirectUrl === '/admin') {
+                            localStorage.setItem('adminLoggedIn', 'true');
+                        }
                         if (data.employeeId) {
                             localStorage.setItem('employeeId', data.employeeId);
                         } else {

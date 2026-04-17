@@ -1,4 +1,32 @@
+// --- SECURITY GUARD --- //
+if (localStorage.getItem('adminLoggedIn') !== 'true') {
+    window.location.href = '/';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // --- INACTIVITY MONITOR (1 MINUTE) --- //
+    let inactivityTimer;
+    const INACTIVITY_LIMIT = 60 * 1000; // 1 minute
+
+    const logoutSession = () => {
+        console.log("🔐 Inactivity timeout triggered. Logging out...");
+        localStorage.removeItem('adminLoggedIn');
+        window.location.href = '/';
+    };
+
+    const resetTimer = () => {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(logoutSession, INACTIVITY_LIMIT);
+    };
+
+    // Initialize the timer
+    resetTimer();
+
+    // Reset timer on any significant user activity
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+        window.addEventListener(event, resetTimer, { passive: true });
+    });
+
     const viewReportBtn = document.querySelector('.view-report-btn');
     const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
     const manageEmployeesBtn = document.querySelector('.manage-employees-btn');
@@ -137,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* manageEmployeesBtn is now SPA routed */
 
     logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('adminLoggedIn');
         window.location.href = '/';
     });
 
