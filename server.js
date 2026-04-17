@@ -22,7 +22,15 @@ const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482
 // Initialize Firebase Admin
 let firestore;
 try {
-    const serviceAccount = require(FIREBASE_KEY_PATH);
+    let serviceAccount;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        // Handle both raw JSON string and base64 encoded JSON
+        const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+        serviceAccount = JSON.parse(raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString());
+    } else {
+        serviceAccount = require(FIREBASE_KEY_PATH);
+    }
+    
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
