@@ -1422,7 +1422,7 @@ Namma Mart
  * Verify admin approval OTP for employee relogin
  * Additionally, set employee startShiftTime and reset shiftEnded flag
  */
-app.post('/api/verify-admin-approval-otp', (req, res) => {
+app.post('/api/verify-admin-approval-otp', async (req, res) => {
     const { otp, employeeId } = req.body;
     if (isEmpty(otp) || isEmpty(employeeId)) {
         return res.status(400).json({ success: false, message: 'OTP and Employee ID are required.' });
