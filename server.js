@@ -117,6 +117,10 @@ const db = {
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
+
+// Specifically serve models directory (Crucial for Vercel/Face-API)
+app.use('/models', express.static(path.join(__dirname, 'models')));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -1267,36 +1271,42 @@ app.post('/api/end-employee-shift', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Password and Employee ID are required.' });
     }
 
-    const employeeRecord = db.get('employees').find({ id: employeeId }).value();
-    if (!employeeRecord) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
+    const employeeRecord = doc.data();
 
     // Verify employee password
-    if (!bcrypt.compareSync(password, employeeRecord.password)) {
+    const decryptedPass = decrypt(employeeRecord.password);
+    if (!bcrypt.compareSync(password, decryptedPass)) {
         return res.status(401).json({ success: false, message: 'Invalid password.' });
     }
 
     // Record endShiftTime and set shiftEnded true
     const endShiftTime = new Date().toISOString();
-    const employeeForShiftEnd = db.get('employees').find({ id: employeeId }).value();
+    let counter_selections = employeeRecord.counter_selections || [];
     let lastShiftIndex = -1;
-    if (employeeForShiftEnd && employeeForShiftEnd.counter_selections) {
-        const today = new Date().toISOString().split('T')[0];
-        lastShiftIndex = employeeForShiftEnd.counter_selections.reduce((lastIndex, selection, currentIndex) => {
-            if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) {
-                return currentIndex;
-            }
-            return lastIndex;
-        }, -1);
-
-        if (lastShiftIndex !== -1) {
-            employeeForShiftEnd.counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
+    const today = new Date().toISOString().split('T')[0];
+    
+    lastShiftIndex = counter_selections.reduce((lastIndex, selection, currentIndex) => {
+        if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) {
+            return currentIndex;
         }
-    }
-    db.get('employees').find({ id: employeeId }).assign({ shiftEnded: true, counter_selections: employeeForShiftEnd.counter_selections }).write();
+        return lastIndex;
+    }, -1);
 
-    // Use the employee data fetched earlier for report
+    if (lastShiftIndex !== -1) {
+        counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
+    }
+
+    await doc.ref.update({ 
+        shiftEnded: true, 
+        counter_selections 
+    });
+
+    const employeeForShiftEnd = { ...employeeRecord, counter_selections };
+    // Use the employee name fetched earlier for report
     const employeeName = employeeRecord.name || 'Employee';
 
     // Generate and save ESR Text Report
@@ -1304,9 +1314,9 @@ app.post('/api/end-employee-shift', async (req, res) => {
     let reportText = '';
     try {
         // Get shift details
-        const shiftStartTime = employeeForShiftEnd.counter_selections[lastShiftIndex].shiftStartTime;
+        const shiftStartTime = counter_selections[lastShiftIndex].shiftStartTime;
         const shiftEndTimeFormatted = endShiftTime;
-        const shiftId = employeeForShiftEnd.counter_selections[lastShiftIndex].shiftId;
+        const shiftId = counter_selections[lastShiftIndex].shiftId;
 
         // Fetch today's report summary
         const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${shiftEndTimeFormatted}`);
@@ -1433,13 +1443,16 @@ app.post('/api/verify-admin-approval-otp', (req, res) => {
     adminApprovalOtp.expiresAt = 0;
     adminApprovalOtp.employeeId = null;
 
-    const employee = db.get('employees').find({ id: employeeId }).value();
-    if (!employee) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) {
         return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
     // Set shiftEnded to false and record startShiftTime to current time
-    db.get('employees').find({ id: employeeId }).assign({ shiftEnded: false, startShiftTime: new Date().toISOString() }).write();
+    await doc.ref.update({ 
+        shiftEnded: false, 
+        startShiftTime: new Date().toISOString() 
+    });
 
     return res.json({ success: true, message: 'OTP verified. New shift started.', redirectUrl: '/counter_selection.html', employeeId });
 });
@@ -1735,9 +1748,9 @@ app.get('/api/system/status', (req, res) => {
     });
 });
 
-// Download database backup
+// Download system health report (Cloud migration notice)
 app.get('/api/system/backup', (req, res) => {
-    res.download(path.join(__dirname, 'db.json'), 'NammaMart_Backup_' + new Date().toISOString().split('T')[0] + '.json');
+    res.json({ success: true, message: "Local DB removed. System is fully running on Firebase Cloud." });
 });
 
 // Reset settings to defaults

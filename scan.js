@@ -133,7 +133,9 @@ async function initScanner() {
         });
 
         if (labeledDescriptors.length > 0) {
-            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.65);
+            // Lower threshold (0.5 or 0.55) makes it more strict/accurate. 
+            // 0.6 is a good balance for slightly varied lighting.
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.58);
         } else {
             statusText.textContent = 'No face data registered';
         }
@@ -196,7 +198,7 @@ async function startDetectionLoop() {
 
         if (!scannerPaused) {
             const detections = await faceapi
-                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
@@ -210,8 +212,11 @@ async function startDetectionLoop() {
                     showToast('No faces registered. Contact admin to register your face.', 'error');
                 } else {
                     const result = faceMatcher.findBestMatch(detections.descriptor);
-                    if (result.label !== 'unknown') {
+                    if (result.label !== 'unknown' && result.distance < 0.58) {
                         handleMatchFound(result.label);
+                    } else if (window.manualScanRequested) {
+                        // Face detected but not matched during a requested scan
+                        // We give it a few more frames or show a subtle hint
                     }
                 }
             }
