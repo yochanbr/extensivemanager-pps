@@ -354,6 +354,12 @@ app.get('/api/employees/:id', async (req, res) => {
             if (emp.isActive === false) {
                 return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
             }
+            
+            // Decrypt sensitive fields
+            ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+                if (emp[field]) emp[field] = decrypt(emp[field]);
+            });
+
             res.json(emp);
         } else {
             res.status(404).json({ success: false, message: 'Employee not found.' });
