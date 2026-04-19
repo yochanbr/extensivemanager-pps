@@ -2022,8 +2022,33 @@
                     if (empRes.ok) {
                         const emp = await empRes.json();
                         document.getElementById('dash-greeting').textContent = `Welcome back, ${emp.name.split(' ')[0]}`;
+                        
+                        // Calculate Shift Progress (Target: 8 Hours)
+                        let progress = 0;
+                        if (emp.counter_selections && emp.counter_selections.length > 0) {
+                            const lastShift = emp.counter_selections[emp.counter_selections.length - 1];
+                            if (!lastShift.shiftEndTime) {
+                                const startTime = new Date(lastShift.shiftStartTime);
+                                const now = new Date();
+                                const diffMs = now - startTime;
+                                const targetMs = 8 * 60 * 60 * 1000; // 8 hours
+                                progress = Math.min(100, Math.round((diffMs / targetMs) * 100));
+                            }
+                        }
+                        const ring = document.querySelector('.dash-progress-ring');
+                        if (ring) {
+                            ring.style.setProperty('--p', progress + '%');
+                            ring.querySelector('span').textContent = progress + '%';
+                        }
                     }
-                } catch(e) {}
+                } catch(e) { console.error('Error loading employee name/stats:', e); }
+
+                // Update Real-time Clock & Date
+                const now = new Date();
+                const dateEl = document.getElementById('dash-date');
+                const timeEl = document.getElementById('dash-time');
+                if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+                if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 const shiftParams = await getActiveShiftParams(employeeId);
 
@@ -2111,9 +2136,10 @@
             }
         }
         
-        // Initial fetch and 10-second polling
+        // Initial fetch and polling
         fetchBroadcast();
         setInterval(fetchBroadcast, 10000);
+        setInterval(loadDashboardData, 60000);
 
     </script>
 </body>
