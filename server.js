@@ -350,11 +350,18 @@ app.get('/api/employees/:id', async (req, res) => {
         const employeeId = req.params.id;
         const doc = await db.employees().doc(employeeId).get();
         if (doc.exists) {
-            res.json(doc.data());
+            const emp = doc.data();
+            if (emp.isActive === false) {
+                return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
+            }
+            res.json(emp);
         } else {
             res.status(404).json({ success: false, message: 'Employee not found.' });
         }
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) { 
+        console.error('Error in /api/employees/:id:', e);
+        res.status(500).json({ success: false, message: 'Server error' }); 
+    }
 });
 
 // Update an employee's details
@@ -1783,109 +1790,130 @@ app.post('/api/employees/:id/face', async (req, res) => {
  * Endpoint: Get Employee Current State
  */
 app.get('/api/attendance/state/:employeeId', async (req, res) => {
-    const { employeeId } = req.params;
-    const dateStr = new Date().toISOString().split('T')[0];
-    
-    const snapshot = await db.daily_sessions()
-        .where('employeeId', '==', employeeId)
-        .where('date', '==', dateStr)
-        .orderBy('checkIn', 'desc')
-        .limit(1)
-        .get();
+    try {
+        const { employeeId } = req.params;
+        const dateStr = new Date().toISOString().split('T')[0];
         
-    const lastSession = !snapshot.empty ? snapshot.docs[0].data() : null;
-    let currentState = 'IDLE';
-    let sessionId = null;
-
-    if (lastSession) {
-        if (!lastSession.checkOut) {
-            currentState = lastSession.onBreak ? 'ON_BREAK' : 'WORKING';
-            sessionId = snapshot.docs[0].id;
+        // 1. Check if employee is active
+        const empDoc = await db.employees().doc(employeeId).get();
+        if (!empDoc.exists) return res.status(404).json({ success: false, message: 'Employee not found.' });
+        if (empDoc.data().isActive === false) {
+            return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
         }
-    }
 
-    res.json({ success: true, currentState, sessionId });
+        // 2. Fetch today's sessions and sort in-memory (Avoiding Composite Index requirement)
+        const snapshot = await db.daily_sessions()
+            .where('employeeId', '==', employeeId)
+            .where('date', '==', dateStr)
+            .get();
+            
+        const sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Sort by checkIn descending to get the latest session
+        sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+        
+        const lastSession = sessions.length > 0 ? sessions[0] : null;
+        let currentState = 'IDLE';
+        let sessionId = null;
+
+        if (lastSession && !lastSession.checkOut) {
+            currentState = lastSession.onBreak ? 'ON_BREAK' : 'WORKING';
+            sessionId = lastSession.id;
+        }
+
+        res.json({ success: true, currentState, sessionId });
+    } catch (err) {
+        console.error('Error in /api/attendance/state:', err);
+        res.status(500).json({ success: false, message: 'Server error fetching state' });
+    }
 });
 
 /**
  * Endpoint: Attendance Scan (Kiosk Mode)
  */
 app.post('/api/attendance/scan', async (req, res) => {
-    const { employeeId, actionType } = req.body;
-    const doc = await db.employees().doc(employeeId).get();
-    if (!doc.exists) return res.status(404).json({ success: false, message: 'Identity not recognized.' });
-    const emp = doc.data();
-    if (emp.isActive === false) return res.status(403).json({ success: false, message: 'Access denied.' });
-
-    const processAction = async (empId, empName, action) => {
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        const timestamp = now.toISOString();
-
-        const snapshot = await db.daily_sessions()
-            .where('employeeId', '==', empId)
-            .where('date', '==', dateStr)
-            .orderBy('checkIn', 'desc')
-            .limit(1)
-            .get();
-        
-        let sessionDoc = !snapshot.empty ? snapshot.docs[0] : null;
-        let session = sessionDoc ? sessionDoc.data() : null;
-
-        let currentState = 'IDLE';
-        if (session && !session.checkOut) currentState = session.onBreak ? 'ON_BREAK' : 'WORKING';
-
-        if (action === 'in') {
-            if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
-            const newSession = {
-                employeeId: empId, employeeName: empName, date: dateStr, checkIn: timestamp,
-                checkOut: null, onBreak: false, breakHistory: [], totalBreakMinutes: 0, status: 'active'
-            };
-            await db.daily_sessions().add(newSession);
-            await logAttendance(empId, empName, 'CLOCK_IN', timestamp);
-            return { success: true, message: `Welcome ${empName}!`, action: 'IN' };
+    try {
+        const { employeeId, actionType } = req.body;
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Identity not recognized.' });
+        const emp = doc.data();
+        if (emp.isActive === false) {
+            return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
         }
 
-        if (currentState === 'IDLE') return { success: false, message: 'No active session.' };
+        const processAction = async (empId, empName, action) => {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timestamp = now.toISOString();
 
-        if (action === 'break_start') {
-            if (currentState !== 'WORKING') return { success: false, message: 'Not working.' };
-            await sessionDoc.ref.update({ onBreak: true, status: 'on_break', breakHistory: admin.firestore.FieldValue.arrayUnion({ start: timestamp, end: null }) });
-            await logAttendance(empId, empName, 'BREAK_START', timestamp);
-            return { success: true, message: 'Break started.', action: 'BREAK_START' };
-        }
+            // Fetch sessions and sort in-memory (Avoiding Composite Index requirement)
+            const snapshot = await db.daily_sessions()
+                .where('employeeId', '==', empId)
+                .where('date', '==', dateStr)
+                .get();
+            
+            const sessions = snapshot.docs.map(doc => ({ ref: doc.ref, ...doc.data() }));
+            sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+            
+            let session = sessions.length > 0 ? sessions[0] : null;
 
-        if (action === 'break_end') {
-            if (currentState !== 'ON_BREAK') return { success: false, message: 'Not on break.' };
-            const history = [...session.breakHistory];
-            const lastBreak = history[history.length - 1];
-            if (lastBreak && !lastBreak.end) {
-                lastBreak.end = timestamp;
-                const diff = (new Date(timestamp) - new Date(lastBreak.start)) / 60000;
-                await sessionDoc.ref.update({ onBreak: false, status: 'active', breakHistory: history, totalBreakMinutes: admin.firestore.FieldValue.increment(Math.floor(diff)) });
+            let currentState = 'IDLE';
+            if (session && !session.checkOut) currentState = session.onBreak ? 'ON_BREAK' : 'WORKING';
+
+            if (action === 'in') {
+                if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
+                const newSession = {
+                    employeeId: empId, employeeName: empName, date: dateStr, checkIn: timestamp,
+                    checkOut: null, onBreak: false, breakHistory: [], totalBreakMinutes: 0, status: 'active'
+                };
+                await db.daily_sessions().add(newSession);
+                await logAttendance(empId, empName, 'CLOCK_IN', timestamp);
+                return { success: true, message: `Welcome ${empName}!`, action: 'IN' };
             }
-            await logAttendance(empId, empName, 'BREAK_END', timestamp);
-            return { success: true, message: 'Break ended.', action: 'BREAK_END' };
-        }
 
-        if (action === 'out') {
-            await sessionDoc.ref.update({ checkOut: timestamp, status: 'completed', onBreak: false });
-            await logAttendance(empId, empName, 'CLOCK_OUT', timestamp);
-            return { success: true, message: 'Goodbye!', action: 'OUT' };
-        }
-        return { success: false, message: 'Invalid action.' };
-    };
+            if (currentState === 'IDLE') return { success: false, message: 'No active session.' };
 
-    if (Array.isArray(actionType)) {
-        let result = null;
-        for (const action of actionType) {
-            result = await processAction(employeeId, emp.name, action);
-            if (!result.success) break;
+            if (action === 'break_start') {
+                if (currentState !== 'WORKING') return { success: false, message: 'Not working.' };
+                await session.ref.update({ onBreak: true, status: 'on_break', breakHistory: admin.firestore.FieldValue.arrayUnion({ start: timestamp, end: null }) });
+                await logAttendance(empId, empName, 'BREAK_START', timestamp);
+                return { success: true, message: 'Break started.', action: 'BREAK_START' };
+            }
+
+            if (action === 'break_end') {
+                if (currentState !== 'ON_BREAK') return { success: false, message: 'Not on break.' };
+                const history = [...session.breakHistory];
+                const lastBreak = history[history.length - 1];
+                if (lastBreak && !lastBreak.end) {
+                    lastBreak.end = timestamp;
+                    const diff = (new Date(timestamp) - new Date(lastBreak.start)) / 60000;
+                    await session.ref.update({ onBreak: false, status: 'active', breakHistory: history, totalBreakMinutes: admin.firestore.FieldValue.increment(Math.floor(diff)) });
+                }
+                await logAttendance(empId, empName, 'BREAK_END', timestamp);
+                return { success: true, message: 'Break ended.', action: 'BREAK_END' };
+            }
+
+            if (action === 'out') {
+                await session.ref.update({ checkOut: timestamp, status: 'completed', onBreak: false });
+                await logAttendance(empId, empName, 'CLOCK_OUT', timestamp);
+                return { success: true, message: 'Goodbye!', action: 'OUT' };
+            }
+            return { success: false, message: 'Invalid action.' };
+        };
+
+        if (Array.isArray(actionType)) {
+            let result = null;
+            for (const action of actionType) {
+                result = await processAction(employeeId, emp.name, action);
+                if (!result.success) break;
+            }
+            return res.json(result);
+        } else {
+            const result = await processAction(employeeId, emp.name, actionType);
+            return res.status(result.success ? 200 : 400).json(result);
         }
-        return res.json(result);
-    } else {
-        const result = await processAction(employeeId, emp.name, actionType);
-        return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+        console.error('Error in /api/attendance/scan:', error);
+        res.status(500).json({ success: false, message: 'Server error processing scan' });
     }
 });
 

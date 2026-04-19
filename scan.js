@@ -238,6 +238,14 @@ async function handleMatchFound(employeeId) {
 
     try {
         const res = await fetch(`/api/employees/${employeeId}`);
+        if (res.status === 403) {
+            const errorData = await res.json();
+            showToast(errorData.message || 'Access Denied', 'error');
+            SFX.error();
+            setTimeout(resetScanner, 3000);
+            return;
+        }
+        
         const employee = await res.json();
         currentEmployee = employee;
 
@@ -290,6 +298,14 @@ window.confirmIdentity = async function () {
     try {
         const res = await fetch('/api/attendance/state/' + currentEmployee.id);
         const data = await res.json();
+        
+        if (res.status === 403) {
+            showToast(data.message || 'Access Denied', 'error');
+            SFX.error();
+            setTimeout(resetScanner, 3000);
+            return;
+        }
+
         if (data.success) {
             window.currentEmployeeState = data.currentState;
             badge.textContent = "State: " + data.currentState.replace('_', ' ');
@@ -408,9 +424,9 @@ async function applyAutoFix(sequences, employeeId) {
 async function submitAttendance(actionType) {
     if (!currentEmployee) return;
 
-    const btn = event.currentTarget;
-    const icon = btn.querySelector('.action-icon');
-    const original = btn.innerHTML;
+    // Find the button reliably without global event dependency
+    const btnId = `btn-${actionType}`;
+    const btn = document.getElementById(btnId) || (window.event ? window.event.currentTarget : null);
     
     // Pre-validate locally to show smart-fix immediately without hitting network if possible
     const state = window.currentEmployeeState;
@@ -441,8 +457,10 @@ async function submitAttendance(actionType) {
         }
     }
 
-    btn.style.opacity = '0.6';
-    btn.style.pointerEvents = 'none';
+    if (btn) {
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+    }
 
     try {
         const res = await fetch('/api/attendance/scan', {
@@ -452,9 +470,16 @@ async function submitAttendance(actionType) {
         });
 
         const data = await res.json();
+        
+        if (res.status === 403) {
+            showToast(data.message || 'Access Denied', 'error');
+            SFX.error();
+            setTimeout(resetScanner, 3000);
+            return;
+        }
+
         if (data.success) {
             // Play action-specific sound + voice
-            const empName = currentEmployee.name;
             if (actionType === 'in') { SFX.success(); }
             else if (actionType === 'out') { SFX.success(); }
             else if (actionType === 'break_start') { SFX.tap(); }
@@ -472,14 +497,18 @@ async function submitAttendance(actionType) {
                  SFX.error();
                  showToast(data.message || 'Error recording action', 'error');
             }
-            btn.style.opacity = '';
-            btn.style.pointerEvents = '';
+            if (btn) {
+                btn.style.opacity = '';
+                btn.style.pointerEvents = '';
+            }
         }
     } catch (err) {
         SFX.error();
         showToast('Network error. Try again.', 'error');
-        btn.style.opacity = '';
-        btn.style.pointerEvents = '';
+        if (btn) {
+            btn.style.opacity = '';
+            btn.style.pointerEvents = '';
+        }
     }
 }
 
