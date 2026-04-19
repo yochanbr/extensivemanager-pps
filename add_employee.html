@@ -497,6 +497,7 @@
         </form>
     </div>
 
+    <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const steps = document.querySelectorAll('.step');
@@ -581,7 +582,7 @@
                 const pass2 = document.getElementById('pass-2').value;
 
                 if (pass1 !== pass2) {
-                    alert('Passwords do not match!');
+                    await nammaModalSystem.alert('Passwords do not match!');
                     return;
                 }
 
@@ -607,13 +608,13 @@
                     if (result.success) {
                         window.location.href = 'admin.html';
                     } else {
-                        alert(result.message || 'Error adding employee.');
+                        await nammaModalSystem.alert(result.message || 'Error adding employee.');
                         btnSubmit.disabled = false;
                         btnSubmit.innerHTML = 'Complete Setup <i class="fas fa-check"></i>';
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Server communication error.');
+                    await nammaModalSystem.alert('Server communication error.');
                     btnSubmit.disabled = false;
                 }
             });

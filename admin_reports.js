@@ -45,18 +45,18 @@
 
             if (type === 'daily') {
                 const date = document.getElementById('report-date').value;
-                if (!date) return alert('Please select a date.');
+                if (!date) return await nammaModalSystem.alert('Please select a date.');
                 params.date = date;
                 selectedDate = date;
             } else if (type === 'monthly') {
                 const month = document.getElementById('report-month').value;
-                if (!month) return alert('Please select a month.');
+                if (!month) return await nammaModalSystem.alert('Please select a month.');
                 params.month = month;
                 selectedDate = month;
             } else if (type === 'custom') {
                 const start = document.getElementById('report-start-date').value;
                 const end = document.getElementById('report-end-date').value;
-                if (!start || !end) return alert('Please select both start and end dates.');
+                if (!start || !end) return await nammaModalSystem.alert('Please select both start and end dates.');
                 params.startDate = start;
                 params.endDate = end;
                 selectedDate = `${start} to ${end}`;
@@ -82,7 +82,7 @@
         async function fetchReport(employeeId, params = {}) {
             const employee = await fetchEmployee(employeeId);
             if (!employee) {
-                alert('Error fetching employee details.');
+                await nammaModalSystem.alert('Error fetching employee details.');
                 return;
             }
 
@@ -137,13 +137,13 @@
                 }
 
                 if (!allData.length) {
-                    alert(selectedDate ? `No data found for ${selectedDate}.` : 'No data found for this employee.');
+                    await nammaModalSystem.alert(selectedDate ? `No data found for ${selectedDate}.` : 'No data found for this employee.');
                 } else {
                     displayReport(allData, selectedDate, employee);
                 }
             } catch (err) {
                 console.error('Error fetching report:', err);
-                alert('Error fetching report.');
+                await nammaModalSystem.alert('Error fetching report.');
             }
         }
 
@@ -218,12 +218,12 @@
                     button.innerHTML = `<i class="fas ${icons[type] || 'fa-file'}" style="margin-right:10px; color:#3B82F6;"></i> View ${type.replace('_', ' ')}`;
                 }
 
-                button.addEventListener('click', () => {
+                button.addEventListener('click', async () => {
                     const typeData = data.filter(item => item.type === type);
                     if (typeData.length > 0) {
                         displayDataTable(type, typeData);
                     } else {
-                        alert(`No data found for ${type}.`);
+                        await nammaModalSystem.alert(`No data found for ${type}.`);
                     }
                 });
                 buttonContainer.appendChild(button);
@@ -1068,7 +1068,7 @@
             try {
                 const employeesResponse = await fetch('/api/employees');
                 if (!employeesResponse.ok) {
-                    alert('Error fetching employees.');
+                    await nammaModalSystem.alert('Error fetching employees.');
                     return;
                 }
                 const employees = await employeesResponse.json();
@@ -1086,7 +1086,7 @@
                 displayAllHistory(allHistory);
             } catch (error) {
                 console.error('Error fetching all history:', error);
-                alert('Error fetching all history.');
+                await nammaModalSystem.alert('Error fetching all history.');
             }
         }
 
@@ -1416,21 +1416,20 @@
             renderHistoryTable(filteredData);
         }
 
-        function fetchHistoryByType(type, employeeId, date) {
+        async function fetchHistoryByType(type, employeeId, date) {
             const displayType = type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
-            fetch(`/api/history?employeeId=${employeeId}&type=${type}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        displayHistoryTableByType(type, data);
-                    } else {
-                        alert(`No ${displayType} data found.`);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Error fetching ${type} data:`, error);
-                    alert(`Error fetching ${displayType} data.`);
-                });
+            try {
+                const response = await fetch(`/api/history?employeeId=${employeeId}&type=${type}`);
+                const data = await response.json();
+                if (data.length > 0) {
+                    displayHistoryTableByType(type, data);
+                } else {
+                    await nammaModalSystem.alert(`No ${displayType} data found.`);
+                }
+            } catch (error) {
+                console.error(`Error fetching ${type} data:`, error);
+                await nammaModalSystem.alert(`Error fetching ${displayType} data.`);
+            }
         }
 
         function getFieldsForType(type) {
@@ -1934,28 +1933,27 @@
             dataTableContainer.style.display = 'block';
         }
 
-        function restoreItem(item) {
-            if (confirm('Are you sure you want to restore this item to its original state?')) {
-                fetch(`/api/restore/${item.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ originalData: item.originalData || item.originaldata })
-                })
-                .then(response => {
+        async function restoreItem(item) {
+            if (await nammaModalSystem.confirm('Are you sure you want to restore this item to its original state?')) {
+                try {
+                    const response = await fetch(`/api/restore/${item.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ originalData: item.originalData || item.originaldata })
+                    });
                     if (response.ok) {
-                        alert('Item restored successfully.');
+                        await nammaModalSystem.alert('Item restored successfully.');
                         // Refresh the history view
                         fetchHistory(selectedEmployeeId, selectedDate);
                     } else {
-                        alert('Error restoring item.');
+                        await nammaModalSystem.alert('Error restoring item.');
                     }
-                })
-                .catch(error => {
+                } catch (error) {
                     console.error('Error restoring item:', error);
-                    alert('Error restoring item.');
-                });
+                    await nammaModalSystem.alert('Error restoring item.');
+                }
             }
         }
 
@@ -2037,50 +2035,48 @@
             setTimeout(() => modal.style.display = 'none', 300);
         }
 
-        function revertEdit(item) {
-            if (confirm('Are you sure you want to revert this edit to the original values?')) {
-                fetch(`/api/revert-edit/${item.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ originalData: item.originaldata })
-                })
-                .then(response => {
+        async function revertEdit(item) {
+            if (await nammaModalSystem.confirm('Are you sure you want to revert this edit to the original values?')) {
+                try {
+                    const response = await fetch(`/api/revert-edit/${item.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ originalData: item.originaldata })
+                    });
                     if (response.ok) {
-                        alert('Edit reverted successfully.');
+                        await nammaModalSystem.alert('Edit reverted successfully.');
                         closeEditComparisonModal();
                         // Refresh the history view
                         fetchHistory(selectedEmployeeId, selectedDate);
                     } else {
-                        alert('Error reverting edit.');
+                        await nammaModalSystem.alert('Error reverting edit.');
                     }
-                })
-                .catch(error => {
+                } catch (error) {
                     console.error('Error reverting edit:', error);
-                    alert('Error reverting edit.');
-                });
+                    await nammaModalSystem.alert('Error reverting edit.');
+                }
             }
         }
 
-        function permanentlyDeleteHistory(item) {
-            if (confirm('Are you sure you want to permanently delete this history entry? This action cannot be undone.')) {
-                fetch(`/api/permanently-delete-history/${item.id}`, {
-                    method: 'DELETE'
-                })
-                .then(response => {
+        async function permanentlyDeleteHistory(item) {
+            if (await nammaModalSystem.confirm('Are you sure you want to permanently delete this history entry? This action cannot be undone.', { theme: 'danger' })) {
+                try {
+                    const response = await fetch(`/api/permanently-delete-history/${item.id}`, {
+                        method: 'DELETE'
+                    });
                     if (response.ok) {
-                        alert('History entry deleted permanently.');
+                        await nammaModalSystem.alert('History entry deleted permanently.');
                         // Refresh the history view
                         fetchHistory(selectedEmployeeId, selectedDate);
                     } else {
-                        alert('Error deleting history entry.');
+                        await nammaModalSystem.alert('Error deleting history entry.');
                     }
-                })
-                .catch(error => {
+                } catch (error) {
                     console.error('Error deleting history entry:', error);
-                    alert('Error deleting history entry.');
-                });
+                    await nammaModalSystem.alert('Error deleting history entry.');
+                }
             }
         }
 
@@ -2260,7 +2256,7 @@
             const editReason = document.getElementById('edit-reason').value.trim();
 
             if (!editReason) {
-                alert('Please provide a reason for editing.');
+                await nammaModalSystem.alert('Please provide a reason for editing.');
                 return;
             }
 
@@ -2280,15 +2276,15 @@
                     body: JSON.stringify(payload)
                 });
                 if (response.ok) {
-                    alert('Record updated successfully.');
+                    await nammaModalSystem.alert('Record updated successfully.');
                     closeEditModal();
                     fetchReport(selectedEmployeeId, selectedDate);
                 } else {
-                    alert('Error updating record.');
+                    await nammaModalSystem.alert('Error updating record.');
                 }
             } catch (error) {
                 console.error('Error updating record:', error);
-                alert('Error updating record.');
+                await nammaModalSystem.alert('Error updating record.');
             }
         });
 
@@ -2300,11 +2296,11 @@
             const reason = document.getElementById('delete-reason-text').value.trim();
 
             if (!reason) {
-                alert('Please provide a reason for deletion.');
+                await nammaModalSystem.alert('Please provide a reason for deletion.');
                 return;
             }
 
-            if (!confirm('Are you sure you want to delete this record?')) {
+            if (!(await nammaModalSystem.confirm('Are you sure you want to delete this record?', { theme: 'danger' }))) {
                 return;
             }
 
@@ -2313,15 +2309,15 @@
                     method: 'DELETE'
                 });
                 if (response.ok) {
-                    alert('Record deleted successfully.');
+                    await nammaModalSystem.alert('Record deleted successfully.');
                     closeDeleteModal();
                     fetchReport(selectedEmployeeId, selectedDate);
                 } else {
-                    alert('Error deleting record.');
+                    await nammaModalSystem.alert('Error deleting record.');
                 }
             } catch (error) {
                 console.error('Error deleting record:', error);
-                alert('Error deleting record.');
+                await nammaModalSystem.alert('Error deleting record.');
             }
         });
 

@@ -169,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/';
     });
 
-    endShiftBtn.addEventListener('click', () => {
-        const password = prompt('Enter admin password to request End Shift OTP:');
+    endShiftBtn.addEventListener('click', async () => {
+        const password = await nammaModalSystem.prompt('Enter admin password to request End Shift OTP:');
         if (!password) return;
 
         // Step 1: verify password and request OTP to be emailed
@@ -182,21 +182,21 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(async data => {
                 if (!data || !data.success) {
-                    alert('Incorrect password. Cannot request OTP.');
+                    await nammaModalSystem.alert('Incorrect password. Cannot request OTP.');
                     return;
                 }
 
                 // If server returned a debug OTP (local dev), show it so testing is easier
                 if (data.debugOtp) {
-                    alert('OTP (debug): ' + data.debugOtp + '\n(Use this only for local testing)');
+                    await nammaModalSystem.alert('OTP (debug): ' + data.debugOtp + '\n(Use this only for local testing)');
                 } else {
-                    alert('OTP sent to configured admin email. Please check your inbox.');
+                    await nammaModalSystem.alert('OTP sent to configured admin email. Please check your inbox.');
                 }
 
                 // Prompt for OTP and confirm
-                const otp = prompt('Enter the 5-digit OTP sent to the admin email:');
+                const otp = await nammaModalSystem.prompt('Enter the 5-digit OTP sent to the admin email:');
                 if (!otp) {
-                    alert('OTP is required to end shift.');
+                    await nammaModalSystem.alert('OTP is required to end shift.');
                     return;
                 }
 
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     const confirmData = await confirmRes.json();
                     if (confirmData && confirmData.success) {
-                        alert('Shift ended successfully. Store is now closed.');
+                        await nammaModalSystem.alert('Shift ended successfully. Store is now closed.');
                         viewReportBtn.style.display = 'none';
                         viewEsrJpgsBtn.style.display = 'none';
                         manageEmployeesBtn.style.display = 'none';
@@ -216,21 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         endShiftBtn.style.display = 'none';
                         startShiftBtn.style.display = 'block';
                     } else {
-                        alert('OTP verification failed: ' + (confirmData.message || 'Invalid OTP'));
+                        await nammaModalSystem.alert('OTP verification failed: ' + (confirmData.message || 'Invalid OTP'));
                     }
                 } catch (err) {
                     console.error('Error confirming OTP:', err);
-                    alert('Error verifying OTP.');
+                    await nammaModalSystem.alert('Error verifying OTP.');
                 }
             })
-            .catch(error => {
+            .catch(async error => {
                 console.error('Error requesting OTP:', error);
-                alert('Error requesting OTP.');
+                await nammaModalSystem.alert('Error requesting OTP.');
             });
     });
 
-    startShiftBtn.addEventListener('click', () => {
-        const password = prompt('Enter admin password to start shift:');
+    startShiftBtn.addEventListener('click', async () => {
+        const password = await nammaModalSystem.prompt('Enter admin password to start shift:');
         if (password) {
             fetch('/api/start-shift', {
                 method: 'POST',
@@ -240,21 +240,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ password })
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(async data => {
                     if (data.success) {
-                        alert('Shift started successfully. Store is now open.');
+                        await nammaModalSystem.alert('Shift started successfully. Store is now open.');
                         viewReportBtn.style.display = 'block';
                         manageEmployeesBtn.style.display = 'block';
                         logoutBtn.style.display = 'block';
                         endShiftBtn.style.display = 'block';
                         startShiftBtn.style.display = 'none';
                     } else {
-                        alert('Incorrect password. Shift not started.');
+                        await nammaModalSystem.alert('Incorrect password. Shift not started.');
                     }
                 })
-                .catch(error => {
+                .catch(async error => {
                     console.error('Error starting shift:', error);
-                    alert('Error starting shift.');
+                    await nammaModalSystem.alert('Error starting shift.');
                 });
         }
     });
@@ -330,17 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle employee selection form submission
     const employeeSelectionForm = document.getElementById('employee-selection-form');
     if (employeeSelectionForm) {
-        employeeSelectionForm.addEventListener('submit', (event) => {
+        employeeSelectionForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const selectedEmployeeId = document.getElementById('employee-select').value;
             const selectedDate = document.getElementById('shift-summary-date').value;
             if (!selectedEmployeeId) {
-                alert('Please select an employee.');
+                await nammaModalSystem.alert('Please select an employee.');
                 return;
             }
             if (!selectedDate) {
-                alert('Please select a date.');
+                await nammaModalSystem.alert('Please select a date.');
                 return;
             }
 
@@ -418,51 +418,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEmployeeId = null;
 
     // Function to fetch and display ESR JPGs
-    const fetchAndDisplayEsrJpgs = (employeeId, date = null) => {
+    const fetchAndDisplayEsrJpgs = async (employeeId, date = null) => {
         let url = `/api/esr-jpgs?employeeId=${employeeId}`;
         if (date) {
             url += `&date=${date}`;
         }
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const grid = document.getElementById('esr-jpgs-grid');
-                    grid.innerHTML = '';
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.success) {
+                const grid = document.getElementById('esr-jpgs-grid');
+                grid.innerHTML = '';
 
-                    if (data.jpgs && data.jpgs.length > 0) {
-                        data.jpgs.forEach(jpg => {
-                            const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
-                            const item = document.createElement('div');
-                            item.className = 'jpg-item';
-                            item.innerHTML = `
-                                <img src="${imageUrl}" alt="ESR JPG" onclick="window.open('${imageUrl}', '_blank')">
-                                <div class="date">${jpg.date}</div>
-                            `;
-                            grid.appendChild(item);
-                        });
-                    } else {
-                        grid.innerHTML = '<p>No ESR JPGs found for this employee.</p>';
-                    }
-
-                    // Show the JPGs modal
-                    const jpgsModal = document.getElementById('esr-jpgs-modal');
-                    jpgsModal.style.display = 'block';
+                if (data.jpgs && data.jpgs.length > 0) {
+                    data.jpgs.forEach(jpg => {
+                        const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
+                        const item = document.createElement('div');
+                        item.className = 'jpg-item';
+                        item.innerHTML = `
+                            <img src="${imageUrl}" alt="ESR JPG" onclick="window.open('${imageUrl}', '_blank')">
+                            <div class="date">${jpg.date}</div>
+                        `;
+                        grid.appendChild(item);
+                    });
                 } else {
-                    alert('Error loading ESR JPGs: ' + data.message);
+                    grid.innerHTML = '<p>No ESR JPGs found for this employee.</p>';
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching ESR JPGs:', error);
-                alert('Error loading ESR JPGs.');
-            });
+
+                // Show the JPGs modal
+                const jpgsModal = document.getElementById('esr-jpgs-modal');
+                jpgsModal.style.display = 'block';
+            } else {
+                await nammaModalSystem.alert('Error loading ESR JPGs: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching ESR JPGs:', error);
+            await nammaModalSystem.alert('Error loading ESR JPGs.');
+        }
     };
 
     // Handle ESR JPG employee select change to populate dates
     const esrJpgEmployeeSelect = document.getElementById('esr-jpg-employee-select');
     if (esrJpgEmployeeSelect) {
-        esrJpgEmployeeSelect.addEventListener('change', () => {
+        esrJpgEmployeeSelect.addEventListener('change', async () => {
             const selectedEmployeeId = esrJpgEmployeeSelect.value;
             if (!selectedEmployeeId) {
                 document.getElementById('esr-jpg-date-select').innerHTML = '<option value="">Select employee first</option>';
@@ -471,35 +470,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Fetch ESR JPGs for the selected employee to get available dates
-            fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.jpgs && data.jpgs.length > 0) {
-                        const dateSelect = document.getElementById('esr-jpg-date-select');
-                        dateSelect.innerHTML = '<option value="">Select a date</option>';
-                        const uniqueDates = [...new Set(data.jpgs.map(jpg => jpg.date))].sort();
-                        uniqueDates.forEach(date => {
-                            const option = document.createElement('option');
-                            option.value = date;
-                            option.textContent = date;
-                            dateSelect.appendChild(option);
-                        });
-                    } else {
-                        document.getElementById('esr-jpg-date-select').innerHTML = '<option value="">No dates available</option>';
-                    }
-                    document.getElementById('esr-jpg-shift-id-select').innerHTML = '<option value="">Select date first</option>';
-                })
-                .catch(error => {
-                    console.error('Error fetching ESR JPGs for dates:', error);
-                    alert('Error loading dates.');
-                });
+            try {
+                const response = await fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}`);
+                const data = await response.json();
+                if (data.success && data.jpgs && data.jpgs.length > 0) {
+                    const dateSelect = document.getElementById('esr-jpg-date-select');
+                    dateSelect.innerHTML = '<option value="">Select a date</option>';
+                    const uniqueDates = [...new Set(data.jpgs.map(jpg => jpg.date))].sort();
+                    uniqueDates.forEach(date => {
+                        const option = document.createElement('option');
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+                } else {
+                    document.getElementById('esr-jpg-date-select').innerHTML = '<option value="">No dates available</option>';
+                }
+                document.getElementById('esr-jpg-shift-id-select').innerHTML = '<option value="">Select date first</option>';
+            } catch (error) {
+                console.error('Error fetching ESR JPGs for dates:', error);
+                await nammaModalSystem.alert('Error loading dates.');
+            }
         });
     }
 
     // Handle ESR JPG date select change to populate shift IDs
     const esrJpgDateSelect = document.getElementById('esr-jpg-date-select');
     if (esrJpgDateSelect) {
-        esrJpgDateSelect.addEventListener('change', () => {
+        esrJpgDateSelect.addEventListener('change', async () => {
             const selectedEmployeeId = document.getElementById('esr-jpg-employee-select').value;
             const selectedDate = esrJpgDateSelect.value;
             if (!selectedEmployeeId || !selectedDate) {
@@ -508,83 +506,81 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Fetch ESR JPGs for the selected employee and date to get available shift IDs
-            fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}&date=${selectedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.jpgs && data.jpgs.length > 0) {
-                        const shiftIdSelect = document.getElementById('esr-jpg-shift-id-select');
-                        shiftIdSelect.innerHTML = '<option value="">Select a shift ID</option>';
-                        data.jpgs.forEach(jpg => {
-                            const option = document.createElement('option');
-                            option.value = jpg.id;
-                            option.textContent = jpg.shift_id || 'N/A';
-                            shiftIdSelect.appendChild(option);
-                        });
-                    } else {
-                        document.getElementById('esr-jpg-shift-id-select').innerHTML = '<option value="">No shift IDs available</option>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching ESR JPGs for shift IDs:', error);
-                    alert('Error loading shift IDs.');
-                });
+            try {
+                const response = await fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}&date=${selectedDate}`);
+                const data = await response.json();
+                if (data.success && data.jpgs && data.jpgs.length > 0) {
+                    const shiftIdSelect = document.getElementById('esr-jpg-shift-id-select');
+                    shiftIdSelect.innerHTML = '<option value="">Select a shift ID</option>';
+                    data.jpgs.forEach(jpg => {
+                        const option = document.createElement('option');
+                        option.value = jpg.id;
+                        option.textContent = jpg.shift_id || 'N/A';
+                        shiftIdSelect.appendChild(option);
+                    });
+                } else {
+                    document.getElementById('esr-jpg-shift-id-select').innerHTML = '<option value="">No shift IDs available</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching ESR JPGs for shift IDs:', error);
+                await nammaModalSystem.alert('Error loading shift IDs.');
+            }
         });
     }
 
     // Handle ESR JPG employee selection form submission
     const esrJpgEmployeeSelectionForm = document.getElementById('esr-jpg-employee-selection-form');
     if (esrJpgEmployeeSelectionForm) {
-        esrJpgEmployeeSelectionForm.addEventListener('submit', (event) => {
+        esrJpgEmployeeSelectionForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const selectedEmployeeId = document.getElementById('esr-jpg-employee-select').value;
             const selectedDate = document.getElementById('esr-jpg-date-select').value;
             const selectedShiftId = document.getElementById('esr-jpg-shift-id-select').value;
             if (!selectedEmployeeId) {
-                alert('Please select an employee.');
+                await nammaModalSystem.alert('Please select an employee.');
                 return;
             }
             if (!selectedDate) {
-                alert('Please select a date.');
+                await nammaModalSystem.alert('Please select a date.');
                 return;
             }
             if (!selectedShiftId) {
-                alert('Please select a shift ID.');
+                await nammaModalSystem.alert('Please select a shift ID.');
                 return;
             }
 
             // Fetch and display the specific ESR JPG
-            fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}&date=${selectedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.jpgs && data.jpgs.length > 0) {
-                        const jpg = data.jpgs.find(j => j.id == selectedShiftId);
-                        if (jpg) {
-                            const grid = document.getElementById('esr-jpgs-grid');
-                            grid.innerHTML = '';
-                            const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
-                            const item = document.createElement('div');
-                            item.className = 'jpg-item';
-                            item.innerHTML = `
-                                <img src="${imageUrl}" alt="ESR JPG" onclick="window.open('${imageUrl}', '_blank')">
-                                <div class="date">${jpg.date} - Shift ID: ${jpg.shift_id}</div>
-                            `;
-                            grid.appendChild(item);
+            try {
+                const response = await fetch(`/api/esr-jpgs?employeeId=${selectedEmployeeId}&date=${selectedDate}`);
+                const data = await response.json();
+                if (data.success && data.jpgs && data.jpgs.length > 0) {
+                    const jpg = data.jpgs.find(j => j.id == selectedShiftId);
+                    if (jpg) {
+                        const grid = document.getElementById('esr-jpgs-grid');
+                        grid.innerHTML = '';
+                        const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
+                        const item = document.createElement('div');
+                        item.className = 'jpg-item';
+                        item.innerHTML = `
+                            <img src="${imageUrl}" alt="ESR JPG" onclick="window.open('${imageUrl}', '_blank')">
+                            <div class="date">${jpg.date} - Shift ID: ${jpg.shift_id}</div>
+                        `;
+                        grid.appendChild(item);
 
-                            // Show the JPGs modal
-                            const jpgsModal = document.getElementById('esr-jpgs-modal');
-                            jpgsModal.style.display = 'block';
-                        } else {
-                            alert('Selected shift ID not found.');
-                        }
+                        // Show the JPGs modal
+                        const jpgsModal = document.getElementById('esr-jpgs-modal');
+                        jpgsModal.style.display = 'block';
                     } else {
-                        alert('No ESR JPG found for the selected criteria.');
+                        await nammaModalSystem.alert('Selected shift ID not found.');
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching ESR JPG:', error);
-                    alert('Error loading ESR JPG.');
-                });
+                } else {
+                    await nammaModalSystem.alert('No ESR JPG found for the selected criteria.');
+                }
+            } catch (error) {
+                console.error('Error fetching ESR JPG:', error);
+                await nammaModalSystem.alert('Error loading ESR JPG.');
+            }
 
             // Close the employee selection modal
             const modal = document.getElementById('esr-jpg-employee-selection-modal');
@@ -595,9 +591,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle apply date filter
     const applyDateFilterBtn = document.getElementById('apply-date-filter-btn');
     if (applyDateFilterBtn) {
-        applyDateFilterBtn.addEventListener('click', () => {
+        applyDateFilterBtn.addEventListener('click', async () => {
             if (!currentEmployeeId) {
-                alert('Please select an employee first.');
+                await nammaModalSystem.alert('Please select an employee first.');
                 return;
             }
 
@@ -609,9 +605,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle clear date filter
     const clearDateFilterBtn = document.getElementById('clear-date-filter-btn');
     if (clearDateFilterBtn) {
-        clearDateFilterBtn.addEventListener('click', () => {
+        clearDateFilterBtn.addEventListener('click', async () => {
             if (!currentEmployeeId) {
-                alert('Please select an employee first.');
+                await nammaModalSystem.alert('Please select an employee first.');
                 return;
             }
 
@@ -621,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Function to show update progress modal
-    const showUpdateProgressModal = () => {
+    const showUpdateProgressModal = async () => {
         const modal = document.getElementById('update-progress-modal');
         const progressFill = document.getElementById('progress-fill');
         const progressPercentage = document.getElementById('progress-percentage');
@@ -633,61 +629,59 @@ document.addEventListener('DOMContentLoaded', () => {
         remainingTime.textContent = 'Time remaining: Calculating...';
 
         // Start the update
-        fetch('/api/update-app', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    alert('Update failed: ' + data.message);
-                    modal.style.display = 'none';
-                    return;
-                }
-
-                // Poll for update status
-                const pollInterval = setInterval(() => {
-                    fetch('/api/update-status')
-                        .then(response => response.json())
-                        .then(status => {
-                            if (!status.updateInProgress) {
-                                clearInterval(pollInterval);
-                                modal.style.display = 'none';
-                                alert('Update completed successfully!');
-                                window.location.reload();
-                                return;
-                            }
-
-                            // Calculate progress (assume 2 minutes total)
-                            const startTime = new Date(status.updateStartTime);
-                            const now = new Date();
-                            const elapsed = (now - startTime) / 1000; // seconds
-                            const totalTime = 120; // 2 minutes
-                            const progress = (elapsed / totalTime) * 100;
-
-                            progressFill.style.width = Math.min(progress, 100) + '%';
-                            progressPercentage.textContent = Math.round(Math.min(progress, 100)) + '%';
-
-                            if (progress >= 100) {
-                                remainingTime.textContent = 'Update in progress...';
-                            } else {
-                                const remaining = Math.max(totalTime - elapsed, 0);
-                                const minutes = Math.floor(remaining / 60);
-                                const seconds = Math.floor(remaining % 60);
-                                remainingTime.textContent = `Time remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error polling update status:', error);
-                        });
-                }, 1000); // Poll every second
-            })
-            .catch(error => {
-                console.error('Error starting update:', error);
-                alert('Error starting update.');
-                modal.style.display = 'none';
+        try {
+            const response = await fetch('/api/update-app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
             });
+            const data = await response.json();
+            if (!data.success) {
+                await nammaModalSystem.alert('Update failed: ' + data.message);
+                modal.style.display = 'none';
+                return;
+            }
+
+            // Poll for update status
+            const pollInterval = setInterval(async () => {
+                try {
+                    const statusRes = await fetch('/api/update-status');
+                    const status = await statusRes.json();
+                    if (!status.updateInProgress) {
+                        clearInterval(pollInterval);
+                        modal.style.display = 'none';
+                        await nammaModalSystem.alert('Update completed successfully!');
+                        window.location.reload();
+                        return;
+                    }
+
+                    // Calculate progress (assume 2 minutes total)
+                    const startTime = new Date(status.updateStartTime);
+                    const now = new Date();
+                    const elapsed = (now - startTime) / 1000; // seconds
+                    const totalTime = 120; // 2 minutes
+                    const progress = (elapsed / totalTime) * 100;
+
+                    progressFill.style.width = Math.min(progress, 100) + '%';
+                    progressPercentage.textContent = Math.round(Math.min(progress, 100)) + '%';
+
+                    if (progress >= 100) {
+                        remainingTime.textContent = 'Update in progress...';
+                    } else {
+                        const remaining = Math.max(totalTime - elapsed, 0);
+                        const minutes = Math.floor(remaining / 60);
+                        const seconds = Math.floor(remaining % 60);
+                        remainingTime.textContent = `Time remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                } catch (error) {
+                    console.error('Error polling update status:', error);
+                }
+            }, 1000); // Poll every second
+        } catch (error) {
+            console.error('Error starting update:', error);
+            await nammaModalSystem.alert('Error starting update.');
+            modal.style.display = 'none';
+        }
     };
     // Sidebar and View Management
 
@@ -754,9 +748,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const estIndicator = document.getElementById('est-indicator');
     const estText = document.getElementById('est-text');
     if (estToggle) {
-        estToggle.addEventListener('click', () => {
+        estToggle.addEventListener('click', async () => {
             // Toggle logic can fall back on startShift/endShift buttons
-            alert('Use Start Shift / End Shift buttons to officially open/close the store.');
+            await nammaModalSystem.alert('Use Start Shift / End Shift buttons to officially open/close the store.');
         });
     }
 
@@ -960,13 +954,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBBtn = document.getElementById('send-broadcast-btn');
     const clearBBtn = document.getElementById('clear-broadcast-btn');
     if (sendBBtn && bInput) {
-        sendBBtn.addEventListener('click', () => {
+        sendBBtn.addEventListener('click', async () => {
             if (bInput.value.trim()) {
-                fetch('/api/broadcast-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: bInput.value.trim() })
-                }).then(() => alert('Broadcast emitted!'));
+                try {
+                    await fetch('/api/broadcast-message', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: bInput.value.trim() })
+                    });
+                    await nammaModalSystem.alert('Broadcast emitted!');
+                } catch (error) {
+                    console.error('Broadcast failed:', error);
+                }
             }
         });
     }
@@ -1052,9 +1051,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Global action: Toggle Employee Status
-    window.spaToggleEmployeeStatus = function (id, isCurrentlyActive) {
+    window.spaToggleEmployeeStatus = async function (id, isCurrentlyActive) {
         const action = isCurrentlyActive ? 'deactivate' : 'activate';
-        if (confirm(`Are you sure you want to ${action} this employee?`)) {
+        if (await nammaModalSystem.confirm(`Are you sure you want to ${action} this employee?`)) {
             fetch('/api/employees/' + id)
                 .then(res => res.json())
                 .then(emp => {
@@ -1066,11 +1065,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 })
                 .then(res => res.json())
-                .then(result => {
+                .then(async result => {
                     if (result.success) {
                         fetchEmployeesForSPA();
                     } else {
-                        alert('Failed to update status: ' + result.message);
+                        await nammaModalSystem.alert('Failed to update status: ' + result.message);
                     }
                 })
                 .catch(err => console.error(err));
@@ -1078,12 +1077,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Global action: Delete Employee
-    window.spaDeleteEmployee = function (id) {
-        if (confirm('Are you sure you want to delete this employee?')) {
+    window.spaDeleteEmployee = async function (id) {
+        if (await nammaModalSystem.confirm('Are you sure you want to delete this employee?', { theme: 'danger' })) {
             fetch('/api/employees/' + id, { method: 'DELETE' })
-                .then(res => {
+                .then(async res => {
                     if (res.ok) fetchEmployeesForSPA();
-                    else alert('Failed to delete employee.');
+                    else await nammaModalSystem.alert('Failed to delete employee.');
                 })
                 .catch(err => console.error(err));
         }
@@ -1316,7 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).catch(e => console.log('Share failed again:', e));
                 }
             } else {
-                alert('Sharing is not supported on this browser. Please download and share manually.');
+                await nammaModalSystem.alert('Sharing is not supported on this browser. Please download and share manually.');
             }
         }
     });
@@ -1448,18 +1447,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(mappedData)
             })
                 .then(res => res.json())
-                .then(result => {
+                .then(async (result) => {
                     if (result.success) {
-                        alert('Employee details updated successfully!');
+                        await nammaModalSystem.alert('Employee details updated successfully!');
                         const modal = document.getElementById('spa-edit-employee-modal');
                         modal.classList.remove('show');
                         setTimeout(() => modal.style.display = 'none', 300);
                         fetchEmployeesForSPA();
                     } else {
-                        alert('Error updating employee: ' + result.message);
+                        await nammaModalSystem.alert('Error updating employee: ' + result.message);
                     }
                 })
-                .catch(err => console.error(err));
+                .catch(async (err) => {
+                    console.error(err);
+                    await nammaModalSystem.alert('Failed to connect to server.');
+                });
         });
     }
 
@@ -1542,13 +1544,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    const securityForm = document.getElementById('security-hub-form');
     if (securityForm) {
         securityForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const current = document.getElementById('current-admin-password').value;
             const next = document.getElementById('new-admin-password').value;
-            if (next.length < 6) return alert('New password must be at least 6 characters');
+            if (next.length < 6) return await nammaModalSystem.alert('New password must be at least 6 characters');
 
             try {
                 const res = await fetch('/api/settings/change-password', {
@@ -1558,12 +1559,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    alert('Password changed successfully! Please login again.');
+                    await nammaModalSystem.alert('Password changed successfully! Please login again.');
                     window.location.href = '/logout';
                 } else {
-                    alert(result.message || 'Verification failed');
+                    await nammaModalSystem.alert(result.message || 'Verification failed');
                 }
-            } catch (err) { alert('Server error during password change'); }
+            } catch (err) { await nammaModalSystem.alert('Server error during password change'); }
         });
     }
 
@@ -1578,15 +1579,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetBtn = document.getElementById('reset-settings-btn');
     if (resetBtn) {
         resetBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to reset all settings to factory defaults? This will reset your accent color, theme, and admin password.')) return;
+            if (!(await nammaModalSystem.confirm('Are you sure you want to reset all settings to factory defaults? This will reset your accent color, theme, and admin password.', { theme: 'danger' }))) return;
             try {
                 const res = await fetch('/api/settings/reset', { method: 'POST' });
                 const result = await res.json();
                 if (result.success) {
-                    alert('Settings restored to defaults! Logging out for security...');
+                    await nammaModalSystem.alert('Settings restored to defaults! Logging out for security...');
                     window.location.href = '/logout';
                 }
-            } catch (err) { alert('Failed to reset settings'); }
+            } catch (err) { await nammaModalSystem.alert('Failed to reset settings'); }
         });
     }
 
@@ -1610,9 +1611,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.refreshSystemStatus = refreshSystemStatus;
     window.fetchSettings = fetchSettings;
 
-    window.exportExcel = function () {
+    window.exportExcel = async function () {
         // ... (Existing exportExcel logic)
-        if (!window.staffData || window.staffData.length === 0) return alert('No data to export!');
+        if (!window.staffData || window.staffData.length === 0) return await nammaModalSystem.alert('No data to export!');
         const exportData = window.staffData.map(s => {
             const checkInStr = s.session && s.session.checkInTime ? new Date(s.session.checkInTime).toLocaleString() : '-';
             const checkOutStr = s.session && s.session.checkOutTime ? new Date(s.session.checkOutTime).toLocaleString() : '-';
@@ -2135,7 +2136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Bulk APIs placeholder hooking
     window.bulkDeleteLogs = async function() {
-        if (!confirm('Are you sure you want to completely erase the selected raw logs? This will recalculate sessions.')) return;
+        if (!(await nammaModalSystem.confirm('Are you sure you want to completely erase the selected raw logs? This will recalculate sessions.', { theme: 'danger' }))) return;
         const ids = Array.from(window.selectedLogIds);
         try {
             const res = await fetch('/api/attendance/logs', {
@@ -2146,13 +2147,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 window.selectedLogIds.clear();
                 window.fetchLogsRealtime();
-                alert('Logs deleted and sessions recalculated!');
+                await nammaModalSystem.alert('Logs deleted and sessions recalculated!');
             }
-        } catch(e) { alert('Deletion failed'); }
+        } catch(e) { await nammaModalSystem.alert('Deletion failed'); }
     }
 
     window.bulkChangeAction = async function() {
-        const newAction = prompt('Enter new action (CLOCK_IN, BREAK_START, BREAK_END, CLOCK_OUT):');
+        const newAction = await nammaModalSystem.prompt('Enter new action (CLOCK_IN, BREAK_START, BREAK_END, CLOCK_OUT):', { placeholder: 'e.g. CLOCK_IN' });
         if (!newAction) return;
         const ids = Array.from(window.selectedLogIds);
         try {
@@ -2164,15 +2165,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.selectedLogIds.clear();
                 window.fetchLogsRealtime();
             }
-        } catch(e) { alert('Edit failed'); }
+        } catch(e) { await nammaModalSystem.alert('Edit failed'); }
     }
 
     window.rebuildSessions = async function() {
         // Triggers the hard reconstruction algorithm on the backend manually
         try {
             const res = await fetch('/api/attendance/sessions/recalculate', { method: 'POST' });
-            if ((await res.json()).success) alert('Success! Sessions meticulously rebuilt based on raw logs.');
-        } catch(e) { alert('Rebuild failed'); }
+            if ((await res.json()).success) await nammaModalSystem.alert('Success! Sessions meticulously rebuilt based on raw logs.');
+        } catch(e) { await nammaModalSystem.alert('Rebuild failed'); }
     }
 
     // Attach search/filter listeners
@@ -2310,13 +2311,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('Biometric registration successful!');
+                    await nammaModalSystem.alert('Biometric registration successful!');
                     window.closeFaceRegistration();
                 } else {
-                    alert('Failed to register: ' + data.message);
+                    await nammaModalSystem.alert('Failed to register: ' + data.message);
                 }
             } catch (err) {
-                alert('Cloud synchronization failed.');
+                await nammaModalSystem.alert('Cloud synchronization failed.');
                 console.error(err);
             } finally {
                 btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register';
