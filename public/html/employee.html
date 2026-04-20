@@ -2115,10 +2115,11 @@
         setInterval(fetchBroadcast, 10000);
         setInterval(loadDashboardData, 60000);
 
-        // --- DEVELOPER OVERRIDE POLLING ---
-        const checkDevOperations = async () => {
+        // --- DEVELOPER OVERRIDE POLLING (REAL-TIME SYNC) ---
+        const syncDevOperations = async () => {
             try {
-                const res = await fetch('/api/dev/status', { cache: 'no-cache' });
+                // Request server to wait for changes (Long Polling)
+                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
                 const data = await res.json();
 
                 // 1. Check for Targeted Dev Broadcast
@@ -2126,7 +2127,6 @@
                     const { message, target, timestamp } = data.dev_broadcast;
                     const lastSeen = localStorage.getItem('lastDevMsg');
                     if (timestamp > (lastSeen || 0) && (target === 'all' || target === 'employee')) {
-                        // Use the existing app message system if available, or fallback to alert
                         if (window.nammaModalSystem) {
                             await nammaModalSystem.alert(`🚨 SYSTEM ALERT:\n\n${message}`);
                         } else {
@@ -2151,10 +2151,17 @@
                     if (existingAd) existingAd.remove();
                 }
 
-            } catch (err) { /* Silently handle dev sync errors */ }
+            } catch (err) { 
+                // Silently reconnect with a delay if error
+                await new Promise(r => setTimeout(r, 5000));
+            } finally {
+                // Recursive call for continuous real-time listening
+                setTimeout(syncDevOperations, 500);
+            }
         };
-        setInterval(checkDevOperations, 30000); // Check every 30 seconds
-        checkDevOperations();
+
+        // Initialize real-time engine
+        syncDevOperations();
 
     </script>
 </body>

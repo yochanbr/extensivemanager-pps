@@ -535,10 +535,43 @@ app.post('/api/dev/broadcast', apiLimiter, async (req, res) => {
 
 // Get all status in one go for the dev panel
 app.get('/api/dev/status', async (req, res) => {
+    const isLongPoll = req.query.longPoll === 'true';
+
     try {
-        const doc = await db.broadcast().get();
-        res.json(doc.exists ? doc.data() : {});
-    } catch (e) { res.status(500).json({ success: false }); }
+        if (!isLongPoll) {
+            const doc = await db.broadcast().get();
+            return res.json(doc.exists ? doc.data() : {});
+        }
+
+        // --- LONG POLLING LOGIC ---
+        let resolved = false;
+        const timeout = setTimeout(async () => {
+            if (!resolved) {
+                resolved = true;
+                if (unsubscribe) unsubscribe();
+                const doc = await db.broadcast().get();
+                res.json(doc.exists ? doc.data() : {});
+            }
+        }, 20000); // 20s Timeout for Vercel stability
+
+        const unsubscribe = db.broadcast().onSnapshot((doc) => {
+            if (!resolved && doc.exists) {
+                resolved = true;
+                clearTimeout(timeout);
+                unsubscribe();
+                res.json(doc.data());
+            }
+        }, (err) => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                res.status(500).json({ success: false, error: err.message });
+            }
+        });
+
+    } catch (e) {
+        if (!res.headersSent) res.status(500).json({ success: false });
+    }
 });
 
 // Serve maintenance page explicitly

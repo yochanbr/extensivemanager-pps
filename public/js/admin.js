@@ -979,10 +979,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initCharts();
         setInterval(fetchDashboardStats, 60000);
 
-        // --- DEVELOPER OVERRIDE POLLING ---
-        const checkDevOperations = async () => {
+        // --- DEVELOPER OVERRIDE POLLING (REAL-TIME LONG POLL) ---
+        const syncDevOperations = async () => {
             try {
-                const res = await fetch('/api/dev/status');
+                // Request server to wait for changes
+                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
                 const data = await res.json();
 
                 // 1. Check for Targeted Dev Broadcast
@@ -1010,15 +1011,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (existingAd) existingAd.remove();
                 }
 
-                // 3. Donation Check
-                if (data.donation && data.donation.active) {
-                    // Logic to show subtle donation prompt if needed
-                }
-
-            } catch (err) { console.warn('DevOps sync failed.'); }
+            } catch (err) { 
+                console.warn('DevOps sync reconnecting...'); 
+                await new Promise(r => setTimeout(r, 5000)); // Delay on error
+            } finally {
+                // Recursive call for continuous real-time listening
+                setTimeout(syncDevOperations, 500); 
+            }
         };
-        setInterval(checkDevOperations, 30000); // Check every 30 seconds
-        checkDevOperations();
+
+        // Start the real-time engine
+        syncDevOperations();
     }
         setInterval(fetchLiveStatus, 60000);
     }
