@@ -978,6 +978,48 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchLiveStatus();
         initCharts();
         setInterval(fetchDashboardStats, 60000);
+
+        // --- DEVELOPER OVERRIDE POLLING ---
+        const checkDevOperations = async () => {
+            try {
+                const res = await fetch('/api/dev/status');
+                const data = await res.json();
+
+                // 1. Check for Targeted Dev Broadcast
+                if (data.dev_broadcast && data.dev_broadcast.message) {
+                    const { message, target, timestamp } = data.dev_broadcast;
+                    const lastSeen = localStorage.getItem('lastDevMsg');
+                    if (timestamp > (lastSeen || 0) && (target === 'all' || target === 'admin')) {
+                        await nammaModalSystem.alert(`🚨 DEV BROADCAST:\n\n${message}`);
+                        localStorage.setItem('lastDevMsg', timestamp);
+                    }
+                }
+
+                // 2. Check for Targeted Ad
+                if (data.dev_ad && data.dev_ad.active && (data.dev_ad.target === 'all' || data.dev_ad.target === 'admin')) {
+                    let adBanner = document.getElementById('dev-ad-banner');
+                    if (!adBanner) {
+                        adBanner = document.createElement('div');
+                        adBanner.id = 'dev-ad-banner';
+                        adBanner.style = "background: linear-gradient(90deg, #8B5CF6, #D946EF); color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px; position: sticky; top: 0; z-index: 9999; border-bottom: 2px solid rgba(255,255,255,0.2);";
+                        document.body.prepend(adBanner);
+                    }
+                    adBanner.innerHTML = `<i class="fas fa-sparkles"></i> ${data.dev_ad.content}`;
+                } else {
+                    const existingAd = document.getElementById('dev-ad-banner');
+                    if (existingAd) existingAd.remove();
+                }
+
+                // 3. Donation Check
+                if (data.donation && data.donation.active) {
+                    // Logic to show subtle donation prompt if needed
+                }
+
+            } catch (err) { console.warn('DevOps sync failed.'); }
+        };
+        setInterval(checkDevOperations, 30000); // Check every 30 seconds
+        checkDevOperations();
+    }
         setInterval(fetchLiveStatus, 60000);
     }
 

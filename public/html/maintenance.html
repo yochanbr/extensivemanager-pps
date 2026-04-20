@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Maintenance | Namma Mart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: #0A0A0A;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 600px;
+            z-index: 10;
+        }
+
+        .icon-orb {
+            width: 120px;
+            height: 120px;
+            background: rgba(249, 90, 44, 0.1);
+            border: 1px solid rgba(249, 90, 44, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .icon-orb i {
+            font-size: 48px;
+            color: #F95A2C;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            color: #A3A3A3;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #F95A2C;
+            border-radius: 50%;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            font-size: 12px;
+            color: #404040;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Abstract Background Elements */
+        .bg-gradient {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(249, 90, 44, 0.05) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="container">
+        <div class="icon-orb">
+            <i class="fas fa-tools"></i>
+        </div>
+        <h1>System Under Maintenance</h1>
+        <p>We are currently upgrading the Namma Mart Experience. The terminal will be back online shortly with improved security and new features.</p>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            UPDATING CORE MODULES...
+        </div>
+    </div>
+    <div class="footer">Namma Mart Operations &bull; Signature Of Quality</div>
+</body>
+</html>

@@ -29,6 +29,26 @@ app.use((req, res, next) => {
     next();
 });
 
+// MAINTENANCE MODE MIDDLEWARE
+app.use(async (req, res, next) => {
+    const isDevRoute = req.path === '/dev-ops-2026' || req.path.startsWith('/api/dev');
+    const isMaintenancePage = req.path === '/maintenance' || req.path.includes('/css/') || req.path.includes('/js/');
+    const isAdmin = req.session && req.session.admin;
+
+    if (isDevRoute || isMaintenancePage || isAdmin) {
+        return next();
+    }
+
+    try {
+        const doc = await db.broadcast().get();
+        const maintenance = doc.exists ? doc.data().maintenance_mode : false;
+        if (maintenance) {
+            return res.redirect('/maintenance');
+        }
+    } catch (e) { /* Fallback */ }
+    next();
+});
+
 // Lightweight In-Memory Rate Limiter
 const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
@@ -464,13 +484,66 @@ app.get('/api/store-status', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// Toggle store status (Cloud Native)
-app.post('/api/store-status', async (req, res) => {
+// --- DEVELOPER CONTROL CENTER API ---
+
+// Serve Developer Control Center
+app.get('/dev-ops-2026', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/dev_control.html'));
+});
+
+// Update Developer Global Config (Maintenance, Ads, Donations)
+app.post('/api/dev/config', apiLimiter, async (req, res) => {
+    const { maintenance_mode, dev_ad, donation, pin } = req.body;
+    
+    // Developer PIN Check (Default 2026)
+    if (pin !== '2026') {
+        return res.status(401).json({ success: false, message: 'Invalid Developer PIN.' });
+    }
+
+    const updates = {};
+    if (maintenance_mode !== undefined) updates.maintenance_mode = !!maintenance_mode;
+    if (dev_ad) updates.dev_ad = dev_ad;
+    if (donation) updates.donation = donation;
+
     try {
-        const { store_closed } = req.body;
-        await db.broadcast().update({ store_closed: !!store_closed });
-        res.json({ success: true, store_closed: !!store_closed });
+        await db.broadcast().update(updates);
+        res.json({ success: true, message: 'Developer configuration updated.' });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// High Priority Dev Broadcast
+app.post('/api/dev/broadcast', apiLimiter, async (req, res) => {
+    const { message, target, pin } = req.body;
+    if (pin !== '2026') return res.status(401).json({ success: false, message: 'Invalid PIN.' });
+
+    const timestamp = Date.now();
+    try {
+        await db.broadcast().update({
+            dev_broadcast: { 
+                message: message || "", 
+                target: target || "all", // all, admin, employee
+                timestamp 
+            }
+        });
+        res.json({ success: true, message: 'Dev broadcast sent.', timestamp });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// Get all status in one go for the dev panel
+app.get('/api/dev/status', async (req, res) => {
+    try {
+        const doc = await db.broadcast().get();
+        res.json(doc.exists ? doc.data() : {});
     } catch (e) { res.status(500).json({ success: false }); }
+});
+
+// Serve maintenance page explicitly
+app.get('/maintenance', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/maintenance.html'));
 });
 
 // Get a single employee by ID
