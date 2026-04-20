@@ -34,7 +34,11 @@ let puppeteer;
 // Firebase Configuration
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key_change_me';
 const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json';
-const BACKUP_REPO_PATH = path.join(__dirname, 'namma_backup_cloud');
+
+// Backup Configuration
+const BACKUP_PAT = process.env.BACKUP_PAT; 
+const BACKUP_REPO_URL = `https://${BACKUP_PAT}@github.com/yochanbr/backup-extensivemanager.git`;
+const BACKUP_REPO_PATH = isVercel ? path.join('/tmp', 'namma_backup_cloud') : path.join(__dirname, 'namma_backup_cloud');
 
 // Initialize Firebase Admin
 let firestore;
@@ -119,11 +123,24 @@ const db = {
 // --- Secure GitHub Backup System ---
 const syncToBackupRepo = async () => {
     try {
+        const gitCmd = (cmd, cwd = BACKUP_REPO_PATH) => execSync(cmd, { cwd, stdio: 'pipe' });
+
+        // 1. Ensure Repository exists in the writable path
         if (!fs.existsSync(BACKUP_REPO_PATH)) {
-            fs.mkdirSync(BACKUP_REPO_PATH, { recursive: true });
+            console.log('📂 Initializing transient backup folder in writable path...');
+            const parentDir = path.dirname(BACKUP_REPO_PATH);
+            if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+            
+            // Clone with depth 1 for speed (especially important on Vercel)
+            execSync(`git clone --depth 1 ${BACKUP_REPO_URL} ${BACKUP_REPO_PATH}`, { stdio: 'pipe' });
+            
+            // Configure user for commits in this transient repo
+            gitCmd('git config user.email "yochanbr@gmail.com"');
+            gitCmd('git config user.name "Namma Mart Backup Sync"');
         }
 
-        // 1. Data Export
+        // 2. Data Export
+        console.log('📡 Fetching latest Firestore state...');
         const collections = ['settings', 'employees', 'attendance_logs', 'daily_sessions', 'esr_reports', 'esr_jpgs', 'leave_swaps'];
         const backupData = {};
         for (const colName of collections) {
@@ -131,23 +148,20 @@ const syncToBackupRepo = async () => {
             backupData[colName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
 
-        // 2. Write to local file inside the backup repo
+        // 3. Write to local file inside the backup repo
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = 'latest_system_backup.json';
         const filePath = path.join(BACKUP_REPO_PATH, filename);
         fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
 
-        // 3. Git Operations
-        const gitCmd = (cmd) => execSync(cmd, { cwd: BACKUP_REPO_PATH, stdio: 'pipe' });
-        
-        console.log('📦 Starting GitHub Cloud Sync...');
+        // 4. Push to Cloud
+        console.log('📦 Committing to GitHub Cloud...');
         try {
             gitCmd('git add .');
-            // Check if there are changes to commit
             const status = gitCmd('git status --porcelain').toString();
             if (status) {
-                gitCmd(`git commit -m "System Backup [${timestamp}]"`);
-                gitCmd('git push -u origin master'); 
+                gitCmd(`git commit -m "Cloud Sync [${timestamp}]"`);
+                gitCmd('git push origin master'); 
                 console.log('✅ GitHub Backup Successful.');
                 return { success: true, message: 'Data synced to GitHub Cloud successfully.', timestamp };
             } else {
@@ -155,11 +169,11 @@ const syncToBackupRepo = async () => {
                 return { success: true, message: 'Cloud is already up to date.' };
             }
         } catch (gitErr) {
-            console.error('❌ Git Error:', gitErr.message);
+            console.error('❌ Git sync failed:', gitErr.message);
             throw gitErr;
         }
     } catch (error) {
-        console.error('❌ Cloud Backup Failed:', error.message);
+        console.error('❌ Cloud Backup Critical Failure:', error.message);
         return { success: false, error: error.message };
     }
 };

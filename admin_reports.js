@@ -2281,14 +2281,13 @@
                     await nammaModalSystem.alert('Record updated successfully.');
                     closeEditModal();
                     fetchReport(selectedEmployeeId, selectedDate);
-                } else {
-                    await nammaModalSystem.alert('Error updating record.');
                 }
             } catch (error) {
                 console.error('Error updating record:', error);
                 await nammaModalSystem.alert('Error updating record.');
             }
         });
+    }
 
         // Handle submission of delete form
         const deleteReasonForm = document.getElementById('delete-reason-form');
@@ -2316,14 +2315,13 @@
                     await nammaModalSystem.alert('Record deleted successfully.');
                     closeDeleteModal();
                     fetchReport(selectedEmployeeId, selectedDate);
-                } else {
-                    await nammaModalSystem.alert('Error deleting record.');
                 }
             } catch (error) {
                 console.error('Error deleting record:', error);
                 await nammaModalSystem.alert('Error deleting record.');
             }
         });
+    }
 
     // Native Drag and Drop Window Utility
     function makeDraggable(element) {
