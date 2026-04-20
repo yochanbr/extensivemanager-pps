@@ -1,4 +1,15 @@
-// --- SECURITY GUARD --- //
+// --- AUTHENTICATED FETCH WRAPPPER ---
+window.secureFetch = async function (url, options = {}) {
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+        localStorage.removeItem('adminLoggedIn');
+        window.location.href = '/login.html';
+        throw new Error('Unauthorized');
+    }
+    return response;
+};
+
+// --- INITIAL SECURITY CHECK ---
 if (localStorage.getItem('adminLoggedIn') !== 'true') {
     window.location.href = '/';
 }
@@ -28,7 +39,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const viewReportBtn = document.querySelector('.view-report-btn');
-    const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
+    if (viewEsrJpgsBtn) {
+        viewEsrJpgsBtn.addEventListener('click', () => {
+            switchSpaView('shift-summary-view');
+            fetchShiftSummaries();
+        });
+    }
+
+    const esrRefreshBtn = document.getElementById('refresh-esr-btn');
+    if (esrRefreshBtn) {
+        esrRefreshBtn.addEventListener('click', fetchShiftSummaries);
+    }
+
+    async function fetchShiftSummaries() {
+        const container = document.getElementById('esr-list-container');
+        const dateFilter = document.getElementById('esr-date-filter');
+        const date = dateFilter ? dateFilter.value : '';
+        
+        if (container) container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading snapshots...</p></div>';
+        
+        try {
+            const res = await window.secureFetch(`/api/shift-summary${date ? '?date=' + date : ''}`);
+            const data = await res.json();
+            
+            if (container) {
+                if (data.reports && data.reports.length > 0) {
+                    container.innerHTML = data.reports.map(report => `
+                        <div class="summary-card" style="flex-direction: column; height: auto; padding: 15px; cursor: pointer;" onclick="window.viewFullScreenSnapshot('${report.id}')">
+                            <div style="width: 100%; aspect-ratio: 16/9; background: #eee; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: flex; align-items: center; justify-content: center;">
+                                <img src="/api/shift-summary/${report.id}/image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/300x160?text=Error+Loading+Image'">
+                            </div>
+                            <div style="width: 100%;">
+                                <div style="font-weight: 700; color: #1E293B;">${report.id.split('_')[0]}</div>
+                                <div style="font-size: 12px; color: #64748B;">Date: ${report.date}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748B;">No snapshots found for this period.</div>';
+                }
+            }
+        } catch (err) {
+            if (container) container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #EF4444;">Failed to load summaries.</div>';
+        }
+    }
+
+    window.viewFullScreenSnapshot = function(id) {
+        const modal = document.getElementById('esr-fullscreen-modal');
+        const img = document.getElementById('esr-fullscreen-img');
+        if (modal && img) {
+            img.src = `/api/shift-summary/${id}/image`;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+    }
     const manageEmployeesBtn = document.querySelector('.manage-employees-btn');
     const logoutBtn = document.querySelector('.logout-btn');
     const settingsBtn = document.querySelector('.update-btn');
@@ -164,7 +228,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* manageEmployeesBtn is now SPA routed */
 
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await fetch('/logout', { method: 'POST' });
+        } catch (e) {}
         localStorage.removeItem('adminLoggedIn');
         window.location.href = '/';
     });
@@ -754,97 +821,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.staffData = [];
     window.loadDashboardData = async function () {
         try {
             const dateInput = document.getElementById('mainDateFilter');
             const dateStr = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
-            const [empRes, logsRes] = await Promise.all([
-                fetch('/api/employees'),
-                fetch(`/api/daily-sessions?date=${dateStr}`)
-            ]);
-            const employees = await empRes.json();
-            const logsData = await logsRes.json();
-            const sessions = logsData.success ? logsData.sessions : [];
+            
+            // Use the new performance-optimized Summary API
+            const res = await window.secureFetch(`/api/dashboard/summary?date=${dateStr}`);
+            const data = await res.json();
+            
+            if (!data.success) throw new Error(data.message);
+            const { summary } = data;
 
-            let active = 0, checkins = 0, breakCount = 0, checkouts = 0, leaveWorked = 0;
-            let totalWorkMs = 0, totalBreakMs = 0;
-            const filterDropdown = document.getElementById('live-status-filter');
-            const filterValue = filterDropdown ? filterDropdown.value : 'all';
-
-            const d = new Date(dateStr);
-            const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const targetDayName = dayNames[d.getDay()];
-
-            // Calculate KPIs and aggregate staffData
-            window.staffData = employees.map(emp => {
-                const session = sessions.find(s => s.employeeId == emp.id);
-                let status = 'absent';
-                let statusText = 'Absent';
-                let statusColor = '#EF4444'; // Red
-                let bg = '#FEE2E2';
-
-                if (session) {
-                    checkins++;
-                    totalBreakMs += (session.totalBreakDuration || 0);
-
-                    if (session.checkOutTime) {
-                        status = 'checkout';
-                        statusText = 'Checked Out';
-                        statusColor = '#64748b';
-                        bg = '#f1f5f9';
-                        checkouts++;
-                        totalWorkMs += (new Date(session.checkOutTime) - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
-                    } else if (session.isOnBreak) {
-                        status = 'break';
-                        statusText = 'On Break';
-                        statusColor = '#f59e0b';
-                        bg = 'rgba(245, 158, 11, 0.1)';
-                        breakCount++;
-                        totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
-                    } else {
-                        status = 'working';
-                        statusText = 'Working';
-                        statusColor = '#10b981';
-                        bg = 'rgba(16, 185, 129, 0.1)';
-                        active++;
-                        totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
-                    }
-
-                    if (emp.workingDays && !emp.workingDays.split(',').includes(targetDayName)) leaveWorked++;
-                }
-
-                return { ...emp, status, statusText, statusColor, bg, session };
-            });
-
-            // Update UI KPIs
+            // Update UI KPIs instantly from server-calculated values
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setVal('dash-checkins', checkins);
-            setVal('dash-working', active);
-            setVal('dash-break', breakCount);
+            setVal('dash-checkins', summary.totalCheckins);
+            setVal('dash-working', summary.working);
+            setVal('dash-break', summary.onBreak);
 
-            // --- ALERT HUB ENGINE ---
-            const alerts = [];
-            const SHIFT_START_HOUR = 9;
-            employees.forEach(emp => {
-                const session = sessions.find(s => s.employeeId == emp.id);
-                if (session && session.checkInTime) {
-                    const checkInDate = new Date(session.checkInTime);
-                    const shiftStart = new Date(checkInDate);
-                    shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
-                    const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
-                    if (lateMin > 10) {
-                        alerts.push({
-                            type: 'late',
-                            title: 'Late Arrival',
-                            user: emp.name,
-                            desc: `Checked in ${lateMin}m late`,
-                            color: '#EF4444'
-                        });
-                    }
+            // Build Live Monitor Table from summarized data
+            const tbody = document.getElementById('live-status-tbody');
+            if (tbody) {
+                if (summary.liveAttendance.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:#64748B;">No activity recorded for this date.</td></tr>';
+                } else {
+                    tbody.innerHTML = summary.liveAttendance.map(item => `
+                        <tr>
+                            <td><div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:30px; height:30px; border-radius:50%; background:#7C3AED; color:white; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">${item.employeeName.charAt(0)}</div>
+                                <strong>${item.employeeName}</strong>
+                            </div></td>
+                            <td><span style="font-size:11px; font-weight:600; color:#64748B;">Standard Shift</span></td>
+                            <td>${item.checkInTime}</td>
+                            <td><span class="status-badge ${item.status.toLowerCase()}">${item.status.replace('_', ' ')}</span></td>
+                        </tr>
+                    `).join('');
                 }
-            });
-            if (window.renderAlertHub) window.renderAlertHub(alerts);
+            }
+        } catch (err) {
+            console.error('Core Dashboard Error:', err);
+        }
+    };
 
             // Build Table
             const tbody = document.getElementById('live-status-tbody');
@@ -908,30 +925,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initCharts() {
-        fetch('/api/bill_paid')
+        window.secureFetch('/api/bill_paid')
             .then(res => res.json())
             .then(bills => {
                 const ctx1 = document.getElementById('revenueBarChart');
                 const ctx2 = document.getElementById('revenuePieChart');
                 if (!ctx1 || !ctx2 || !window.Chart) return;
 
+                // Simple aggregation for Demo - Daily Trend
+                const hourlyData = new Array(24).fill(0);
+                const paymentCounts = { 'upi': 0, 'cash': 0, 'card': 0 };
+                
+                if (bills && Array.isArray(bills)) {
+                    bills.forEach(b => {
+                        if (b.timestamp) {
+                            const hr = new Date(b.timestamp).getHours();
+                            hourlyData[hr] += parseFloat(b.amount || 0);
+                        }
+                        const p = (b.paymentType || 'cash').toLowerCase();
+                        if (paymentCounts[p] !== undefined) paymentCounts[p]++;
+                    });
+                }
+
+                // Bar Chart - Hourly Trend (9am to 9pm focused)
                 new Chart(ctx1, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
-                        labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'],
+                        labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', '7pm', '8pm', '9pm'],
                         datasets: [{
-                            label: 'Revenue',
-                            data: [1200, 1900, 3000, 5000, 2000, 3000, 4500],
-                            borderColor: '#3B82F6',
-                            tension: 0.4,
-                            borderWidth: 3,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#3B82F6',
-                            pointBorderWidth: 2,
-                            pointRadius: 4,
+                            label: 'Revenue (₹)',
+                            data: hourlyData.slice(9, 22),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderRadius: 6
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4] } }, x: { grid: { display: false } } } }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
 
                 new Chart(ctx2, {
@@ -939,7 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data: {
                         labels: ['UPI', 'Cash', 'Card'],
                         datasets: [{
-                            data: [55, 30, 15],
+                            data: [paymentCounts.upi, paymentCounts.cash, paymentCounts.card],
                             backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
                             borderWidth: 0,
                         }]

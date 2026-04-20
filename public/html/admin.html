@@ -213,6 +213,26 @@
                             <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
                         </div>
                     </div>
+                    
+                    <!-- NEW: Performance Analytics Section -->
+                    <div class="dashboard-grid" style="margin-top: 32px; grid-template-columns: 2fr 1fr; gap: 24px;">
+                        <div class="live-status-section" style="padding: 24px;">
+                            <div class="section-header" style="margin-bottom: 20px;">
+                                <h3 style="font-size: 16px; font-weight: 700;"><i class="fas fa-chart-line" style="color: #3B82F6;"></i> System Revenue Trend</h3>
+                            </div>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="revenueBarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="live-status-section" style="padding: 24px;">
+                            <div class="section-header" style="margin-bottom: 20px;">
+                                <h3 style="font-size: 16px; font-weight: 700;"><i class="fas fa-chart-pie" style="color: #10B981;"></i> Payment Split</h3>
+                            </div>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="revenuePieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="dashboard-grid">
                         <div class="live-status-section" style="grid-column: span 2;">
@@ -270,24 +290,22 @@
                     </div>
                 </div>
 
-                <!-- Shift Summary View -->
                 <div id="shift-summary-view" style="display: none;">
-                    <div class="live-status-section"
-                        style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
-                        <div
-                            style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                            <i class="fas fa-tools"></i>
+                    <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
+                        <div class="section-header" style="margin-bottom: 24px;">
+                            <div>
+                                <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 4px;">Shift Summary Snapshots</h2>
+                                <p style="color: #64748B; font-size: 14px;">Historical verification images and end-shift results</p>
+                            </div>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <input type="date" id="esr-date-filter" class="modern-input" style="width: 160px;">
+                                <button class="action-btn secondary" id="refresh-esr-btn">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
                         </div>
-                        <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature
-                            Coming Soon</h2>
-                        <p
-                            style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
-                            We are currently refining the Shift Summary snapshot engine to provide more detailed visual
-                            reports and biometric verification history.
-                        </p>
-                        <div
-                            style="display: inline-flex; items-center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
-                            <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
+                        <div id="esr-list-container" class="jpg-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Activity snapshots will be loaded here -->
                         </div>
                     </div>
                 </div>

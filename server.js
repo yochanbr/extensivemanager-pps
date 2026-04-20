@@ -147,6 +147,37 @@ const decrypt = (text) => {
     }
 };
 
+// --- AUTHENTICATION SYSTEM (JWT Alternative using Crypto-JS) ---
+const AUTH_COOKIE_NAME = 'nammamart_session';
+
+const generateSessionToken = (data) => {
+    const payload = JSON.stringify({ ...data, exp: Date.now() + (24 * 60 * 60 * 1000) }); // 24h expiry
+    return encrypt(payload);
+};
+
+const verifyAdmin = (req, res, next) => {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return res.status(401).json({ success: false, message: 'Unauthorized: No session found.' });
+
+    const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+    const token = cookies[AUTH_COOKIE_NAME];
+
+    if (!token) return res.status(401).json({ success: false, message: 'Unauthorized: Session missing.' });
+
+    try {
+        const decrypted = decrypt(token);
+        const session = JSON.parse(decrypted);
+
+        if (session.role !== 'admin' || Date.now() > session.exp) {
+            return res.status(401).json({ success: false, message: 'Unauthorized: Session expired or invalid.' });
+        }
+        req.admin = session;
+        next();
+    } catch (e) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: Authentication failed.' });
+    }
+};
+
 // Firestore Collection Wrappers
 const db = {
     settings: () => firestore.collection('settings'),
@@ -242,8 +273,8 @@ const emailConfig = {
     transporter: nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: 'nsoridcodings@gmail.com',
-            pass: 'thvp krkn ipml dzzp' // Replace with actual App Password
+            user: process.env.GMAIL_USER || 'nsoridcodings@gmail.com',
+            pass: process.env.GMAIL_PASS || 'thvp krkn ipml dzzp'
         }
     })
 };
@@ -275,6 +306,12 @@ let adminApprovalOtp = {
 // Test close flag
 let testCloseDone = false;
 
+// Handle logout
+app.post('/logout', (req, res) => {
+    res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
+    res.json({ success: true });
+});
+
 // Handle login requests
 app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     const { username, password } = req.body;
@@ -290,6 +327,8 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminPassword: 'admin12nammamart' };
 
     if ((trimmedUsername === 'nammamart' || trimmedUsername === 'admin') && password === adminSettings.adminPassword) {
+        const token = generateSessionToken({ username: trimmedUsername, role: 'admin' });
+        res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
         return res.json({ success: true, redirectUrl: '/admin' });
     }
 
@@ -392,7 +431,7 @@ app.get('/report', (req, res) => {
 });
 
 // Handle add employee requests
-app.post('/api/employees', async (req, res) => {
+app.post('/api/employees', verifyAdmin, async (req, res) => {
     const employeeData = req.body;
 
     // Set username to employee-id
@@ -431,14 +470,14 @@ app.get('/api/employees', async (req, res) => {
 });
 
 // Delete an employee
-app.delete('/api/employees/:id', async (req, res) => {
+app.delete('/api/employees/:id', verifyAdmin, async (req, res) => {
     const employeeId = req.params.id;
     await db.employees().doc(employeeId).delete();
     res.json({ success: true, message: 'Employee deleted successfully.' });
 });
 
 // Post a new broadcast message
-app.post('/api/broadcast', async (req, res) => {
+app.post('/api/broadcast', verifyAdmin, async (req, res) => {
     const { message } = req.body;
     const timestamp = Date.now();
     await db.broadcast().update({
@@ -494,7 +533,7 @@ app.get('/api/employees/:id', async (req, res) => {
 });
 
 // Update an employee's details
-app.put('/api/employees/:id', async (req, res) => {
+app.put('/api/employees/:id', verifyAdmin, async (req, res) => {
     const employeeId = req.params.id;
     const employeeData = req.body;
 
@@ -1806,7 +1845,7 @@ app.get('/api/todays-report-summary', async (req, res) => {
  */
 app.get('/api/data-activity-summary', async (req, res) => {
     try {
-        const { employeeId, date } = req.query;
+        const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
         if (!employeeId || !date) return res.status(400).json({ success: false });
 
         const doc = await db.employees().doc(employeeId).get();
@@ -1814,24 +1853,46 @@ app.get('/api/data-activity-summary', async (req, res) => {
         const emp = doc.data();
 
         let stats = { edited: 0, deleted: 0, inputed: 0 };
+        
+        // Helper to check if a timestamp falls within the requested range
+        const isInRange = (ts) => {
+            if (!ts) return false;
+            const itemTime = new Date(ts);
+            if (shiftStartTime) {
+                const start = new Date(shiftStartTime);
+                if (itemTime < start) return false;
+            }
+            if (shiftEndTime) {
+                const end = new Date(shiftEndTime);
+                if (itemTime > end) return false;
+            }
+            // If no shift times provided, fallback to date matching
+            if (!shiftStartTime && !shiftEndTime) {
+                return ts.split('T')[0] === date;
+            }
+            return true;
+        };
+
         const check = (arr) => {
             if (arr && Array.isArray(arr)) {
                 arr.forEach(item => {
-                    if (item && item.timestamp && item.timestamp.split('T')[0] === date) stats.inputed++;
+                    if (item && item.timestamp && isInRange(item.timestamp)) stats.inputed++;
                 });
             }
         };
+
         check(emp.extra); check(emp.delivery); check(emp.bill_paid); check(emp.issue); check(emp.retail_credit);
 
         if (emp.history && Array.isArray(emp.history)) {
             emp.history.forEach(log => {
-                if (log.timestamp && log.timestamp.split('T')[0] === date) {
+                if (log.timestamp && isInRange(log.timestamp)) {
                     if (log.action === 'edit') stats.edited++;
                     if (log.action === 'delete') stats.deleted++;
                 }
             });
         }
-        res.json({ success: true, stats });
+        // Return flattened stats for easier frontend access
+        res.json({ success: true, ...stats });
     } catch (error) { res.status(500).json({ success: false }); }
 });
 
@@ -1846,7 +1907,7 @@ app.get('/api/settings', async (req, res) => {
 });
 
 // Update settings
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', verifyAdmin, async (req, res) => {
     const newSettings = req.body;
     delete newSettings.adminPassword;
     await db.settings().doc('config').set(newSettings, { merge: true });
@@ -1854,7 +1915,7 @@ app.post('/api/settings', async (req, res) => {
 });
 
 // Change admin password
-app.post('/api/settings/change-password', async (req, res) => {
+app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const doc = await db.settings().doc('config').get();
     const settings = doc.exists ? doc.data() : { adminPassword: 'admin12nammamart' };
@@ -1885,7 +1946,7 @@ app.get('/api/system/status', (req, res) => {
 });
 
 // Download system health report (Now triggers Cloud Sync)
-app.get('/api/system/backup', apiLimiter, async (req, res) => {
+app.get('/api/system/backup', apiLimiter, verifyAdmin, async (req, res) => {
     // Security: Only allow Admin Session OR Vercel Cron Trigger
     const isCron = req.headers['x-vercel-cron'] === '1';
     const isAdmin = req.session && req.session.admin;
@@ -1902,7 +1963,7 @@ app.get('/api/system/backup', apiLimiter, async (req, res) => {
 });
 
 // Reset settings to defaults
-app.post('/api/settings/reset', (req, res) => {
+app.post('/api/settings/reset', verifyAdmin, (req, res) => {
     // Reset functionality moved to Firestore settings init if needed
     res.json({ success: true, message: 'Settings reset functionality is currently disabled for security.' });
 });
@@ -2062,7 +2123,7 @@ app.post('/api/attendance/scan', async (req, res) => {
 /**
  * Endpoint: Fetch Raw Attendance Logs
  */
-app.get('/api/attendance/logs/raw', async (req, res) => {
+app.get('/api/attendance/logs/raw', verifyAdmin, async (req, res) => {
     const { filter } = req.query;
     try {
         let query = db.attendance_logs();
@@ -2081,7 +2142,40 @@ app.get('/api/attendance/logs/raw', async (req, res) => {
  * Endpoint: Fetch Daily Sessions
  * Returns aggregated shift session data used by the Dashboard UI
  */
-app.get('/api/daily-sessions', async (req, res) => {
+/**
+ * Endpoint: Dashboard Summary
+ * Purpose: Consolidated metrics and live status for the Admin Dashboard
+ */
+app.get('/api/dashboard/summary', verifyAdmin, async (req, res) => {
+    try {
+        const dateStr = req.query.date || new Date().toISOString().split('T')[0];
+        
+        // Fetch all sessions for specifically chosen date
+        const sessionsSnapshot = await db.daily_sessions().where('date', '==', dateStr).get();
+        const sessions = sessionsSnapshot.docs.map(doc => doc.data());
+        
+        // Count statuses
+        const active = sessions.filter(s => s.status === 'active' || !s.checkOut);
+        
+        const summary = {
+            working: active.filter(s => !s.onBreak).length,
+            onBreak: active.filter(s => s.onBreak).length,
+            totalCheckins: sessions.length,
+            // Latest 10 activities for the live monitor
+            liveAttendance: sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn)).slice(0, 10).map(s => ({
+                employeeName: s.employeeName,
+                status: s.onBreak ? 'ON_BREAK' : (s.checkOut ? 'COMPLETED' : 'WORKING'),
+                checkInTime: s.checkIn ? s.checkIn.split('T')[1].substr(0, 5) : '00:00'
+            }))
+        };
+        
+        res.json({ success: true, summary });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.get('/api/daily-sessions', verifyAdmin, async (req, res) => {
     try {
         const { date } = req.query;
         let query = db.daily_sessions();
@@ -2110,7 +2204,52 @@ app.get('/api/daily-sessions', async (req, res) => {
 /**
  * Endpoint: Bulk Edit Logs
  */
-app.put('/api/attendance/logs/bulk-edit', async (req, res) => {
+/**
+ * Endpoint: Shift Summary (ESR JPGs)
+ * Returns snapshots of end-shift reports
+ */
+app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
+    try {
+        const { date } = req.query;
+        let query = db.esr_jpgs();
+        if (date) {
+            query = query.where('date', '==', date);
+        }
+        const snapshot = await query.orderBy('date', 'desc').limit(50).get();
+        const reports = snapshot.docs.map(doc => ({
+            id: doc.id,
+            employeeId: doc.data().employeeId,
+            date: doc.data().date,
+            // We don't send the full base64 here if it's too large, 
+            // but for simple display we can or use another endpoint
+            hasImage: !!doc.data().jpgData
+        }));
+        res.json({ success: true, reports });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * Endpoint: Get Shift Snapshot Image
+ */
+app.get('/api/shift-summary/:id/image', verifyAdmin, async (req, res) => {
+    try {
+        const doc = await db.esr_jpgs().doc(req.params.id).get();
+        if (!doc.exists || !doc.data().jpgData) {
+            return res.status(404).json({ success: false, message: 'Image not found' });
+        }
+        // Send as raw base64 or buffer
+        const base64Data = doc.data().jpgData.split(',')[1] || doc.data().jpgData;
+        const img = Buffer.from(base64Data, 'base64');
+        res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': img.length });
+        res.end(img);
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.put('/api/attendance/logs/bulk-edit', verifyAdmin, async (req, res) => {
     const { logIds, newAction } = req.body;
     if (!logIds || !Array.isArray(logIds)) return res.status(400).json({ success: false });
 
@@ -2128,7 +2267,7 @@ app.put('/api/attendance/logs/bulk-edit', async (req, res) => {
 /**
  * Endpoint: Bulk Delete Logs
  */
-app.delete('/api/attendance/logs', async (req, res) => {
+app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
     const { logIds } = req.body;
     if (!logIds || !Array.isArray(logIds)) return res.status(400).json({ success: false });
 
@@ -2146,7 +2285,7 @@ app.delete('/api/attendance/logs', async (req, res) => {
 /**
  * Endpoint: Recalculate Sessions
  */
-app.post('/api/attendance/sessions/recalculate', async (req, res) => {
+app.post('/api/attendance/sessions/recalculate', verifyAdmin, async (req, res) => {
     // 1. Clear daily_sessions
     const snapshot = await db.daily_sessions().get();
     const batch = firestore.batch();
