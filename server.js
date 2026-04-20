@@ -29,26 +29,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// MAINTENANCE MODE MIDDLEWARE
-app.use(async (req, res, next) => {
-    const path = req.path.toLowerCase();
-    const isDevRoute = path.includes('dev-ops-2026') || path.includes('dev_control') || path.startsWith('/api/dev');
-    const isMaintenancePage = path.startsWith('/maintenance') || path.includes('/css/') || path.includes('/js/');
-    const isAdmin = req.session && req.session.admin;
-
-    if (isDevRoute || isMaintenancePage || isAdmin) {
-        return next();
-    }
-
-    try {
-        const doc = await db.broadcast().get();
-        const maintenance = doc.exists ? doc.data().maintenance_mode : false;
-        if (maintenance) {
-            return res.redirect('/maintenance');
-        }
-    } catch (e) { /* Fallback */ }
-    next();
-});
 
 // Lightweight In-Memory Rate Limiter
 const rateLimitStore = new Map();
@@ -178,6 +158,28 @@ const db = {
     esr_jpgs: () => firestore.collection('esr_jpgs'),
     leave_swaps: () => firestore.collection('leave_swaps')
 };
+
+// MAINTENANCE MODE MIDDLEWARE (Moved below dependencies for stability)
+app.use(async (req, res, next) => {
+    const p = req.path.toLowerCase();
+    const isDevRoute = p.includes('dev-ops-2026') || p.includes('dev_control') || p.startsWith('/api/dev');
+    const isMaintenancePage = p.startsWith('/maintenance') || p.includes('/css/') || p.includes('/js/');
+    const isAdmin = req.session && req.session.admin;
+
+    if (isDevRoute || isMaintenancePage || isAdmin) {
+        return next();
+    }
+
+    try {
+        if (!firestore) return next();
+        const doc = await db.broadcast().get();
+        const maintenance = doc.exists ? doc.data().maintenance_mode : false;
+        if (maintenance) {
+            return res.redirect('/maintenance');
+        }
+    } catch (e) { /* Fallback */ }
+    next();
+});
 
 // --- Secure GitHub Backup System (Git-less API Implementation) ---
 const syncToBackupRepo = async () => {
