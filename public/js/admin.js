@@ -1028,9 +1028,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Start the real-time engine
         syncDevOperations();
-    }
+
         setInterval(fetchLiveStatus, 60000);
-    }
+    });
 
     // SPA Employee Management Logic
     function fetchEmployeesForSPA() {
