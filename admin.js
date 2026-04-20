@@ -1544,6 +1544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    const securityForm = document.getElementById('security-hub-form');
     if (securityForm) {
         securityForm.addEventListener('submit', async (e) => {
             e.preventDefault();

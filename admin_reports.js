@@ -2245,7 +2245,9 @@
         }
 
         // Handle submission of edit form
-        document.getElementById('edit-form').addEventListener('submit', async function(e) {
+        const editForm = document.getElementById('edit-form');
+        if (editForm) {
+            editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const id = document.getElementById('edit-id').value;
             const employeeId = selectedEmployeeId;
@@ -2289,7 +2291,9 @@
         });
 
         // Handle submission of delete form
-        document.getElementById('delete-reason-form').addEventListener('submit', async function(e) {
+        const deleteReasonForm = document.getElementById('delete-reason-form');
+        if (deleteReasonForm) {
+            deleteReasonForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const id = document.getElementById('delete-id').value;
             const employeeId = selectedEmployeeId;
