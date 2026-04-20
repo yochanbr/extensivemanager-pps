@@ -185,8 +185,10 @@ const syncToBackupRepo = async () => {
 };
 
 
-// Serve static files from the current directory
-app.use(express.static(__dirname));
+// Professional Directory Structure Static Serving
+app.use('/css', express.static(path.join(__dirname, 'public/css')));
+app.use('/js', express.static(path.join(__dirname, 'public/js')));
+app.use(express.static(path.join(__dirname, 'public/html')));
 
 // Specifically serve models directory (Crucial for Vercel/Face-API)
 app.use('/models', express.static(path.join(__dirname, 'models')));
@@ -309,25 +311,45 @@ app.post('/login', ensureDb, async (req, res) => {
     }
 
     if (hasActiveShift) {
-        res.json({ success: true, redirectUrl: '/employee.html', employeeId: employee.id });
+        res.json({ success: true, redirectUrl: '/employee', employeeId: employee.id });
     } else {
-        res.json({ success: true, redirectUrl: '/counter_selection.html', employeeId: employee.id });
+        res.json({ success: true, redirectUrl: '/counter_selection', employeeId: employee.id });
     }
 });
 
 // Serve the main page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public/html/index.html'));
 });
 
 // Serve the admin page
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public/html/admin.html'));
 });
 
 // Serve the scan page
 app.get('/scan', (req, res) => {
-    res.sendFile(path.join(__dirname, 'scan.html'));
+    res.sendFile(path.join(__dirname, 'public/html/scan.html'));
+});
+
+// Serve the employee portal
+app.get('/employee', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/employee.html'));
+});
+
+// Serve the counter selection page
+app.get('/counter_selection', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/counter_selection.html'));
+});
+
+// Serve the add employee wizard
+app.get('/add_employee', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/add_employee.html'));
+});
+
+// Serve the modernized report page
+app.get('/report', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/report.html'));
 });
 
 // Handle add employee requests

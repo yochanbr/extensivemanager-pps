@@ -6,15 +6,11 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "*.html",
-          "*.css",
-          "*.js",
+          "public/**",
+          "models/**",
+          "certs/**",
           "*.json",
-          "*.png",
-          "*.jpg",
-          "*.gif",
-          "*.svg",
-          "*.ico"
+          "*.js"
         ]
       }
     }

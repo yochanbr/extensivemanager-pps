@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namma Mart | Employee Report</title>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --primary: #F95A2C;
+            --secondary: #3B82F6;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #1e293b;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            margin: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+        }
+
+        .manager-info h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            text-align: right;
+        }
+
+        .manager-info p {
+            margin: 0;
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        main {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        .report-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            padding: 32px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .report-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .employee-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .employee-btn {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .employee-btn:hover {
+            border-color: var(--secondary);
+            color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .employee-btn.active {
+            background: var(--secondary);
+            color: #fff;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        #data-display {
+            overflow-x: auto;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .modern-table th {
+            text-align: left;
+            padding: 16px 24px;
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modern-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            transition: background 0.2s;
+        }
+
+        .modern-table tr:hover td {
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .modern-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .back-button button {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-button button:hover {
+            background: #f1f5f9;
+        }
+
+        footer {
+            padding: 32px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--secondary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>NAMMA MART</h1>
+            <p>Signature Of Quality</p>
+        </div>
+        <div class="manager-info">
+            <h2>EXTENSIVE MANAGER</h2>
+            <p>Designed By Yochan</p>
+        </div>
+    </header>
+
+    <main>
+        <div class="report-card">
+            <div class="report-header">
+                <div>
+                    <h2>Activity Report</h2>
+                    <p id="report-meta" style="font-size: 13px; color: #64748b; margin-top: 4px;">Select a category to view logs</p>
+                </div>
+                <div class="back-button">
+                    <button onclick="window.close()"><i class="fas fa-times"></i> Close</button>
+                </div>
+            </div>
+
+            <div class="employee-buttons">
+                <button class="employee-btn" data-type="extra"><i class="fas fa-plus-circle"></i> Extra</button>
+                <button class="employee-btn" data-type="delivery"><i class="fas fa-truck"></i> Delivery</button>
+                <button class="employee-btn" data-type="bill_paid"><i class="fas fa-receipt"></i> Bill Paid</button>
+                <button class="employee-btn" data-type="issue"><i class="fas fa-exclamation-circle"></i> Issue</button>
+                <button class="employee-btn" data-type="retail_credit"><i class="fas fa-credit-card"></i> Retail Credit</button>
+            </div>
+
+            <div id="data-display">
+                <div class="empty-state">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Click a category above to load report data</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 NAMMA MART &bull; SECURE OPERATIONS PORTAL</p>
+    </footer>
+
+    <script src="../js/script.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const employeeId = urlParams.get('employeeId');
+        const selectedDate = urlParams.get('date');
+
+        if (selectedDate) {
+            document.getElementById('report-meta').textContent = `Report for ${selectedDate}`;
+        }
+
+        document.querySelectorAll('.employee-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.employee-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const type = this.dataset.type;
+                viewData(type);
+            });
+        });
+
+        async function viewData(type) {
+            const displayDiv = document.getElementById('data-display');
+            displayDiv.innerHTML = '<div class="empty-state"><div class="loader"></div><p style="margin-top:16px;">Fetching ' + type + ' data...</p></div>';
+            
+            let url = `/api/${type}?employeeId=${employeeId}`;
+            if (selectedDate) {
+                url += `&date=${selectedDate}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                displayDiv.innerHTML = ''; // Clear previous data
+                
+                if (!data || data.length === 0) {
+                    displayDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>No ${type} data found for this period.</p>
+                        </div>`;
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.className = 'modern-table';
+                
+                const headers = Object.keys(data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    headerRow.appendChild(th);
+                });
+                table.appendChild(headerRow);
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        let value = row[header];
+                        if (header === 'timestamp' || header === 'date') {
+                            const date = new Date(value);
+                            if (!isNaN(date)) {
+                                value = date.toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                });
+                            }
+                        }
+                        td.textContent = value || '-';
+                        tr.appendChild(td);
+                    });
+                    table.appendChild(tr);
+                });
+                displayDiv.appendChild(table);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                displayDiv.innerHTML = `
+                    <div class="empty-state" style="color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading data. Please try again.</p>
+                    </div>`;
+                if (typeof nammaModalSystem !== 'undefined') {
+                    await nammaModalSystem.alert('Error fetching data.');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

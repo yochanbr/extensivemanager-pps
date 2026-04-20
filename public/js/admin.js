@@ -1046,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const spaAddEmployeeBtn = document.getElementById('spa-add-employee-btn');
     if (spaAddEmployeeBtn) {
         spaAddEmployeeBtn.addEventListener('click', () => {
-            window.location.href = 'add_employee.html';
+            window.location.href = '/add_employee';
         });
     }
 

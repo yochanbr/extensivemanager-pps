@@ -11,7 +11,7 @@ document.getElementById('counter2').addEventListener('click', async () => {
     await nammaModalSystem.alert('Please ensure that the Paytm machine shift is being reset.');
     saveCounterSelection('Counter 2');
     setTimeout(() => {
-        window.location.href = 'employee.html';
+        window.location.href = '/employee';
     }, 5000);
 });
 
@@ -40,7 +40,7 @@ async function saveCounterSelection(counter, pineLabValue = null) {
 
         if (data.success) {
             if (counter === 'Counter 1') {
-                window.location.href = 'employee.html';
+                window.location.href = '/employee';
             }
         } else {
             await nammaModalSystem.alert('Failed to save counter selection. Please try again.');
