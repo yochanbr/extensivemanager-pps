@@ -37,8 +37,9 @@ const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482
 
 // Backup Configuration
 const BACKUP_PAT = process.env.BACKUP_PAT; 
-const BACKUP_REPO_URL = `https://${BACKUP_PAT}@github.com/yochanbr/backup-extensivemanager.git`;
-const BACKUP_REPO_PATH = isVercel ? path.join('/tmp', 'namma_backup_cloud') : path.join(__dirname, 'namma_backup_cloud');
+const BACKUP_OWNER = 'yochanbr';
+const BACKUP_REPO = 'backup-extensivemanager';
+const BACKUP_FILE_PATH = 'latest_system_backup.json';
 
 // Initialize Firebase Admin
 let firestore;
@@ -120,26 +121,15 @@ const db = {
     leave_swaps: () => firestore.collection('leave_swaps')
 };
 
-// --- Secure GitHub Backup System ---
+// --- Secure GitHub Backup System (Git-less API Implementation) ---
 const syncToBackupRepo = async () => {
     try {
-        const gitCmd = (cmd, cwd = BACKUP_REPO_PATH) => execSync(cmd, { cwd, stdio: 'pipe' });
-
-        // 1. Ensure Repository exists in the writable path
-        if (!fs.existsSync(BACKUP_REPO_PATH)) {
-            console.log('📂 Initializing transient backup folder in writable path...');
-            const parentDir = path.dirname(BACKUP_REPO_PATH);
-            if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-            
-            // Clone with depth 1 for speed (especially important on Vercel)
-            execSync(`git clone --depth 1 ${BACKUP_REPO_URL} ${BACKUP_REPO_PATH}`, { stdio: 'pipe' });
-            
-            // Configure user for commits in this transient repo
-            gitCmd('git config user.email "yochanbr@gmail.com"');
-            gitCmd('git config user.name "Namma Mart Backup Sync"');
+        if (!BACKUP_PAT) {
+            console.error('❌ BACKUP_PAT not found in environment.');
+            return { success: false, error: 'Cloud Sync configuration missing (BACKUP_PAT).' };
         }
 
-        // 2. Data Export
+        // 1. Data Export
         console.log('📡 Fetching latest Firestore state...');
         const collections = ['settings', 'employees', 'attendance_logs', 'daily_sessions', 'esr_reports', 'esr_jpgs', 'leave_swaps'];
         const backupData = {};
@@ -148,29 +138,45 @@ const syncToBackupRepo = async () => {
             backupData[colName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
 
-        // 3. Write to local file inside the backup repo
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = 'latest_system_backup.json';
-        const filePath = path.join(BACKUP_REPO_PATH, filename);
-        fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
+        const timestamp = new Date().toISOString();
+        const contentBase64 = Buffer.from(JSON.stringify(backupData, null, 2)).toString('base64');
+        const apiUrl = `https://api.github.com/repos/${BACKUP_OWNER}/${BACKUP_REPO}/contents/${BACKUP_FILE_PATH}`;
 
-        // 4. Push to Cloud
-        console.log('📦 Committing to GitHub Cloud...');
+        // 2. Check for existing file SHA (required for updating files in GitHub API)
+        let sha = null;
         try {
-            gitCmd('git add .');
-            const status = gitCmd('git status --porcelain').toString();
-            if (status) {
-                gitCmd(`git commit -m "Cloud Sync [${timestamp}]"`);
-                gitCmd('git push origin master'); 
-                console.log('✅ GitHub Backup Successful.');
-                return { success: true, message: 'Data synced to GitHub Cloud successfully.', timestamp };
-            } else {
-                console.log('ℹ️ No changes detected. Cloud is already up to date.');
-                return { success: true, message: 'Cloud is already up to date.' };
+            const getRes = await fetch(apiUrl, {
+                headers: { 'Authorization': `token ${BACKUP_PAT}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (getRes.ok) {
+                const fileData = await getRes.json();
+                sha = fileData.sha;
             }
-        } catch (gitErr) {
-            console.error('❌ Git sync failed:', gitErr.message);
-            throw gitErr;
+        } catch (err) { console.log('ℹ️ Creating new backup file on GitHub.'); }
+
+        // 3. Push to Cloud via REST API
+        console.log('📦 Pushing to GitHub Cloud API...');
+        const putRes = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${BACKUP_PAT}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `System Backup [${timestamp}]`,
+                content: contentBase64,
+                sha: sha || undefined
+            })
+        });
+
+        const result = await putRes.json();
+        if (putRes.ok) {
+            console.log('✅ GitHub API Backup Successful.');
+            return { success: true, message: 'Data synced to GitHub Cloud API successfully.', timestamp };
+        } else {
+            console.error('❌ GitHub API Error:', result.message);
+            return { success: false, error: result.message };
         }
     } catch (error) {
         console.error('❌ Cloud Backup Critical Failure:', error.message);
