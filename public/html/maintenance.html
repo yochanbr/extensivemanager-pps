@@ -135,6 +135,31 @@
         </div>
     </div>
     <div class="footer">Pinpoint Startups </div>
+
+    <script>
+        // Real-time listener to detect when maintenance ends
+        async function syncStatus() {
+            try {
+                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
+                const data = await res.json();
+
+                // If maintenance mode is now OFF, redirect to login instantly
+                if (data.maintenance_mode === false) {
+                    window.location.href = '/';
+                    return;
+                }
+            } catch (err) {
+                // Wait and retry on error
+                await new Promise(r => setTimeout(r, 5000));
+            } finally {
+                // Recursive call for continuous real-time listening
+                setTimeout(syncStatus, 500);
+            }
+        }
+
+        // Start listening
+        syncStatus();
+    </script>
 </body>
 
 </html>
