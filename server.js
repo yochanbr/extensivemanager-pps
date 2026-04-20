@@ -159,27 +159,6 @@ const db = {
     leave_swaps: () => firestore.collection('leave_swaps')
 };
 
-// MAINTENANCE MODE MIDDLEWARE (Moved below dependencies for stability)
-app.use(async (req, res, next) => {
-    const p = req.path.toLowerCase();
-    const isDevRoute = p.includes('dev-ops-2026') || p.includes('dev_control') || p.startsWith('/api/dev');
-    const isMaintenancePage = p.startsWith('/maintenance') || p.includes('/css/') || p.includes('/js/');
-    const isAdmin = req.session && req.session.admin;
-
-    if (isDevRoute || isMaintenancePage || isAdmin) {
-        return next();
-    }
-
-    try {
-        if (!firestore) return next();
-        const doc = await db.broadcast().get();
-        const maintenance = doc.exists ? doc.data().maintenance_mode : false;
-        if (maintenance) {
-            return res.redirect('/maintenance');
-        }
-    } catch (e) { /* Fallback */ }
-    next();
-});
 
 // --- Secure GitHub Backup System (Git-less API Implementation) ---
 const syncToBackupRepo = async () => {
@@ -487,100 +466,6 @@ app.get('/api/store-status', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// --- DEVELOPER CONTROL CENTER API ---
-
-// Serve Developer Control Center
-app.get('/dev-ops-2026', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/dev_control.html'));
-});
-
-// Update Developer Global Config (Maintenance, Ads, Donations)
-app.post('/api/dev/config', apiLimiter, async (req, res) => {
-    const { maintenance_mode, dev_ad, donation, pin } = req.body;
-    
-    // Developer PIN Check (Default 2026)
-    if (pin !== '2026') {
-        return res.status(401).json({ success: false, message: 'Invalid Developer PIN.' });
-    }
-
-    const updates = {};
-    if (maintenance_mode !== undefined) updates.maintenance_mode = !!maintenance_mode;
-    if (dev_ad) updates.dev_ad = dev_ad;
-    if (donation) updates.donation = donation;
-
-    try {
-        await db.broadcast().update(updates);
-        res.json({ success: true, message: 'Developer configuration updated.' });
-    } catch (e) {
-        res.status(500).json({ success: false, message: e.message });
-    }
-});
-
-// High Priority Dev Broadcast
-app.post('/api/dev/broadcast', apiLimiter, async (req, res) => {
-    const { message, target, pin } = req.body;
-    if (pin !== '2026') return res.status(401).json({ success: false, message: 'Invalid PIN.' });
-
-    const timestamp = Date.now();
-    try {
-        await db.broadcast().update({
-            dev_broadcast: { 
-                message: message || "", 
-                target: target || "all", // all, admin, employee
-                timestamp 
-            }
-        });
-        res.json({ success: true, message: 'Dev broadcast sent.', timestamp });
-    } catch (e) {
-        res.status(500).json({ success: false, message: e.message });
-    }
-});
-
-// Get all status in one go for the dev panel
-app.get('/api/dev/status', async (req, res) => {
-    const isLongPoll = req.query.longPoll === 'true';
-
-    try {
-        if (!isLongPoll) {
-            const doc = await db.broadcast().get();
-            return res.json(doc.exists ? doc.data() : {});
-        }
-
-        // --- LONG POLLING LOGIC ---
-        let resolved = false;
-        const timeout = setTimeout(async () => {
-            if (!resolved) {
-                resolved = true;
-                if (unsubscribe) unsubscribe();
-                const doc = await db.broadcast().get();
-                res.json(doc.exists ? doc.data() : {});
-            }
-        }, 20000); // 20s Timeout for Vercel stability
-
-        const unsubscribe = db.broadcast().onSnapshot((doc) => {
-            if (!resolved && doc.exists) {
-                resolved = true;
-                clearTimeout(timeout);
-                unsubscribe();
-                res.json(doc.data());
-            }
-        }, (err) => {
-            if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                res.status(500).json({ success: false, error: err.message });
-            }
-        });
-
-    } catch (e) {
-        if (!res.headersSent) res.status(500).json({ success: false });
-    }
-});
-
-// Serve maintenance page explicitly
-app.get('/maintenance', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/maintenance.html'));
-});
 
 // Get a single employee by ID
 app.get('/api/employees/:id', async (req, res) => {

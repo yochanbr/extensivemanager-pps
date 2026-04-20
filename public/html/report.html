@@ -285,19 +285,6 @@
 
     <script src="../js/script.js"></script>
     <script>
-        // Real-time Maintenance Monitoring
-        async function syncDevOperations() {
-            try {
-                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
-                const data = await res.json();
-                if (data.maintenance_mode === true) {
-                    window.location.href = '/maintenance';
-                    return;
-                }
-            } catch (err) { }
-            setTimeout(syncDevOperations, 1000);
-        }
-        syncDevOperations();
 
         const urlParams = new URLSearchParams(window.location.search);
         const employeeId = urlParams.get('employeeId');

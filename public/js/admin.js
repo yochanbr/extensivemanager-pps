@@ -979,58 +979,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initCharts();
         setInterval(fetchDashboardStats, 60000);
 
-        // --- DEVELOPER OVERRIDE POLLING (REAL-TIME LONG POLL) ---
-        const syncDevOperations = async () => {
-            try {
-                // Request server to wait for changes
-                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
-                const data = await res.json();
-
-                // 0. Immediate Maintenance Redirect
-                if (data.maintenance_mode === true) {
-                    window.location.href = '/maintenance';
-                    return;
-                }
-
-                // 1. Check for Targeted Dev Broadcast
-                if (data.dev_broadcast && data.dev_broadcast.message) {
-                    const { message, target, timestamp } = data.dev_broadcast;
-                    const lastSeen = localStorage.getItem('lastDevMsg');
-                    if (timestamp > (lastSeen || 0) && (target === 'all' || target === 'admin')) {
-                        await nammaModalSystem.alert(`🚨 DEV BROADCAST:\n\n${message}`);
-                        localStorage.setItem('lastDevMsg', timestamp);
-                    }
-                }
-
-                // 2. Check for Targeted Ad
-                if (data.dev_ad && data.dev_ad.active && (data.dev_ad.target === 'all' || data.dev_ad.target === 'admin')) {
-                    let adBanner = document.getElementById('dev-ad-banner');
-                    if (!adBanner) {
-                        adBanner = document.createElement('div');
-                        adBanner.id = 'dev-ad-banner';
-                        adBanner.style = "background: linear-gradient(90deg, #8B5CF6, #D946EF); color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px; position: sticky; top: 0; z-index: 9999; border-bottom: 2px solid rgba(255,255,255,0.2);";
-                        document.body.prepend(adBanner);
-                    }
-                    adBanner.innerHTML = `<i class="fas fa-sparkles"></i> ${data.dev_ad.content}`;
-                } else {
-                    const existingAd = document.getElementById('dev-ad-banner');
-                    if (existingAd) existingAd.remove();
-                }
-
-            } catch (err) { 
-                console.warn('DevOps sync reconnecting...'); 
-                await new Promise(r => setTimeout(r, 5000)); // Delay on error
-            } finally {
-                // Recursive call for continuous real-time listening
-                setTimeout(syncDevOperations, 500); 
-            }
-        };
-
-        // Start the real-time engine
-        syncDevOperations();
 
         setInterval(fetchLiveStatus, 60000);
-    });
+    }
+});
 
     // SPA Employee Management Logic
     function fetchEmployeesForSPA() {
