@@ -1833,6 +1833,17 @@ app.get('/api/system/status', (req, res) => {
 
 // Download system health report (Now triggers Cloud Sync)
 app.get('/api/system/backup', async (req, res) => {
+    // Security: Only allow Admin Session OR Vercel Cron Trigger
+    const isCron = req.headers['x-vercel-cron'] === '1';
+    const isAdmin = req.session && req.session.admin;
+
+    if (!isCron && !isAdmin) {
+        console.warn('⚠️ Unauthorized backup attempt blocked.');
+        return res.status(401).json({ success: false, message: 'Unauthorized.' });
+    }
+
+    if (isCron) console.log('⏰ Triggering automated Cloud Backup...');
+    
     const result = await syncToBackupRepo();
     res.json(result);
 });
