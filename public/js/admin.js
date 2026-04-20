@@ -2399,7 +2399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-}); // Closes DOMContentLoaded
+
 
 window.editSingleLog = async function (logId) {
     window.selectedLogIds.clear();
