@@ -982,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setInterval(fetchLiveStatus, 60000);
     }
-});
+
 
     // SPA Employee Management Logic
     function fetchEmployeesForSPA() {
@@ -2358,6 +2358,7 @@ window.editSingleLog = async function (logId) {
     window.selectedLogIds.add(logId);
     window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
 };
+});
 
 window.addEventListener('error', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
