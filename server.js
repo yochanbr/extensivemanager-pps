@@ -31,8 +31,9 @@ app.use((req, res, next) => {
 
 // MAINTENANCE MODE MIDDLEWARE
 app.use(async (req, res, next) => {
-    const isDevRoute = req.path.startsWith('/dev-ops-2026') || req.path.startsWith('/api/dev');
-    const isMaintenancePage = req.path === '/maintenance' || req.path.includes('/css/') || req.path.includes('/js/');
+    const path = req.path.toLowerCase();
+    const isDevRoute = path.includes('dev-ops-2026') || path.includes('dev_control') || path.startsWith('/api/dev');
+    const isMaintenancePage = path.startsWith('/maintenance') || path.includes('/css/') || path.includes('/js/');
     const isAdmin = req.session && req.session.admin;
 
     if (isDevRoute || isMaintenancePage || isAdmin) {
