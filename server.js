@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const crypto = require('crypto-js');
+const { execSync } = require('child_process');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,8 +20,8 @@ if (isVercel) {
 
 // Diagnostic route (no DB dependency)
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'online', 
+    res.json({
+        status: 'online',
         time: new Date().toISOString(),
         firebaseInitialized: !!firestore,
         nodeVersion: process.version
@@ -28,18 +29,19 @@ app.get('/api/health', (req, res) => {
 });
 
 // Heavy dependencies (Deferred for serverless compatibility)
-let puppeteer; 
+let puppeteer;
 
 // Firebase Configuration
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key_change_me';
 const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json';
+const BACKUP_REPO_PATH = path.join(__dirname, 'namma_backup_cloud');
 
 // Initialize Firebase Admin
 let firestore;
 try {
     let serviceAccount;
     const rawAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-    
+
     if (rawAccount) {
         console.log('📡 Attempting to initialize Firebase from environment variable...');
         try {
@@ -60,7 +62,7 @@ try {
             console.warn('⚠️ Local firebase-key.json not found.');
         }
     }
-    
+
     if (serviceAccount && !admin.apps.length) {
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
@@ -75,9 +77,9 @@ try {
 // Global check for firestore availability
 const ensureDb = (req, res, next) => {
     if (!firestore) {
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Database not initialized. Check server logs for FIREBASE_SERVICE_ACCOUNT errors.' 
+        return res.status(500).json({
+            success: false,
+            message: 'Database not initialized. Check server logs for FIREBASE_SERVICE_ACCOUNT errors.'
         });
     }
     next();
@@ -112,6 +114,54 @@ const db = {
     esr_reports: () => firestore.collection('esr_reports'),
     esr_jpgs: () => firestore.collection('esr_jpgs'),
     leave_swaps: () => firestore.collection('leave_swaps')
+};
+
+// --- Secure GitHub Backup System ---
+const syncToBackupRepo = async () => {
+    try {
+        if (!fs.existsSync(BACKUP_REPO_PATH)) {
+            fs.mkdirSync(BACKUP_REPO_PATH, { recursive: true });
+        }
+
+        // 1. Data Export
+        const collections = ['settings', 'employees', 'attendance_logs', 'daily_sessions', 'esr_reports', 'esr_jpgs', 'leave_swaps'];
+        const backupData = {};
+        for (const colName of collections) {
+            const snapshot = await firestore.collection(colName).get();
+            backupData[colName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        // 2. Write to local file inside the backup repo
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = 'latest_system_backup.json';
+        const filePath = path.join(BACKUP_REPO_PATH, filename);
+        fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
+
+        // 3. Git Operations
+        const gitCmd = (cmd) => execSync(cmd, { cwd: BACKUP_REPO_PATH, stdio: 'pipe' });
+        
+        console.log('📦 Starting GitHub Cloud Sync...');
+        try {
+            gitCmd('git add .');
+            // Check if there are changes to commit
+            const status = gitCmd('git status --porcelain').toString();
+            if (status) {
+                gitCmd(`git commit -m "System Backup [${timestamp}]"`);
+                gitCmd('git push -u origin master'); 
+                console.log('✅ GitHub Backup Successful.');
+                return { success: true, message: 'Data synced to GitHub Cloud successfully.', timestamp };
+            } else {
+                console.log('ℹ️ No changes detected. Cloud is already up to date.');
+                return { success: true, message: 'Cloud is already up to date.' };
+            }
+        } catch (gitErr) {
+            console.error('❌ Git Error:', gitErr.message);
+            throw gitErr;
+        }
+    } catch (error) {
+        console.error('❌ Cloud Backup Failed:', error.message);
+        return { success: false, error: error.message };
+    }
 };
 
 
@@ -177,7 +227,7 @@ app.post('/login', ensureDb, async (req, res) => {
     // 1. Check Admin Credentials
     const settingsDoc = await db.settings().doc('config').get();
     const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminPassword: 'admin12nammamart' };
-    
+
     if ((trimmedUsername === 'nammamart' || trimmedUsername === 'admin') && password === adminSettings.adminPassword) {
         return res.json({ success: true, redirectUrl: '/admin' });
     }
@@ -197,7 +247,7 @@ app.post('/login', ensureDb, async (req, res) => {
     // 3. Find Employee (Username is primary key or we query by field)
     // In our migration, we used employee.id as document ID, but we should search by username
     const empQuery = await db.employees().where('username', '==', trimmedUsername).get();
-    
+
     if (empQuery.empty) {
         return res.status(401).json({
             success: false,
@@ -211,7 +261,7 @@ app.post('/login', ensureDb, async (req, res) => {
 
     // 4. Decrypt sensitive fields for comparison
     employee.password = decrypt(employee.password);
-    
+
     if (employee.isActive === false) {
         return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
     }
@@ -310,8 +360,8 @@ app.delete('/api/employees/:id', async (req, res) => {
 app.post('/api/broadcast', async (req, res) => {
     const { message } = req.body;
     const timestamp = Date.now();
-    await db.broadcast().update({ 
-        broadcast: { message: message || "", timestamp } 
+    await db.broadcast().update({
+        broadcast: { message: message || "", timestamp }
     });
     res.json({ success: true, message: 'Broadcast updated successfully.', timestamp });
 });
@@ -354,7 +404,7 @@ app.get('/api/employees/:id', async (req, res) => {
             if (emp.isActive === false) {
                 return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
             }
-            
+
             // Decrypt sensitive fields
             ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
                 if (emp[field]) emp[field] = decrypt(emp[field]);
@@ -364,9 +414,9 @@ app.get('/api/employees/:id', async (req, res) => {
         } else {
             res.status(404).json({ success: false, message: 'Employee not found.' });
         }
-    } catch (e) { 
+    } catch (e) {
         console.error('Error in /api/employees/:id:', e);
-        res.status(500).json({ success: false, message: 'Server error' }); 
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -396,7 +446,7 @@ app.put('/api/employees/:id', async (req, res) => {
 app.post('/api/employees/:id/face', async (req, res) => {
     const employeeId = req.params.id;
     const { descriptor } = req.body;
-    
+
     if (!descriptor || !Array.isArray(descriptor)) {
         return res.status(400).json({ success: false, message: 'Invalid face descriptor data provided.' });
     }
@@ -423,10 +473,10 @@ app.post('/api/counter-selection', async (req, res) => {
     // Generate shift ID safely from settings/state
     const stateDoc = await db.broadcast().get();
     const shiftNumber = stateDoc.exists ? (stateDoc.data().nextShiftId || 1) : 1;
-    
+
     const namePart = (employee.name || "EMP").replace(/\s/g, '').substr(0, 3).toUpperCase();
     const shiftId = shiftNumber.toString().padStart(3, '0') + namePart;
-    
+
     // Increment global shift ID
     await db.broadcast().update({ nextShiftId: admin.firestore.FieldValue.increment(1) });
 
@@ -444,9 +494,9 @@ app.post('/api/counter-selection', async (req, res) => {
     const selections = employee.counter_selections || [];
     selections.push(newShift);
 
-    await doc.ref.update({ 
-        counter_selections: selections, 
-        shiftEnded: false 
+    await doc.ref.update({
+        counter_selections: selections,
+        shiftEnded: false
     });
 
     return res.json({ success: true, message: 'Shift started successfully.' });
@@ -486,7 +536,7 @@ app.get('/api/extra', async (req, res) => {
             const employee = doc.data();
             let data = employee.extra || [];
             data = data.filter(item => item && typeof item === 'object' && item.timestamp);
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -561,7 +611,7 @@ app.get('/api/delivery', async (req, res) => {
         if (doc.exists) {
             const employee = doc.data();
             let data = employee.delivery || [];
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -628,13 +678,13 @@ app.post('/api/bill_paid', async (req, res) => {
 app.get('/api/bill_paid', async (req, res) => {
     try {
         const { employeeId, date, month, startDate, endDate, shiftStartTime, shiftEndTime } = req.query;
-        if (!employeeId) return res.json([]); 
+        if (!employeeId) return res.json([]);
 
         const doc = await db.employees().doc(employeeId).get();
         if (doc.exists) {
             const employee = doc.data();
             let data = employee.bill_paid || [];
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -705,7 +755,7 @@ app.get('/api/issue', async (req, res) => {
         if (doc.exists) {
             const employee = doc.data();
             let data = employee.issue || [];
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -777,7 +827,7 @@ app.get('/api/retail_credit', async (req, res) => {
         if (doc.exists) {
             const employee = doc.data();
             let data = employee.retail_credit || [];
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -882,25 +932,25 @@ app.post('/api/end-shift', async (req, res) => {
     try {
         const { employeeId } = req.body;
         if (!employeeId) return res.status(400).json({ success: false, message: 'Missing employeeId' });
-        
+
         const doc = await db.employees().doc(employeeId).get();
         if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found' });
         const employee = doc.data();
-        
+
         if (employee.counter_selections && employee.counter_selections.length > 0) {
             const selections = [...employee.counter_selections];
             const activeShift = selections[selections.length - 1];
             if (!activeShift.shiftEndTime) {
                 activeShift.shiftEndTime = new Date().toISOString();
-                await doc.ref.update({ 
+                await doc.ref.update({
                     counter_selections: selections,
-                    shiftEnded: true 
+                    shiftEnded: true
                 });
                 return res.json({ success: true, message: 'Shift strictly terminated.' });
             }
         }
         res.json({ success: true, message: 'No active shift to terminate.' });
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
@@ -912,7 +962,7 @@ app.put('/api/:type/:id', async (req, res) => {
         const { type, id } = req.params;
         const validTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
         if (!validTypes.includes(type)) return res.status(400).json({ message: 'Invalid record type' });
-        
+
         const data = req.body;
         const employeeId = data.employeeId;
         if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
@@ -938,12 +988,12 @@ app.put('/api/:type/:id', async (req, res) => {
             reason: data.editReason || 'User edited record via UI',
             timestamp: new Date().toISOString(),
             originalRecord: original,
-            newRecord: Object.keys(data).reduce((acc, k) => { if(original[k] !== data[k] && typeof original[k] !== 'undefined') acc[k] = data[k]; return acc; }, {})
+            newRecord: Object.keys(data).reduce((acc, k) => { if (original[k] !== data[k] && typeof original[k] !== 'undefined') acc[k] = data[k]; return acc; }, {})
         });
 
         await doc.ref.update({ [type]: records, audit_history });
         res.json({ success: true });
-    } catch(err) {
+    } catch (err) {
         console.error('PUT Error:', err);
         res.status(500).json({ message: 'System error' });
     }
@@ -955,7 +1005,7 @@ app.delete('/api/:type/:id', async (req, res) => {
         const { type, id } = req.params;
         const { employeeId, reason } = req.query;
         const validTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
-        
+
         if (!validTypes.includes(type)) return res.status(400).json({ message: 'Invalid record type' });
         if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
 
@@ -983,7 +1033,7 @@ app.delete('/api/:type/:id', async (req, res) => {
 
         await doc.ref.update({ [type]: records, audit_history });
         res.json({ success: true });
-    } catch(err) {
+    } catch (err) {
         console.error('DELETE Error:', err);
         res.status(500).json({ message: 'System error' });
     }
@@ -1012,7 +1062,7 @@ app.post('/api/restore/:historyId', async (req, res) => {
             }
         }
         res.status(404).json({ message: 'Audit log not found' });
-    } catch(err) { console.error(err); res.status(500).json({ message: 'Error restoring' }); }
+    } catch (err) { console.error(err); res.status(500).json({ message: 'Error restoring' }); }
 });
 
 // Revert edit item
@@ -1043,7 +1093,7 @@ app.post('/api/revert-edit/:historyId', async (req, res) => {
             }
         }
         res.status(404).json({ message: 'Audit log not found' });
-    } catch(err) { console.error(err); res.status(500).json({ message: 'Error reverting' }); }
+    } catch (err) { console.error(err); res.status(500).json({ message: 'Error reverting' }); }
 });
 
 // Get counter_data for an employee
@@ -1056,7 +1106,7 @@ app.get('/api/counter_data', async (req, res) => {
         if (doc.exists) {
             const employee = doc.data();
             let data = employee.counter_selections || [];
-            
+
             if (date) {
                 data = data.filter(item => item.timestamp && item.timestamp.split('T')[0] === date);
             } else if (month) {
@@ -1217,7 +1267,7 @@ app.post('/api/verify-employee-otp', async (req, res) => {
     const employeeName = employee.name || 'Employee';
     const date = endShiftTime.split('T')[0];
     let reportText = '';
-    
+
     try {
         const shift = employee.counter_selections[lastShiftIndex];
         const shiftStartTime = shift.shiftStartTime;
@@ -1301,7 +1351,7 @@ app.post('/api/end-employee-shift', async (req, res) => {
     let counter_selections = employeeRecord.counter_selections || [];
     let lastShiftIndex = -1;
     const today = new Date().toISOString().split('T')[0];
-    
+
     lastShiftIndex = counter_selections.reduce((lastIndex, selection, currentIndex) => {
         if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) {
             return currentIndex;
@@ -1313,9 +1363,9 @@ app.post('/api/end-employee-shift', async (req, res) => {
         counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
     }
 
-    await doc.ref.update({ 
-        shiftEnded: true, 
-        counter_selections 
+    await doc.ref.update({
+        shiftEnded: true,
+        counter_selections
     });
 
     const employeeForShiftEnd = { ...employeeRecord, counter_selections };
@@ -1462,9 +1512,9 @@ app.post('/api/verify-admin-approval-otp', async (req, res) => {
     }
 
     // Set shiftEnded to false and record startShiftTime to current time
-    await doc.ref.update({ 
-        shiftEnded: false, 
-        startShiftTime: new Date().toISOString() 
+    await doc.ref.update({
+        shiftEnded: false,
+        startShiftTime: new Date().toISOString()
     });
 
     return res.json({ success: true, message: 'OTP verified. New shift started.', redirectUrl: '/counter_selection.html', employeeId });
@@ -1535,9 +1585,9 @@ app.post('/api/start-shift', async (req, res) => {
 
     if (password === adminPassword) {
         const startShiftTime = new Date().toISOString();
-        await db.broadcast().update({ 
+        await db.broadcast().update({
             store_closed: false,
-            startShiftTime: startShiftTime 
+            startShiftTime: startShiftTime
         });
         res.json({ success: true, startShiftTime });
     } else {
@@ -1761,9 +1811,10 @@ app.get('/api/system/status', (req, res) => {
     });
 });
 
-// Download system health report (Cloud migration notice)
-app.get('/api/system/backup', (req, res) => {
-    res.json({ success: true, message: "Local DB removed. System is fully running on Firebase Cloud." });
+// Download system health report (Now triggers Cloud Sync)
+app.get('/api/system/backup', async (req, res) => {
+    const result = await syncToBackupRepo();
+    res.json(result);
 });
 
 // Reset settings to defaults
@@ -1799,7 +1850,7 @@ app.get('/api/attendance/state/:employeeId', async (req, res) => {
     try {
         const { employeeId } = req.params;
         const dateStr = new Date().toISOString().split('T')[0];
-        
+
         // 1. Check if employee is active
         const empDoc = await db.employees().doc(employeeId).get();
         if (!empDoc.exists) return res.status(404).json({ success: false, message: 'Employee not found.' });
@@ -1812,11 +1863,11 @@ app.get('/api/attendance/state/:employeeId', async (req, res) => {
             .where('employeeId', '==', employeeId)
             .where('date', '==', dateStr)
             .get();
-            
+
         const sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         // Sort by checkIn descending to get the latest session
         sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
-        
+
         const lastSession = sessions.length > 0 ? sessions[0] : null;
         let currentState = 'IDLE';
         let sessionId = null;
@@ -1856,10 +1907,10 @@ app.post('/api/attendance/scan', async (req, res) => {
                 .where('employeeId', '==', empId)
                 .where('date', '==', dateStr)
                 .get();
-            
+
             const sessions = snapshot.docs.map(doc => ({ ref: doc.ref, ...doc.data() }));
             sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
-            
+
             let session = sessions.length > 0 ? sessions[0] : null;
 
             let currentState = 'IDLE';
@@ -1952,7 +2003,7 @@ app.get('/api/daily-sessions', async (req, res) => {
         let query = db.daily_sessions();
         if (date) query = query.where('date', '==', date);
         const snapshot = await query.get();
-        
+
         const sessions = snapshot.docs.map(doc => {
             const s = doc.data();
             return {
@@ -2017,7 +2068,7 @@ app.post('/api/attendance/sessions/recalculate', async (req, res) => {
     const batch = firestore.batch();
     snapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
-    
+
     // 2. Load all logs chronologically
     const logsSnapshot = await db.attendance_logs().orderBy('timestamp', 'asc').get();
     const activeSessions = {};
@@ -2035,8 +2086,8 @@ app.post('/api/attendance/sessions/recalculate', async (req, res) => {
             s.onBreak = true; s.breakHistory.push({ start: log.timestamp, end: null });
         } else if (action === 'BREAK_END' && activeSessions[empId]) {
             const s = activeSessions[empId];
-            const last = s.breakHistory[s.breakHistory.length-1];
-            if (last && !last.end) { last.end = log.timestamp; s.totalBreakMinutes += Math.floor((new Date(log.timestamp)-new Date(last.start))/60000); }
+            const last = s.breakHistory[s.breakHistory.length - 1];
+            if (last && !last.end) { last.end = log.timestamp; s.totalBreakMinutes += Math.floor((new Date(log.timestamp) - new Date(last.start)) / 60000); }
             s.onBreak = false;
         } else if ((action === 'CLOCK_OUT' || action === 'OUT') && activeSessions[empId]) {
             const s = activeSessions[empId];

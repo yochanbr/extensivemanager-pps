@@ -68,7 +68,8 @@
                 <div class="nav-item-wrapper">
                     <button class="nav-item view-esr-jpgs-btn" style="opacity: 0.6; cursor: not-allowed;" disabled>
                         <i class="fas fa-history"></i><span>Shift Summary</span>
-                        <span style="font-size: 8px; background: #64748B; color: white; padding: 2px 6px; border-radius: 6px; margin-left: auto;">SOON</span>
+                        <span
+                            style="font-size: 8px; background: #64748B; color: white; padding: 2px 6px; border-radius: 6px; margin-left: auto;">SOON</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
@@ -272,15 +273,21 @@
 
                 <!-- Shift Summary View -->
                 <div id="shift-summary-view" style="display: none;">
-                    <div class="live-status-section" style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
-                        <div style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                    <div class="live-status-section"
+                        style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
+                        <div
+                            style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
                             <i class="fas fa-tools"></i>
                         </div>
-                        <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature Coming Soon</h2>
-                        <p style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
-                            We are currently refining the Shift Summary snapshot engine to provide more detailed visual reports and biometric verification history.
+                        <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature
+                            Coming Soon</h2>
+                        <p
+                            style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
+                            We are currently refining the Shift Summary snapshot engine to provide more detailed visual
+                            reports and biometric verification history.
                         </p>
-                        <div style="display: inline-flex; items-center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
+                        <div
+                            style="display: inline-flex; items-center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
                             <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
                         </div>
                     </div>
@@ -316,20 +323,28 @@
                                 <div style="display: flex; gap: 12px; align-items: center;">
                                     <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
                                         <i class="fas fa-heartbeat"></i>
-                                    </div><strong>System Health</strong>
+                                    </div><strong>Cloud Health</strong>
                                 </div>
                                 <div style="width: 100%; display: grid; grid-template-columns: 1fr; gap: 10px;">
                                     <div
                                         style="background: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
-                                        <div style="font-weight: 700; font-size: 13px; color: #10B981;">
-                                            <i class="fas fa-check-circle"></i> Local Database Operational
+                                        <div style="font-weight: 700; font-size: 13px; color: #3B82F6;">
+                                            <i class="fas fa-cloud"></i> Firebase Operational
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="background: #F0F9FF; padding: 12px; border-radius: 12px; text-align: center;">
+                                        <div style="font-weight: 700; font-size: 11px; color: #0EA5E9;">
+                                            <i class="fab fa-github"></i> GitHub Backup Linked
                                         </div>
                                     </div>
                                 </div>
-                                <button id="download-backup-btn" class="action-btn secondary" style="width: 100%;"><i
-                                        class="fas fa-cloud-download-alt"></i> Backup Database</button>
-                                <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;"><i
-                                        class="fas fa-undo"></i> Reset to Factory Defaults</button>
+                                <button id="sync-cloud-btn" class="action-btn" style="width: 100%; background: #24292e; color: white;">
+                                    <i class="fab fa-github"></i> Sync to GitHub Cloud
+                                </button>
+                                <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;">
+                                    <i class="fas fa-undo"></i> Reset Settings
+                                </button>
                             </div>
                         </div>
                     </div>

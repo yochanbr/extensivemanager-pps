@@ -15,6 +15,7 @@ login.json
 *.pem
 *.key
 firebase-key.json
+google-drive-key.json
 extensivemanager-pps-firebase-adminsdk-fbsvc-*.json
 
 # System and Temp Files
@@ -27,3 +28,4 @@ tmp/
 brain/
 *.tmp
 temp/
+namma_backup_cloud/

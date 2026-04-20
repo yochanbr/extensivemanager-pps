@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Developer Profile Dropdown Toggle
     const profileToggle = document.getElementById('user-profile-toggle');
     const profileDropdown = document.getElementById('profile-dropdown');
-    
+
     if (profileToggle && profileDropdown) {
         profileToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1200,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modal) {
             const subtitle = document.getElementById('shift-report-modal-subtitle');
             if (subtitle) subtitle.textContent = `${employeeName}'s Snapshots`;
-            
+
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
 
@@ -1569,10 +1569,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    const downloadBackupBtn = document.getElementById('download-backup-btn');
-    if (downloadBackupBtn) {
-        downloadBackupBtn.addEventListener('click', () => {
-            window.location.href = '/api/system/backup';
+    const syncCloudBtn = document.getElementById('sync-cloud-btn');
+    if (syncCloudBtn) {
+        syncCloudBtn.addEventListener('click', async () => {
+            if (!(await nammaModalSystem.confirm('This will export your data and push it to your private GitHub Cloud backup repository. Proceed?'))) return;
+            
+            const originalContent = syncCloudBtn.innerHTML;
+            syncCloudBtn.disabled = true;
+            syncCloudBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+            
+            try {
+                const res = await fetch('/api/system/backup');
+                const result = await res.json();
+                
+                if (result.success) {
+                    await nammaModalSystem.alert(`✅ Cloud Sync Complete!\n${result.message}\nTimestamp: ${result.timestamp || 'Just now'}`);
+                } else {
+                    await nammaModalSystem.alert('❌ Sync Failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Cloud Sync Error:', err);
+                await nammaModalSystem.alert('❌ Network error during sync. Check server logs.');
+            } finally {
+                syncCloudBtn.disabled = false;
+                syncCloudBtn.innerHTML = originalContent;
+            }
         });
     }
 
@@ -1672,30 +1693,30 @@ document.addEventListener('DOMContentLoaded', () => {
     let __logsInterval = null;
     let __currentLogs = [];
     window.selectedLogIds = new Set();
-    
+
     // Core Polling Loop
-    window.fetchLogsRealtime = function() {
+    window.fetchLogsRealtime = function () {
         if (__logsInterval) clearInterval(__logsInterval);
-        
+
         const fetchEngine = async () => {
             const dateFilter = document.getElementById('log-date-filter')?.value || 'today';
             const searchQuery = document.getElementById('log-search-input')?.value.toLowerCase() || '';
             const tbody = document.getElementById('attendance-logs-tbody');
-            
+
             try {
                 // Fetch raw logs from DB (since logs collection tracks EVERYTHING)
                 const res = await fetch('/api/attendance/logs/raw?filter=' + dateFilter);
                 const data = await res.json();
-                
+
                 if (data.success) {
                     __currentLogs = data.logs;
-                    
+
                     // Filter locally by search
                     let filteredLogs = __currentLogs;
                     if (searchQuery) {
                         filteredLogs = filteredLogs.filter(l => l.employeeName.toLowerCase().includes(searchQuery));
                     }
-                    
+
                     window.renderLogsTable(filteredLogs, tbody);
                     window.calculateAdminSummary(__currentLogs); // Calculate metrics against the full log dataset
                 }
@@ -1708,15 +1729,15 @@ document.addEventListener('DOMContentLoaded', () => {
         __logsInterval = setInterval(fetchEngine, 3000); // 3-second realtime loop
     };
 
-    window.refreshAttendanceLogs = function() {
-        if(!__logsInterval) window.fetchLogsRealtime();
+    window.refreshAttendanceLogs = function () {
+        if (!__logsInterval) window.fetchLogsRealtime();
     };
 
     // --- VIEW TOGGLE CONTROLLER ---
     let __currentAttendanceView = 'sessions'; // default
     let __sessionsInterval = null;
 
-    window.switchAttendanceView = function(view) {
+    window.switchAttendanceView = function (view) {
         __currentAttendanceView = view;
         const sessionsWrap = document.getElementById('sessions-view-wrapper');
         const rawWrap = document.getElementById('raw-logs-view-wrapper');
@@ -1745,7 +1766,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DAILY SESSIONS FETCH + RENDER ENGINE ---
     let __currentSessions = [];
 
-    window.fetchDailySessions = function() {
+    window.fetchDailySessions = function () {
         if (__sessionsInterval) clearInterval(__sessionsInterval);
 
         const sessionsEngine = async () => {
@@ -1817,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', () => {
         __sessionsInterval = setInterval(sessionsEngine, 3000);
     };
 
-    window.renderSessionsTable = function(sessions, tbody) {
+    window.renderSessionsTable = function (sessions, tbody) {
         const REQUIRED_MINUTES = 8 * 60; // 8 hours = 480 minutes
         const SHIFT_START_HOUR = 9; // 9:00 AM standard shift start
 
@@ -1893,7 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = html;
     };
 
-    window.renderLogsTable = function(logs, tbody) {
+    window.renderLogsTable = function (logs, tbody) {
         if (!logs || logs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 60px; color: #64748B;">No attendance activity found matching filters.</td></tr>';
             return;
@@ -1916,7 +1937,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (typeLabel === 'BREAK_END') { typeColor = '#3B82F6'; typeLabel = 'Break End'; statusClass = 'working'; }
 
             const checked = window.selectedLogIds.has(log.id) ? 'checked' : '';
-            
+
             const eName = log.employeeName || 'System Sync';
             const eInit = eName !== 'System Sync' ? eName.charAt(0).toUpperCase() : '?';
 
@@ -1946,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.handleRowSelection(); // Ensure toolbar state matches
     };
 
-    window.toggleAllLogs = function(sourceCheckbox) {
+    window.toggleAllLogs = function (sourceCheckbox) {
         const checkboxes = document.querySelectorAll('.log-checkbox');
         checkboxes.forEach(cb => {
             cb.checked = sourceCheckbox.checked;
@@ -1956,7 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.handleRowSelection();
     };
 
-    window.handleRowSelection = function() {
+    window.handleRowSelection = function () {
         const checkboxes = document.querySelectorAll('.log-checkbox');
         let selectedCount = 0;
         checkboxes.forEach(cb => {
@@ -1968,33 +1989,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (cb.closest('tr')) cb.closest('tr').style.background = 'transparent';
             }
         });
-        
+
         selectedCount = window.selectedLogIds.size;
         const toolbar = document.getElementById('bulk-action-toolbar');
         document.getElementById('bulk-count').textContent = selectedCount;
 
         if (selectedCount > 0) toolbar.style.display = 'flex';
         else toolbar.style.display = 'none';
-        
+
         const selectAll = document.getElementById('selectAllLogs');
         if (selectAll && checkboxes.length > 0) {
             selectAll.checked = Array.from(checkboxes).every(c => c.checked);
         }
     };
 
-    window.calculateAdminSummary = function(logs) {
+    window.calculateAdminSummary = function (logs) {
         if (!logs) return;
         const empSet = new Set();
         let currentlyWorking = new Set();
         let onBreak = new Set();
-        
+
         // This simulates reconstructing the daily sessions to find accurate total hours
-        const sessionsMap = {}; 
+        const sessionsMap = {};
 
         logs.forEach(log => {
             empSet.add(log.employeeId);
             const empId = log.employeeId;
-            
+
             // Latest status tracking
             if (log.statusAfter === 'WORKING') {
                 currentlyWorking.add(empId);
@@ -2029,8 +2050,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add currently active incomplete sessions
         const nowMs = Date.now();
         Object.values(sessionsMap).forEach(m => {
-             if (m.currentBreakStart) m.totalBreakMs += (nowMs - m.currentBreakStart);
-             if (m.currentCheckIn) m.totalWorkMs += (nowMs - m.currentCheckIn);
+            if (m.currentBreakStart) m.totalBreakMs += (nowMs - m.currentBreakStart);
+            if (m.currentCheckIn) m.totalWorkMs += (nowMs - m.currentCheckIn);
         });
 
         let totalWorkMsGlobal = 0;
@@ -2048,8 +2069,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const fmtHrs = (ms) => Math.floor(ms / 3600000) + 'h ' + Math.floor((ms % 3600000) / 60000) + 'm';
 
         // --- DASHboard KPI Sync ---
-        const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-        
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
         setTxt('kpi-total-emps', empSet.size);
         setTxt('kpi-working', currentlyWorking.size);
         setTxt('kpi-break', onBreak.size);
@@ -2060,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Dashboard specific cards
         setTxt('dash-working', currentlyWorking.size);
         setTxt('dash-break', onBreak.size);
-        setTxt('dash-checkins', logs.filter(l => (l.action||l.type||'').toUpperCase().includes('IN')).length);
+        setTxt('dash-checkins', logs.filter(l => (l.action || l.type || '').toUpperCase().includes('IN')).length);
 
         // --- ALERT HUB LOGIC ---
         const alerts = [];
@@ -2106,7 +2127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAlertHub(alerts);
     };
 
-    window.renderAlertHub = function(alerts) {
+    window.renderAlertHub = function (alerts) {
         const section = document.getElementById('alert-hub-section');
         const container = document.getElementById('alert-list-container');
         const badge = document.getElementById('alert-count-badge');
@@ -2119,7 +2140,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         section.style.display = 'block';
         badge.textContent = `${alerts.length} Issue${alerts.length > 1 ? 's' : ''}`;
-        
+
         container.innerHTML = alerts.map(a => `
             <div style="background: white; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                 <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}15; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px;">
@@ -2135,12 +2156,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Bulk APIs placeholder hooking
-    window.bulkDeleteLogs = async function() {
+    window.bulkDeleteLogs = async function () {
         if (!(await nammaModalSystem.confirm('Are you sure you want to completely erase the selected raw logs? This will recalculate sessions.', { theme: 'danger' }))) return;
         const ids = Array.from(window.selectedLogIds);
         try {
             const res = await fetch('/api/attendance/logs', {
-                method: 'DELETE', headers: {'Content-Type':'application/json'},
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ logIds: ids })
             });
             const data = await res.json();
@@ -2149,39 +2170,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.fetchLogsRealtime();
                 await nammaModalSystem.alert('Logs deleted and sessions recalculated!');
             }
-        } catch(e) { await nammaModalSystem.alert('Deletion failed'); }
+        } catch (e) { await nammaModalSystem.alert('Deletion failed'); }
     }
 
-    window.bulkChangeAction = async function() {
+    window.bulkChangeAction = async function () {
         const newAction = await nammaModalSystem.prompt('Enter new action (CLOCK_IN, BREAK_START, BREAK_END, CLOCK_OUT):', { placeholder: 'e.g. CLOCK_IN' });
         if (!newAction) return;
         const ids = Array.from(window.selectedLogIds);
         try {
             const res = await fetch('/api/attendance/logs/bulk-edit', {
-                method: 'PUT', headers: {'Content-Type':'application/json'},
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ logIds: ids, newAction: newAction.toUpperCase() })
             });
             if ((await res.json()).success) {
                 window.selectedLogIds.clear();
                 window.fetchLogsRealtime();
             }
-        } catch(e) { await nammaModalSystem.alert('Edit failed'); }
+        } catch (e) { await nammaModalSystem.alert('Edit failed'); }
     }
 
-    window.rebuildSessions = async function() {
+    window.rebuildSessions = async function () {
         // Triggers the hard reconstruction algorithm on the backend manually
         try {
             const res = await fetch('/api/attendance/sessions/recalculate', { method: 'POST' });
             if ((await res.json()).success) await nammaModalSystem.alert('Success! Sessions meticulously rebuilt based on raw logs.');
-        } catch(e) { await nammaModalSystem.alert('Rebuild failed'); }
+        } catch (e) { await nammaModalSystem.alert('Rebuild failed'); }
     }
 
     // Attach search/filter listeners
     setTimeout(() => {
         const s = document.getElementById('log-search-input');
-        if(s) s.addEventListener('keyup', () => window.fetchLogsRealtime());
+        if (s) s.addEventListener('keyup', () => window.fetchLogsRealtime());
         const d = document.getElementById('log-date-filter');
-        if(d) d.addEventListener('change', () => window.fetchLogsRealtime());
+        if (d) d.addEventListener('change', () => window.fetchLogsRealtime());
     }, 1000);
 
     // --- FACE REGISTRATION LOGIC ---
@@ -2208,7 +2229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.openFaceRegistration = async function(employeeId) {
+    window.openFaceRegistration = async function (employeeId) {
         currentRegId = employeeId;
         const modal = document.getElementById('face-register-modal');
         if (modal) {
@@ -2220,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startCamera();
     };
 
-    window.closeFaceRegistration = function() {
+    window.closeFaceRegistration = function () {
         const modal = document.getElementById('face-register-modal');
         if (modal) {
             modal.classList.remove('show');
@@ -2298,7 +2319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('capture-face-btn')) {
         document.getElementById('capture-face-btn').addEventListener('click', async () => {
             if (!window.lastDescriptor || !currentRegId) return;
-            
+
             const btn = document.getElementById('capture-face-btn');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
             btn.disabled = true;
@@ -2328,17 +2349,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }); // Closes DOMContentLoaded
 
-window.editSingleLog = async function(logId) {
+window.editSingleLog = async function (logId) {
     window.selectedLogIds.clear();
     window.selectedLogIds.add(logId);
     window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
 };
 
-window.addEventListener('error', function(e) {
+window.addEventListener('error', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
 });
-window.addEventListener('unhandledrejection', function(e) {
+window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
 });
