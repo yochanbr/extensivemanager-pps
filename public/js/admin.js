@@ -986,6 +986,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
                 const data = await res.json();
 
+                // 0. Immediate Maintenance Redirect
+                if (data.maintenance_mode === true) {
+                    window.location.href = '/maintenance';
+                    return;
+                }
+
                 // 1. Check for Targeted Dev Broadcast
                 if (data.dev_broadcast && data.dev_broadcast.message) {
                     const { message, target, timestamp } = data.dev_broadcast;

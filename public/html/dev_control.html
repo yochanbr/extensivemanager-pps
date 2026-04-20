@@ -306,26 +306,34 @@
             if (pin === '2026') {
                 currentPin = pin;
                 document.getElementById('pin-screen').style.display = 'none';
-                loadStatus();
+                syncStatus(); // Start real-time sync
             } else {
                 alert('UNAUTHORIZED ACCESS DETECTED');
             }
         }
 
-        async function loadStatus() {
-            const res = await fetch('/api/dev/status');
-            const data = await res.json();
+        async function syncStatus() {
+            if (!currentPin) return; // Only sync if authorized
+
+            try {
+                const res = await fetch('/api/dev/status?longPoll=true', { cache: 'no-cache' });
+                const data = await res.json();
+                
+                // Update UI elements in real-time
+                document.getElementById('maintenance-toggle').checked = !!data.maintenance_mode;
+                if (data.dev_ad) {
+                    document.getElementById('ad-content').value = data.dev_ad.content || '';
+                    document.getElementById('ad-toggle').checked = !!data.dev_ad.active;
+                    document.getElementById('ad-target').value = data.dev_ad.target || 'all';
+                }
+                if (data.donation) {
+                    document.getElementById('donation-msg').value = data.donation.message || '';
+                    document.getElementById('donation-toggle').checked = !!data.donation.active;
+                }
+            } catch (err) { }
             
-            document.getElementById('maintenance-toggle').checked = !!data.maintenance_mode;
-            if (data.dev_ad) {
-                document.getElementById('ad-content').value = data.dev_ad.content || '';
-                document.getElementById('ad-toggle').checked = !!data.dev_ad.active;
-                document.getElementById('ad-target').value = data.dev_ad.target || 'all';
-            }
-            if (data.donation) {
-                document.getElementById('donation-msg').value = data.donation.message || '';
-                document.getElementById('donation-toggle').checked = !!data.donation.active;
-            }
+            // Recursive sync
+            setTimeout(syncStatus, 1000);
         }
 
         async function saveConfig() {
