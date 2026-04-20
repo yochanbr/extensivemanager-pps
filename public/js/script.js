@@ -1,4 +1,4 @@
-// --- NAMMA MART CUSTOM SAAS MODAL SYSTEM --- //
+// --- EXTENSIVE MANAGER CUSTOM SAAS MODAL SYSTEM --- //
 const nammaModalSystem = (() => {
     if (!document.getElementById('namma-modal-styles')) {
         const style = document.createElement('style'); style.id = 'namma-modal-styles';

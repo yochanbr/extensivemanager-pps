@@ -1315,7 +1315,7 @@ app.post('/api/verify-admin-password', async (req, res) => {
     const mailOptions = {
         from: emailConfig.from,
         to: emailConfig.recipients.filter(Boolean).join(','),
-        subject: 'Namma Mart - End Shift OTP',
+        subject: 'Extensive Manager - End Shift OTP',
         text: `Your End Shift OTP is: ${otp}. It is valid for 5 minutes.`
     };
 
@@ -1359,7 +1359,7 @@ app.post('/api/send-employee-otp', async (req, res) => {
     const mailOptions = {
         from: emailConfig.from,
         to: employeeEmail,
-        subject: 'Namma Mart - Employee End Shift OTP',
+        subject: 'Extensive Manager - Employee End Shift OTP',
         text: `Your End Shift OTP is: ${otp}. It is valid for 5 minutes.`
     };
 
@@ -1469,8 +1469,8 @@ app.post('/api/verify-employee-otp', async (req, res) => {
     const mailOptions = {
         from: emailConfig.from,
         to: decrypt(employee.email),
-        subject: 'Namma Mart - Shift End Report',
-        text: `Hello ${employeeName},\n\nYour shift has ended.\n\n${reportText}\n\nRegards,\nNamma Mart`
+        subject: 'Extensive Manager - Shift End Report',
+        text: `Hello ${employeeName},\n\nYour shift has ended.\n\n${reportText}\n\nRegards,\nPinpoint Startups`
     };
     try { await emailConfig.transporter.sendMail(mailOptions); } catch (e) { console.error('Mail error:', e); }
 
@@ -1565,7 +1565,7 @@ Data Activity Summary:
 
 Thank you for your work today.
 Regards,
-Namma Mart
+Pinpoint Startups
         `;
 
         // Save the text report
@@ -1611,14 +1611,14 @@ Shift End Time: ${endShiftTime}
 ${reportText}
 
 Regards,
-Namma Mart
+Pinpoint Startups
     `;
 
     // Send email with nodemailer
     const mailOptions = {
         from: emailConfig.from,
         to: employeeRecord.email,
-        subject: 'Namma Mart - Shift End Report',
+        subject: 'Pinpoint Startups - Shift End Report',
         text: emailText
     };
 

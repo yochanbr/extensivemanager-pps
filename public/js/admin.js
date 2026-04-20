@@ -1344,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const file = new File([blob], 'ShiftReport.jpg', { type: 'image/jpeg' });
 
                     await navigator.share({
-                        title: 'Namma Mart Shift Report',
+                        title: 'Extensive Manager Shift Report',
                         text: 'Sharing shift report snapshot.',
                         files: [file]
                     });
@@ -1353,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Fallback: Just share text if files fail
                     navigator.share({
                         title: 'Shift Report',
-                        text: 'Check out this shift report snapshot from Namma Mart.'
+                        text: 'Check out this shift report snapshot from Extensive Manager.'
                     }).catch(e => console.log('Share failed again:', e));
                 }
             } else {

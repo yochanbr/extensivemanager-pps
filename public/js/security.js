@@ -1,7 +1,7 @@
 /**
- * Namma Mart - Ultimate Security Guard V4.0
+ * Extensive Manager - Ultimate Security Guard V4.1
  * 🛡️ Designed to protect source code from casual inspection and automated scrapers.
- * (C) 2026 Namma Mart Operations. 
+ * (C) 2026 Pinpoint Startups. 
  */
 
 (function() {

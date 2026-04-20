@@ -1,7 +1,7 @@
 {
-  "name": "namma-mart-pannel",
-  "version": "1.0.0",
-  "description": "Backend for Namma Mart Pannel",
+  "name": "extensive-manager-pps",
+  "version": "1.1.0",
+  "description": "Premium Retail Operating System by Pinpoint Startups",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
