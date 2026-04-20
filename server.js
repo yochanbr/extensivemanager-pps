@@ -18,6 +18,43 @@ if (isVercel) {
     module.exports = app;
 }
 
+// --- GLOBAL SECURITY HARDENING ---
+// Manual Security Headers (Helmet-lite)
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=*, geolocation=(), microphone=()');
+    next();
+});
+
+// Lightweight In-Memory Rate Limiter
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 15;
+
+const apiLimiter = (req, res, next) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    const userData = rateLimitStore.get(ip) || { count: 0, firstRequest: now };
+
+    if (now - userData.firstRequest > RATE_LIMIT_WINDOW) {
+        userData.count = 1;
+        userData.firstRequest = now;
+    } else {
+        userData.count++;
+    }
+
+    rateLimitStore.set(ip, userData);
+
+    if (userData.count > MAX_REQUESTS) {
+        console.warn(`🔒 Rate limit exceeded for IP: ${ip}`);
+        return res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' });
+    }
+    next();
+};
+
 // Diagnostic route (no DB dependency)
 app.get('/api/health', (req, res) => {
     res.json({
@@ -237,7 +274,7 @@ let adminApprovalOtp = {
 let testCloseDone = false;
 
 // Handle login requests
-app.post('/login', ensureDb, async (req, res) => {
+app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -1854,7 +1891,7 @@ app.get('/api/system/status', (req, res) => {
 });
 
 // Download system health report (Now triggers Cloud Sync)
-app.get('/api/system/backup', async (req, res) => {
+app.get('/api/system/backup', apiLimiter, async (req, res) => {
     // Security: Only allow Admin Session OR Vercel Cron Trigger
     const isCron = req.headers['x-vercel-cron'] === '1';
     const isAdmin = req.session && req.session.admin;
