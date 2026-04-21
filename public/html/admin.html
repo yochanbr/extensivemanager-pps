@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namma Mart | Command Center</title>
-    <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+    <title>Extensive Manager | Admin Panel</title>
     <!-- Google Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
@@ -25,11 +24,11 @@
     <div class="layout">
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="sidebar-header" style="padding: 24px;">
-                <img src="/assets/logo.svg" alt="Logo" style="width: 40px; height: 40px; border-radius: 10px;">
+            <div class="sidebar-header">
+                <div class="logo-icon"><i class="fas fa-sun"></i></div>
                 <div class="sidebar-title">
-                    <span class="title-main">Namma Mart</span>
-                    <span class="title-sub">Retail Command OS</span>
+                    <span class="title-main">Extensive Manager</span>
+                    <span class="title-sub">by Pinpoint Startups</span>
                 </div>
             </div>
 
@@ -295,47 +294,34 @@
                         <div class="summary-grid">
                             <div class="summary-card"
                                 style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
-                                <div class="card-header">
-                                    <div class="card-icon" style="background: #E0E7FF; color: #6366F1;">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
                                         <i class="fas fa-shield-alt"></i>
                                     </div><strong>Security Hub</strong>
                                 </div>
                                 <form id="security-hub-form" style="width: 100%;">
-                                    <div class="modern-form-group"><label>Admin Recovery Email</label><input type="email"
-                                            id="admin-contact-email" class="modern-input" placeholder="e.g. admin@nammamart.com">
+                                    <div class="modern-form-group"><label>New Admin Username</label><input type="text"
+                                            id="new-admin-username" class="modern-input"
+                                            placeholder="Leave blank to keep current">
+                                    </div>
+                                    <div class="modern-form-group"><label>Admin Contact Email</label><input type="email"
+                                            id="admin-contact-email" class="modern-input"
+                                            placeholder="e.g. admin@nammamart.com">
                                     </div>
                                     <div class="modern-form-group"><label>Admin Phone Number</label><input type="tel"
-                                            id="admin-contact-phone" class="modern-input" placeholder="e.g. +91 98765 43210">
+                                            id="admin-contact-phone" class="modern-input"
+                                            placeholder="e.g. +91 98765 43210">
                                     </div>
-                                    <div class="modern-form-group"><label>Current Admin Password</label><input type="password"
+                                    <div class="modern-form-group"><label>Current Password</label><input type="password"
                                             id="current-admin-password" class="modern-input" placeholder="••••••••">
                                     </div>
+                                    <div class="modern-form-group"><label>New Password</label><input type="password"
+                                            id="new-admin-password" class="modern-input"
+                                            placeholder="Min 6 chars (optional)">
+                                    </div>
                                     <button type="submit" class="modern-btn accent" style="width: 100%;">Update
-                                        Contact Info</button>
+                                        Credentials</button>
                                 </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- MANDATORY ADMIN SETUP MODAL -->
-    <div id="admin-setup-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(15px); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: white; width: 90%; max-width: 450px; border-radius: 32px; padding: 48px; text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.4); animation: modalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
-            <div style="width: 80px; height: 80px; background: #EEF2FF; color: #6366F1; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px;">
-                <i class="fas fa-user-shield"></i>
-            </div>
-            <h2 style="font-size: 28px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Identity Setup</h2>
-            <p style="color: #64748B; font-size: 15px; margin-bottom: 32px; line-height: 1.6;">Welcome back to Namma Mart. To ensure proper recovery access, please configure your primary email address below.</p>
-            <div class="modern-form-group" style="text-align: left;">
-                <label>Recovery Email Address</label>
-                <input type="email" id="setup-admin-email" class="modern-input" placeholder="admin@yourstore.com" required style="border-radius: 12px; height: 55px; border: 2px solid #E2E8F0;">
-            </div>
-            <button id="save-setup-btn" class="modern-btn accent" style="width: 100%; height: 55px; font-size: 16px; margin-top: 10px; font-weight: 700;">Secure My Account</button>
-        </div>
-    </div>
                             </div>
                             <div class="summary-card"
                                 style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
@@ -358,7 +344,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button id="sync-cloud-btn" class="action-btn" style="width: 100%; background: #24292e; color: white;">
+                                <button id="sync-cloud-btn" class="action-btn"
+                                    style="width: 100%; background: #24292e; color: white;">
                                     <i class="fab fa-github"></i> Sync to GitHub Cloud
                                 </button>
                                 <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;">
