@@ -378,9 +378,21 @@
         </div>
     </div>
 
+    <!-- PREMIUM FEEDBACK MODAL -->
+    <div id="namma-feedback-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(12px); z-index: 2000; align-items: center; justify-content: center;">
+        <div id="feedback-modal-content" style="background: white; width: 90%; max-width: 400px; border-radius: 28px; padding: 40px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.3); animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <div id="feedback-icon-container" style="width: 80px; height: 80px; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px;">
+                <i id="feedback-icon" class="fas fa-check"></i>
+            </div>
+            <h3 id="feedback-title" style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Success</h3>
+            <p id="feedback-message" style="color: #64748B; font-size: 15px; line-height: 1.6; margin-bottom: 32px;">Your operation was completed successfully.</p>
+            <button id="close-feedback-btn" class="submit-btn" style="width: 100%; margin-top: 0;">Got it</button>
+        </div>
+    </div>
+
     <style>
         @keyframes modalPop {
-            from { transform: scale(0.9); opacity: 0; }
+            from { transform: scale(0.8); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
         #forgot-role-employee:hover, #forgot-role-admin:hover {
@@ -389,6 +401,9 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
         }
+        .feedback-success { background: #DCFCE7; color: #10B981; }
+        .feedback-error { background: #FEE2E2; color: #EF4444; }
+        .feedback-info { background: #E0E7FF; color: #6366F1; }
     </style>
 
     <script>
@@ -400,6 +415,31 @@
 
             const greetingEl = document.querySelector('.branding-content h2');
             if (greetingEl) greetingEl.innerHTML = greeting;
+
+            // Professional Feedback Utility
+            window.showNammaFeedback = function(title, message, type = 'success') {
+                const fModal = document.getElementById('namma-feedback-modal');
+                const fTitle = document.getElementById('feedback-title');
+                const fMsg = document.getElementById('feedback-message');
+                const fIcon = document.getElementById('feedback-icon');
+                const fContainer = document.getElementById('feedback-icon-container');
+
+                fTitle.textContent = title;
+                fMsg.innerHTML = message.replace(/\n/g, '<br>');
+                
+                fContainer.className = '';
+                fContainer.classList.add('feedback-' + type);
+                
+                if (type === 'success') fIcon.className = 'fas fa-check-circle';
+                else if (type === 'error') fIcon.className = 'fas fa-exclamation-triangle';
+                else fIcon.className = 'fas fa-info-circle';
+
+                fModal.style.display = 'flex';
+            };
+
+            document.getElementById('close-feedback-btn').addEventListener('click', () => {
+                document.getElementById('namma-feedback-modal').style.display = 'none';
+            });
 
             // Forgot Password logic
             const forgotLink = document.getElementById('forgot-password-link');
@@ -427,6 +467,9 @@
 
                 window.addEventListener('click', (e) => {
                     if (e.target === forgotModal) forgotModal.style.display = 'none';
+                    if (e.target === document.getElementById('namma-feedback-modal')) {
+                        document.getElementById('namma-feedback-modal').style.display = 'none';
+                    }
                 });
 
                 backBtn.addEventListener('click', () => {
@@ -436,7 +479,7 @@
 
                 employeeBtn.addEventListener('click', () => {
                     forgotModal.style.display = 'none';
-                    alert('👤 Employee Access\n\nPlease contact your store manager or administrator to reset your login credentials. If you are an admin, please select the Admin option.');
+                    showNammaFeedback('Employee Support', 'Please contact your store manager or administrator to reset your login credentials.', 'info');
                 });
 
                 adminBtn.addEventListener('click', async () => {
@@ -449,17 +492,16 @@
                         const data = await res.json();
                         
                         if (data.success) {
-                            // TRANSITION TO RESET FORM
                             selectionSection.style.display = 'none';
                             resetSection.style.display = 'block';
-                            alert('📧 OTP Sent!\n\nPlease check your registered email for the 6-digit code.\n\n⚠️ TIP: Also check your "Spam" or "Junk" folders if it doesn\'t appear in your inbox within a minute.');
+                            showNammaFeedback('OTP Delivered', 'Please check your registered email for the 6-digit code.\n\n⚠️ TIP: Check your Spam folder if it doesn\'t appear shortly.', 'success');
                         } else {
                             forgotModal.style.display = 'none';
-                            alert('❌ Request Failed\n\n' + data.message);
+                            showNammaFeedback('Request Failed', data.message || 'Unable to process recovery.', 'error');
                         }
                     } catch (err) {
                         console.error('Reset Request Error:', err);
-                        alert('❌ Network Error\n\nUnable to reach servers. Please try again later.');
+                        showNammaFeedback('Network Issue', 'Unable to reach the security servers. Please try again later.', 'error');
                     } finally {
                         adminBtn.disabled = false;
                         adminBtn.innerHTML = originalContent;
@@ -471,9 +513,9 @@
                     const newPass = document.getElementById('reset-new-password').value;
                     const confirmPass = document.getElementById('reset-confirm-password').value;
 
-                    if (!otp || otp.length !== 6) return alert('Please enter the 6-digit OTP code.');
-                    if (!newPass || newPass.length < 6) return alert('New password must be at least 6 characters.');
-                    if (newPass !== confirmPass) return alert('Passwords do not match.');
+                    if (!otp || otp.length !== 6) return showNammaFeedback('Input Required', 'Please enter the 6-digit OTP code.', 'info');
+                    if (!newPass || newPass.length < 6) return showNammaFeedback('Weak Password', 'New password must be at least 6 characters.', 'info');
+                    if (newPass !== confirmPass) return showNammaFeedback('Mismatch', 'Passwords do not match.', 'error');
 
                     completeResetBtn.disabled = true;
                     const originalText = completeResetBtn.textContent;
@@ -488,18 +530,17 @@
                         const data = await res.json();
 
                         if (data.success) {
-                            alert('✅ Success!\n\n' + data.message);
                             forgotModal.style.display = 'none';
-                            // Optionally clear inputs
+                            showNammaFeedback('Reset Successful', 'Your admin password has been updated. You can now login with your new credentials.', 'success');
                             document.getElementById('reset-otp-input').value = '';
                             document.getElementById('reset-new-password').value = '';
                             document.getElementById('reset-confirm-password').value = '';
                         } else {
-                            alert('❌ Error\n\n' + data.message);
+                            showNammaFeedback('Verification Failed', data.message || 'Invalid request.', 'error');
                         }
                     } catch (err) {
                         console.error('Final Reset Error:', err);
-                        alert('❌ Server Error\n\nUnable to complete reset. Please try again.');
+                        showNammaFeedback('Server Error', 'Unable to complete the password reset at this time.', 'error');
                     } finally {
                         completeResetBtn.disabled = false;
                         completeResetBtn.textContent = originalText;
