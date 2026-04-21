@@ -1565,7 +1565,9 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             if (confirmed) {
-                const password = prompt('Please enter your MASTER PASSWORD to authorize:');
+                const password = await nammaModalSystem.prompt('Please enter your MASTER PASSWORD to authorize:', {
+                    placeholder: 'Enter master password'
+                });
                 if (!password) return;
 
                 const originalBtnText = masterResetBtn.innerHTML;
