@@ -1548,6 +1548,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // MASTER RESET HANDLER
+    const masterResetBtn = document.getElementById('master-reset-attendance-btn');
+    if (masterResetBtn) {
+        masterResetBtn.addEventListener('click', async () => {
+            const confirmed = await nammaModalSystem.confirm(
+                '☢️ CRITICAL DATA RESET ☢️ \n\nThis will PERMANENTLY DELETE all attendance logs and daily session history. This action cannot be undone.\n\nAre you absolutely sure you want to proceed?'
+            );
+
+            if (confirmed) {
+                const password = prompt('Please enter your MASTER PASSWORD to confirm deletion:');
+                if (!password) return;
+
+                try {
+                    const res = await fetch('/api/attendance/reset', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        await nammaModalSystem.alert('✅ Reset Successful! All data has been cleared.');
+                        window.location.reload(); 
+                    } else {
+                        await nammaModalSystem.alert('❌ Reset Failed: ' + (data.message || 'Verification Error'));
+                    }
+                } catch (err) {
+                    await nammaModalSystem.alert('❌ Network Error: Failed to perform reset.');
+                }
+            }
+        });
+    }
+
     const resetBtn = document.getElementById('reset-settings-btn');
     if (resetBtn) {
         resetBtn.addEventListener('click', async () => {
