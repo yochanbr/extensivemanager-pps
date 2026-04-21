@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBtn = document.querySelector('.update-btn');
     const dashboardBtn = document.querySelector('.dashboard-btn');
     const attendanceBtn = document.querySelector('.attendance-btn');
-    const endShiftBtn = document.querySelector('.end-shift-btn');
-    const startShiftBtn = document.querySelector('.start-shift-btn') || document.createElement('button'); // Fallback if hidden
+    const endShiftBtn = document.querySelector('.end-shift-btn') || document.createElement('button');
+    const startShiftBtn = document.querySelector('.start-shift-btn') || document.createElement('button');
     const updateContainer = document.querySelector('.sidebar') || document.body; // Use sidebar as container for update-available class
 
 
@@ -138,20 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusBadge = document.getElementById('store-status-badge');
             if (data.closed) {
                 if (statusBadge) statusBadge.style.display = 'none';
-                if (startShiftBtn) startShiftBtn.style.display = 'block';
-                if (endShiftBtn) endShiftBtn.style.display = 'none';
-                if (logoutBtn) logoutBtn.style.display = 'none';
-                if (manageEmployeesBtn) manageEmployeesBtn.style.display = 'none';
-                if (viewReportBtn) viewReportBtn.style.display = 'none';
-                if (viewEsrJpgsBtn) viewEsrJpgsBtn.style.display = 'none';
             } else {
                 if (statusBadge) statusBadge.style.display = 'flex';
-                if (startShiftBtn) startShiftBtn.style.display = 'none';
-                if (endShiftBtn) endShiftBtn.style.display = 'block';
-                if (logoutBtn) logoutBtn.style.display = 'block';
-                if (manageEmployeesBtn) manageEmployeesBtn.style.display = 'block';
-                if (viewReportBtn) viewReportBtn.style.display = 'block';
-                if (viewEsrJpgsBtn) viewEsrJpgsBtn.style.display = 'block';
             }
         })
         .catch(error => {
@@ -169,95 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/';
     });
 
-    endShiftBtn.addEventListener('click', async () => {
-        const password = await nammaModalSystem.prompt('Enter admin password to request End Shift OTP:');
-        if (!password) return;
-
-        // Step 1: verify password and request OTP to be emailed
-        fetch('/api/verify-admin-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
-        })
-            .then(response => response.json())
-            .then(async data => {
-                if (!data || !data.success) {
-                    await nammaModalSystem.alert('Incorrect password. Cannot request OTP.');
-                    return;
-                }
-
-                // If server returned a debug OTP (local dev), show it so testing is easier
-                if (data.debugOtp) {
-                    await nammaModalSystem.alert('OTP (debug): ' + data.debugOtp + '\n(Use this only for local testing)');
-                } else {
-                    await nammaModalSystem.alert('OTP sent to configured admin email. Please check your inbox.');
-                }
-
-                // Prompt for OTP and confirm
-                const otp = await nammaModalSystem.prompt('Enter the 5-digit OTP sent to the admin email:');
-                if (!otp) {
-                    await nammaModalSystem.alert('OTP is required to end shift.');
-                    return;
-                }
-
-                try {
-                    const confirmRes = await fetch('/api/confirm-endshift-otp', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ otp })
-                    });
-                    const confirmData = await confirmRes.json();
-                    if (confirmData && confirmData.success) {
-                        await nammaModalSystem.alert('Shift ended successfully. Store is now closed.');
-                        viewReportBtn.style.display = 'none';
-                        viewEsrJpgsBtn.style.display = 'none';
-                        manageEmployeesBtn.style.display = 'none';
-                        logoutBtn.style.display = 'none';
-                        endShiftBtn.style.display = 'none';
-                        startShiftBtn.style.display = 'block';
-                    } else {
-                        await nammaModalSystem.alert('OTP verification failed: ' + (confirmData.message || 'Invalid OTP'));
-                    }
-                } catch (err) {
-                    console.error('Error confirming OTP:', err);
-                    await nammaModalSystem.alert('Error verifying OTP.');
-                }
-            })
-            .catch(async error => {
-                console.error('Error requesting OTP:', error);
-                await nammaModalSystem.alert('Error requesting OTP.');
-            });
-    });
-
-    startShiftBtn.addEventListener('click', async () => {
-        const password = await nammaModalSystem.prompt('Enter admin password to start shift:');
-        if (password) {
-            fetch('/api/start-shift', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ password })
-            })
-                .then(response => response.json())
-                .then(async data => {
-                    if (data.success) {
-                        await nammaModalSystem.alert('Shift started successfully. Store is now open.');
-                        viewReportBtn.style.display = 'block';
-                        manageEmployeesBtn.style.display = 'block';
-                        logoutBtn.style.display = 'block';
-                        endShiftBtn.style.display = 'block';
-                        startShiftBtn.style.display = 'none';
-                    } else {
-                        await nammaModalSystem.alert('Incorrect password. Shift not started.');
-                    }
-                })
-                .catch(async error => {
-                    console.error('Error starting shift:', error);
-                    await nammaModalSystem.alert('Error starting shift.');
-                });
-        }
-    });
 
 
 
