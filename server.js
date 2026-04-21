@@ -2373,42 +2373,52 @@ app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
  * Endpoint: Master Reset - Clear All Attendance Data
  */
 app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
-    const { password } = req.body;
+    const { password, targets } = req.body;
     
     // Safety check: Password must match standard admin password
     if (password !== 'admin12nammamart') {
         return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
     }
 
+    if (!targets || !Array.isArray(targets) || targets.length === 0) {
+        return res.status(400).json({ success: false, message: 'No data categories selected for reset.' });
+    }
+
     try {
-        // Recursive deletion to handle > 500 documents
+        // Map of friendly names to collection references
+        const collectionMap = {
+            'attendance': [db.attendance_logs(), db.daily_sessions()],
+            'extra': [db.extra()],
+            'delivery': [db.delivery()],
+            'bill_paid': [db.bill_paid()],
+            'issue': [db.issue()],
+            'retail_credit': [db.retail_credit()],
+            'leave_swaps': [db.leave_swaps()]
+        };
+
         const deleteCollection = async (colRef) => {
             const snapshot = await colRef.limit(500).get();
             if (snapshot.size === 0) return;
-            
             const batch = firestore.batch();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            
-            // Recurse to handle next chunk
-            if (snapshot.size === 500) {
-                await deleteCollection(colRef);
-            }
+            if (snapshot.size === 500) await deleteCollection(colRef);
         };
 
-        console.log('🚮 Starting Attendance Data Master Reset...');
+        console.log(`🚮 Selective Reset Initiated for: ${targets.join(', ')}`);
         
-        // Clear collections in parallel
-        await Promise.all([
-            deleteCollection(db.attendance_logs()),
-            deleteCollection(db.daily_sessions())
-        ]);
+        for (const target of targets) {
+            const collections = collectionMap[target];
+            if (collections) {
+                await Promise.all(collections.map(col => deleteCollection(col)));
+            }
+        }
 
-        console.log('✅ Attendance Data Master Reset Complete');
-        res.json({ success: true, message: 'All logs and sessions have been permanently cleared.' });
+        console.log('✅ Selective Data Reset Complete');
+        res.json({ success: true, message: `Successfully cleared selected data categories.` });
     } catch (e) {
-        console.error('Reset Failed:', e);
-        res.status(500).json({ success: false, message: 'Failed to clear data.' });
+        console.error('Selective Reset Failed:', e);
+        res.status(500).json({ success: false, message: 'Failed to perform selective reset.' });
     }
 });
 

@@ -325,13 +325,36 @@
                                             <i class="fas fa-radiation"></i>
                                         </div>
                                         <div style="color: #ef4444; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
-                                            System Master Reset
+                                            Selective System Reset
                                         </div>
                                         <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 16px 0;">
-                                            This permanently wipes all attendance logs and session history. Irreversible action.
+                                            Selectively clear specific activity categories while preserving critical business reports.
                                         </p>
+                                        
+                                        <!-- Granular Selection UI -->
+                                        <div style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left;">
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="attendance" checked> Attendance
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="extra"> Extra Work
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="delivery"> Deliveries
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="bill_paid"> Bill Paid
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="issue"> Issues
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" class="reset-target" value="retail_credit"> Credits
+                                            </div>
+                                        </div>
+
                                         <button id="master-reset-attendance-btn" class="modern-btn" style="width: 100%; background: #ef4444; color: #FFFFFF; border: none; font-weight: 700; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
-                                            MASTER RESET LOGS
+                                            EXECUTE SELECTIVE RESET
                                         </button>
                                     </div>
                                 </div>

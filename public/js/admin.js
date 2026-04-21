@@ -1552,24 +1552,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const masterResetBtn = document.getElementById('master-reset-attendance-btn');
     if (masterResetBtn) {
         masterResetBtn.addEventListener('click', async () => {
+            // Collect selected targets
+            const selectedTargets = Array.from(document.querySelectorAll('.reset-target:checked'))
+                                         .map(cb => cb.value);
+
+            if (selectedTargets.length === 0) {
+                return await nammaModalSystem.alert('⚠️ Please select at least one category to reset.');
+            }
+
             const confirmed = await nammaModalSystem.confirm(
-                '☢️ SYSTEM RESET AUTHORITY ☢️ \n\nWarning: You are about to perform a Total System Wipe of daily attendance data. All logs, check-ins, and session history will be permanently destroyed.\n\nType the Master Password on the next screen to authorize.'
+                `☢️ SELECTIVE RESET AUTHORITY ☢️ \n\nYou are about to PERMANENTLY DELETE data for: ${selectedTargets.join(', ')}.\n\nThis action is irreversible. Enter Master Password to authorize.`
             );
 
             if (confirmed) {
-                const password = prompt('Please enter your MASTER PASSWORD to confirm deletion:');
+                const password = prompt('Please enter your MASTER PASSWORD to authorize:');
                 if (!password) return;
 
                 try {
                     const res = await fetch('/api/attendance/reset', {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password })
+                        body: JSON.stringify({ password, targets: selectedTargets })
                     });
                     const data = await res.json();
                     
                     if (data.success) {
-                        await nammaModalSystem.alert('✅ Reset Successful! All data has been cleared.');
+                        await nammaModalSystem.alert('✅ Reset Successful! Selected categories have been cleared.');
                         window.location.reload(); 
                     } else {
                         await nammaModalSystem.alert('❌ Reset Failed: ' + (data.message || 'Verification Error'));
