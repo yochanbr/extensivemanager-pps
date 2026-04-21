@@ -1076,7 +1076,6 @@ app.post('/api/end-shift', async (req, res) => {
 app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     const { password, targets } = req.body;
     
-    // Safety check: Password must match standard admin password
     if (password !== 'admin12nammamart') {
         return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
     }
@@ -1086,43 +1085,64 @@ app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     }
 
     try {
-        // Map of friendly names to collection references
-        const collectionMap = {
+        const stats = {};
+
+        // 1. Standalone Collections Reset (Attendance, Sessions, Swaps)
+        const collectionTargets = {
             'attendance': [db.attendance_logs(), db.daily_sessions()],
-            'extra': [db.extra()],
-            'delivery': [db.delivery()],
-            'bill_paid': [db.bill_paid()],
-            'issue': [db.issue()],
-            'retail_credit': [db.retail_credit()],
             'leave_swaps': [db.leave_swaps()]
         };
 
-        // Safe chunked deletion - exactly one pass of 500
+        // 2. Employee-Embedded Data Reset (Extra, Delivery, Bill Paid, Issue, Credit)
+        const employeeTargets = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit'];
+
+        // Helper: Safe batch delete for collections
         const deleteBatch = async (colRef) => {
             const snapshot = await colRef.limit(500).get();
             if (snapshot.size === 0) return 0;
-            
             const batch = firestore.batch();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            
             return snapshot.size;
         };
 
-        console.log(`🔨 Selective Batch Purge: ${targets.join(', ')}`);
-        const stats = {};
-        
+        // Execution: Collections
         for (const target of targets) {
-            const collections = collectionMap[target];
-            if (collections) {
-                const results = await Promise.all(collections.map(col => deleteBatch(col)));
+            if (collectionTargets[target]) {
+                const results = await Promise.all(collectionTargets[target].map(col => deleteBatch(col)));
                 stats[target] = results.reduce((a, b) => a + b, 0);
             }
         }
 
+        // Execution: Employee Embedded Fields
+        const activeEmpTargets = targets.filter(t => employeeTargets.includes(t));
+        if (activeEmpTargets.length > 0) {
+            console.log(`🧹 Cleaning Employee Fields: ${activeEmpTargets.join(', ')}`);
+            const empSnapshot = await db.employees().get();
+            const batch = firestore.batch();
+            let count = 0;
+
+            empSnapshot.docs.forEach(doc => {
+                const update = {};
+                activeEmpTargets.forEach(field => {
+                    update[field] = []; // Clear the array
+                });
+                batch.update(doc.ref, update);
+                count++;
+            });
+
+            if (count > 0) {
+                await batch.commit();
+                activeEmpTargets.forEach(field => {
+                    stats[field] = count; // We cleared this field for all employees
+                });
+            }
+        }
+
+        console.log('✅ Smart Reset Complete. Stats:', stats);
         res.json({ success: true, stats });
     } catch (e) {
-        console.error('Batch Purge Failed:', e);
+        console.error('Smart Reset Failed:', e);
         res.status(500).json({ success: false, message: 'Server error during batch purge.' });
     }
 });
