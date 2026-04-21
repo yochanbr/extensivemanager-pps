@@ -1454,23 +1454,35 @@ document.addEventListener('DOMContentLoaded', () => {
         securityForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const current = document.getElementById('current-admin-password').value;
-            const next = document.getElementById('new-admin-password').value;
-            if (next.length < 6) return await nammaModalSystem.alert('New password must be at least 6 characters');
+            const nextPass = document.getElementById('new-admin-password').value;
+            const nextUser = document.getElementById('new-admin-username').value;
+
+            if (!current) return await nammaModalSystem.alert('Current password is required to save changes.');
+            if (nextPass && nextPass.length < 6) return await nammaModalSystem.alert('New password must be at least 6 characters');
 
             try {
                 const res = await fetch('/api/settings/change-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ currentPassword: current, newPassword: next })
+                    body: JSON.stringify({ 
+                        currentPassword: current, 
+                        newPassword: nextPass || null, 
+                        newUsername: nextUser || null 
+                    })
                 });
                 const result = await res.json();
                 if (result.success) {
-                    await nammaModalSystem.alert('Password changed successfully! Please login again.');
-                    window.location.href = '/logout';
+                    await nammaModalSystem.alert('Credentials updated successfully! Kicking off session for security...');
+                    // FORCE LOGOUT
+                    localStorage.removeItem('adminLoggedIn');
+                    window.location.href = '/'; 
                 } else {
                     await nammaModalSystem.alert(result.message || 'Verification failed');
                 }
-            } catch (err) { await nammaModalSystem.alert('Server error during password change'); }
+            } catch (err) { 
+                console.error('Security Update Error:', err);
+                await nammaModalSystem.alert('Server error during credential change'); 
+            }
         });
     }
 

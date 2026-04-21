@@ -324,9 +324,9 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
 
     // 1. Check Admin Credentials
     const settingsDoc = await db.settings().doc('config').get();
-    const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminPassword: 'admin12nammamart' };
+    const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminUsername: 'nammamart', adminPassword: 'admin12nammamart' };
 
-    if ((trimmedUsername === 'nammamart' || trimmedUsername === 'admin') && password === adminSettings.adminPassword) {
+    if (trimmedUsername === (adminSettings.adminUsername || 'nammamart') && password === adminSettings.adminPassword) {
         const token = generateSessionToken({ username: trimmedUsername, role: 'admin' });
         res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
         return res.json({ success: true, redirectUrl: '/admin' });
@@ -1916,20 +1916,32 @@ app.post('/api/settings', verifyAdmin, async (req, res) => {
 
 // Change admin password
 app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword, newUsername } = req.body;
     const doc = await db.settings().doc('config').get();
-    const settings = doc.exists ? doc.data() : { adminPassword: 'admin12nammamart' };
+    const settings = doc.exists ? doc.data() : { adminUsername: 'nammamart', adminPassword: 'admin12nammamart' };
 
     if (currentPassword !== settings.adminPassword) {
         return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
     }
 
-    if (!newPassword || newPassword.length < 6) {
-        return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+    const updates = {};
+    if (newPassword) {
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+        }
+        updates.adminPassword = newPassword;
     }
 
-    await db.settings().doc('config').update({ adminPassword: newPassword });
-    res.json({ success: true, message: 'Admin password updated successfully.' });
+    if (newUsername && newUsername.trim()) {
+        updates.adminUsername = newUsername.trim();
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ success: false, message: 'No updates provided.' });
+    }
+
+    await db.settings().doc('config').update(updates);
+    res.json({ success: true, message: 'Admin credentials updated successfully.' });
 });
 
 // Get system status (uptime, storage)

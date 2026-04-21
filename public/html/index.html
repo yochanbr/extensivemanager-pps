@@ -297,6 +297,9 @@
                     </div>
                 </div>
                 <button type="submit" class="submit-btn">Check My Credentials</button>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="#" id="forgot-password-link" style="color: #64748B; font-size: 13px; text-decoration: none; font-weight: 500; transition: color 0.2s;">Forgot Password?</a>
+                </div>
             </form>
         </div>
     </div>
@@ -310,6 +313,16 @@
 
             const greetingEl = document.querySelector('.branding-content h2');
             if (greetingEl) greetingEl.innerHTML = greeting;
+
+            // Forgot Password logic
+            const forgotLink = document.getElementById('forgot-password-link');
+            if (forgotLink) {
+                forgotLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Assuming nammaModalSystem or a standard alert if script.js isn't loaded yet
+                    alert('🔐 Security Protected\n\nTo reset your admin credentials, please contact PinPoint Startups support with your device ID and store authorization code.\n\nEmail: pinpointstartups@gmail.com');
+                });
+            }
         });
     </script>
     <!-- Keep existing script behavior intact -->
