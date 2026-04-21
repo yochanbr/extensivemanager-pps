@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Rounded Square Background (Orange) -->
+  <rect x="64" y="64" width="384" height="384" rx="110" fill="#FF5A2C" />
+  
+  <!-- Sun/Gear Icon in Center (White) -->
+  <g fill="white">
+    <circle cx="256" cy="256" r="60" />
+    <path d="M256 120l25 60h-50zM256 392l25-60h-50zM392 256l-60 25v-50zM120 256l60 25v-50zM352 160l-15 63-48-28zM160 352l15-63 48 28zM352 352l-63-15 28-48zM160 160l63 15-28 48z" />
+  </g>
+</svg>

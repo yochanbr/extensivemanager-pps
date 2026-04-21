@@ -1448,6 +1448,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const phoneInput = document.getElementById('admin-contact-phone');
                 if (emailInput && s.adminEmail) emailInput.value = s.adminEmail;
                 if (phoneInput && s.adminPhone) phoneInput.value = s.adminPhone;
+
+                // MANDATORY SETUP CHECK
+                if (!s.adminEmail) {
+                    const setupModal = document.getElementById('admin-setup-modal');
+                    if (setupModal) {
+                        setupModal.style.display = 'flex';
+                        
+                        document.getElementById('save-setup-btn').onclick = async () => {
+                            const setupEmail = document.getElementById('setup-admin-email').value;
+                            if (!setupEmail) return nammaModalSystem.alert('Please enter a valid email to secure your account.');
+                            
+                            try {
+                                const res = await fetch('/api/settings/change-password', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ currentPassword: 'admin12nammamart', newEmail: setupEmail })
+                                });
+                                if (res.ok) {
+                                    setupModal.style.display = 'none';
+                                    nammaModalSystem.alert('Account Secured Successfully!');
+                                    if (emailInput) emailInput.value = setupEmail;
+                                }
+                            } catch (e) { nammaModalSystem.alert('Failed to save setup info.'); }
+                        };
+                    }
+                }
             }
         } catch (err) {
             console.error('Failed to fetch settings:', err);
@@ -1460,13 +1486,12 @@ document.addEventListener('DOMContentLoaded', () => {
         securityForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const current = document.getElementById('current-admin-password').value;
-            const nextPass = document.getElementById('new-admin-password').value;
-            const nextUser = document.getElementById('new-admin-username').value;
             const nextEmail = document.getElementById('admin-contact-email').value;
             const nextPhone = document.getElementById('admin-contact-phone').value;
 
-            if (!current) return await nammaModalSystem.alert('Current password is required to save changes.');
-            if (nextPass && nextPass.length < 6) return await nammaModalSystem.alert('New password must be at least 6 characters');
+            if (current !== 'admin12nammamart') {
+                return await nammaModalSystem.alert('Verification failed. Use your standard master password.');
+            }
 
             try {
                 const res = await fetch('/api/settings/change-password', {
@@ -1474,8 +1499,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         currentPassword: current, 
-                        newPassword: nextPass || null, 
-                        newUsername: nextUser || null,
                         newEmail: nextEmail || null,
                         newPhone: nextPhone || null
                     })

@@ -317,11 +317,15 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
 
     const trimmedUsername = username.trim();
 
-    // 1. Check Admin Credentials
+    // 1. Check Admin Credentials (Enforced: nammamart / admin12nammamart)
     const settingsDoc = await db.settings().doc('config').get();
-    const adminSettings = settingsDoc.exists ? settingsDoc.data() : { adminUsername: 'nammamart', adminPassword: 'admin12nammamart' };
+    const adminSettings = settingsDoc.exists ? settingsDoc.data() : {};
+    
+    // User requested to keep these specific credentials
+    const targetUser = 'nammamart';
+    const targetPass = 'admin12nammamart';
 
-    if (trimmedUsername === (adminSettings.adminUsername || 'nammamart') && password === adminSettings.adminPassword) {
+    if (trimmedUsername === targetUser && password === targetPass) {
         const token = generateSessionToken({ username: trimmedUsername, role: 'admin' });
         res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
         return res.json({ success: true, redirectUrl: '/admin' });
@@ -1911,26 +1915,15 @@ app.post('/api/settings', verifyAdmin, async (req, res) => {
 
 // Change admin password
 app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
-    const { currentPassword, newPassword, newUsername, newEmail, newPhone } = req.body;
+    const { currentPassword, newEmail, newPhone } = req.body;
     const doc = await db.settings().doc('config').get();
-    const settings = doc.exists ? doc.data() : { adminUsername: 'nammamart', adminPassword: 'admin12nammamart' };
-
-    if (currentPassword !== settings.adminPassword) {
-        return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+    
+    // Check current password (must be the enforced one)
+    if (currentPassword !== 'admin12nammamart') {
+        return res.status(401).json({ success: false, message: 'Verification failed. Incorrect current password.' });
     }
 
     const updates = {};
-    if (newPassword) {
-        if (newPassword.length < 6) {
-            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
-        }
-        updates.adminPassword = newPassword;
-    }
-
-    if (newUsername && newUsername.trim()) {
-        updates.adminUsername = newUsername.trim();
-    }
-    
     if (newEmail !== undefined) updates.adminEmail = newEmail;
     if (newPhone !== undefined) updates.adminPhone = newPhone;
 
@@ -1939,7 +1932,7 @@ app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
     }
 
     await db.settings().doc('config').set(updates, { merge: true });
-    res.json({ success: true, message: 'Admin credentials updated successfully.' });
+    res.json({ success: true, message: 'Admin profile updated successfully.' });
 });
 
 // Request Admin Password Reset OTP
