@@ -1570,29 +1570,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const originalBtnText = masterResetBtn.innerHTML;
                 masterResetBtn.disabled = true;
-                masterResetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> DEEP CLEANING...';
+                
+                let totalCleaned = 0;
+                let active = true;
 
-                try {
-                    const res = await fetch('/api/attendance/reset', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password, targets: selectedTargets })
-                    });
-                    const data = await res.json();
-                    
-                    if (data.success) {
-                        await nammaModalSystem.alert(`✅ Deep Clean Successful!\n\n${data.message}`);
-                        window.location.reload(); 
-                    } else {
-                        await nammaModalSystem.alert('❌ Reset Failed: ' + (data.message || 'Verification Error'));
+                const runPass = async () => {
+                    try {
+                        masterResetBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> CLEANING: ${totalCleaned}...`;
+                        
+                        const res = await fetch('/api/attendance/reset', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password, targets: selectedTargets })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            // Calculate how many were deleted in this pass
+                            const passTotal = Object.values(data.stats).reduce((a, b) => a + b, 0);
+                            totalCleaned += passTotal;
+                            
+                            // If any category still reports 500, we need another pass
+                            const needsMore = Object.values(data.stats).some(v => v === 500);
+                            
+                            if (needsMore && active) {
+                                return await runPass();
+                            } else {
+                                await nammaModalSystem.alert(`✅ Reset Complete!\nTotal records purged: ${totalCleaned}\nCategories: ${selectedTargets.join(', ')}`);
+                                window.location.reload(); 
+                            }
+                        } else {
+                            await nammaModalSystem.alert('❌ Reset Stopped: ' + (data.message || 'Server Error'));
+                            masterResetBtn.disabled = false;
+                            masterResetBtn.innerHTML = originalBtnText;
+                        }
+                    } catch (err) {
+                        await nammaModalSystem.alert('❌ Network Failure during cleaning. Please check your connection.');
                         masterResetBtn.disabled = false;
                         masterResetBtn.innerHTML = originalBtnText;
                     }
-                } catch (err) {
-                    await nammaModalSystem.alert('❌ Network Error: Failed to perform reset.');
-                    masterResetBtn.disabled = false;
-                    masterResetBtn.innerHTML = originalBtnText;
-                }
+                };
+
+                await runPass();
             }
         });
     }

@@ -2385,51 +2385,33 @@ app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     }
 
     try {
-        // High-performance chunked deletion
-        const deleteCollection = async (colRef) => {
-            let totalDeleted = 0;
-            const wipePass = async () => {
-                const snapshot = await colRef.limit(500).get();
-                if (snapshot.size === 0) return 0;
-                
-                const batch = firestore.batch();
-                snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
-                return snapshot.size;
-            };
-
-            // Run first pass immediately
-            let count = await wipePass();
-            totalDeleted += count;
-
-            // If we hit the limit, try one more immediate pass (max 1000 docs per request to avoid timeout)
-            if (count === 500) {
-                count = await wipePass();
-                totalDeleted += count;
-            }
+        // Safe chunked deletion - exactly one pass of 500
+        const deleteBatch = async (colRef) => {
+            const snapshot = await colRef.limit(500).get();
+            if (snapshot.size === 0) return 0;
             
-            return totalDeleted;
+            const batch = firestore.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            
+            return snapshot.size;
         };
 
-        console.log(`🌀 Deep Clean Initiated for: ${targets.join(', ')}`);
+        console.log(`🔨 Selective Batch Purge: ${targets.join(', ')}`);
         const stats = {};
         
         for (const target of targets) {
             const collections = collectionMap[target];
             if (collections) {
-                const results = await Promise.all(collections.map(col => deleteCollection(col)));
+                const results = await Promise.all(collections.map(col => deleteBatch(col)));
                 stats[target] = results.reduce((a, b) => a + b, 0);
             }
         }
 
-        console.log('✅ Deep Clean Success. Stats:', stats);
-        res.json({ 
-            success: true, 
-            message: `Deep clean successful. ${Object.entries(stats).map(([k,v]) => `${v} ${k} logs`).join(', ')} cleared.` 
-        });
+        res.json({ success: true, stats });
     } catch (e) {
-        console.error('Deep Clean Failed:', e);
-        res.status(500).json({ success: false, message: 'Deep clean failed during data purge.' });
+        console.error('Batch Purge Failed:', e);
+        res.status(500).json({ success: false, message: 'Server error during batch purge.' });
     }
 });
 
