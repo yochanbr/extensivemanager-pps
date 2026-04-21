@@ -1568,6 +1568,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const password = prompt('Please enter your MASTER PASSWORD to authorize:');
                 if (!password) return;
 
+                const originalBtnText = masterResetBtn.innerHTML;
+                masterResetBtn.disabled = true;
+                masterResetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> DEEP CLEANING...';
+
                 try {
                     const res = await fetch('/api/attendance/reset', {
                         method: 'DELETE',
@@ -1577,13 +1581,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await res.json();
                     
                     if (data.success) {
-                        await nammaModalSystem.alert('✅ Reset Successful! Selected categories have been cleared.');
+                        await nammaModalSystem.alert(`✅ Deep Clean Successful!\n\n${data.message}`);
                         window.location.reload(); 
                     } else {
                         await nammaModalSystem.alert('❌ Reset Failed: ' + (data.message || 'Verification Error'));
+                        masterResetBtn.disabled = false;
+                        masterResetBtn.innerHTML = originalBtnText;
                     }
                 } catch (err) {
                     await nammaModalSystem.alert('❌ Network Error: Failed to perform reset.');
+                    masterResetBtn.disabled = false;
+                    masterResetBtn.innerHTML = originalBtnText;
                 }
             }
         });

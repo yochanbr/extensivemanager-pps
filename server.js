@@ -2385,40 +2385,51 @@ app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     }
 
     try {
-        // Map of friendly names to collection references
-        const collectionMap = {
-            'attendance': [db.attendance_logs(), db.daily_sessions()],
-            'extra': [db.extra()],
-            'delivery': [db.delivery()],
-            'bill_paid': [db.bill_paid()],
-            'issue': [db.issue()],
-            'retail_credit': [db.retail_credit()],
-            'leave_swaps': [db.leave_swaps()]
-        };
-
+        // High-performance chunked deletion
         const deleteCollection = async (colRef) => {
-            const snapshot = await colRef.limit(500).get();
-            if (snapshot.size === 0) return;
-            const batch = firestore.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            if (snapshot.size === 500) await deleteCollection(colRef);
+            let totalDeleted = 0;
+            const wipePass = async () => {
+                const snapshot = await colRef.limit(500).get();
+                if (snapshot.size === 0) return 0;
+                
+                const batch = firestore.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                return snapshot.size;
+            };
+
+            // Run first pass immediately
+            let count = await wipePass();
+            totalDeleted += count;
+
+            // If we hit the limit, try one more immediate pass (max 1000 docs per request to avoid timeout)
+            if (count === 500) {
+                count = await wipePass();
+                totalDeleted += count;
+            }
+            
+            return totalDeleted;
         };
 
-        console.log(`🚮 Selective Reset Initiated for: ${targets.join(', ')}`);
+        console.log(`🌀 Deep Clean Initiated for: ${targets.join(', ')}`);
+        const stats = {};
         
         for (const target of targets) {
             const collections = collectionMap[target];
             if (collections) {
-                await Promise.all(collections.map(col => deleteCollection(col)));
+                const results = await Promise.all(collections.map(col => deleteCollection(col)));
+                stats[target] = results.reduce((a, b) => a + b, 0);
             }
         }
 
-        console.log('✅ Selective Data Reset Complete');
-        res.json({ success: true, message: `Successfully cleared selected data categories.` });
+        console.log('✅ Deep Clean Success. Stats:', stats);
+        res.json({ 
+            success: true, 
+            message: `Deep clean successful. ${Object.entries(stats).map(([k,v]) => `${v} ${k} logs`).join(', ')} cleared.` 
+        });
     } catch (e) {
-        console.error('Selective Reset Failed:', e);
-        res.status(500).json({ success: false, message: 'Failed to perform selective reset.' });
+        console.error('Deep Clean Failed:', e);
+        res.status(500).json({ success: false, message: 'Deep clean failed during data purge.' });
     }
 });
 
