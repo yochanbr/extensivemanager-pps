@@ -1068,6 +1068,65 @@ app.post('/api/end-shift', async (req, res) => {
     }
 });
 
+
+/**
+ * Endpoint: Master Reset - Clear All Attendance Data
+ * NOTE: This must be ABOVE generalize delete route to avoid route matching conflicts.
+ */
+app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
+    const { password, targets } = req.body;
+    
+    // Safety check: Password must match standard admin password
+    if (password !== 'admin12nammamart') {
+        return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
+    }
+
+    if (!targets || !Array.isArray(targets) || targets.length === 0) {
+        return res.status(400).json({ success: false, message: 'No data categories selected for reset.' });
+    }
+
+    try {
+        // Map of friendly names to collection references
+        const collectionMap = {
+            'attendance': [db.attendance_logs(), db.daily_sessions()],
+            'extra': [db.extra()],
+            'delivery': [db.delivery()],
+            'bill_paid': [db.bill_paid()],
+            'issue': [db.issue()],
+            'retail_credit': [db.retail_credit()],
+            'leave_swaps': [db.leave_swaps()]
+        };
+
+        // Safe chunked deletion - exactly one pass of 500
+        const deleteBatch = async (colRef) => {
+            const snapshot = await colRef.limit(500).get();
+            if (snapshot.size === 0) return 0;
+            
+            const batch = firestore.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            
+            return snapshot.size;
+        };
+
+        console.log(`🔨 Selective Batch Purge: ${targets.join(', ')}`);
+        const stats = {};
+        
+        for (const target of targets) {
+            const collections = collectionMap[target];
+            if (collections) {
+                const results = await Promise.all(collections.map(col => deleteBatch(col)));
+                stats[target] = results.reduce((a, b) => a + b, 0);
+            }
+        }
+
+        res.json({ success: true, stats });
+    } catch (e) {
+        console.error('Batch Purge Failed:', e);
+        res.status(500).json({ success: false, message: 'Server error during batch purge.' });
+    }
+});
+
 // Generalized Update Record Route
 app.put('/api/:type/:id', async (req, res) => {
     try {
@@ -2369,51 +2428,7 @@ app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-/**
- * Endpoint: Master Reset - Clear All Attendance Data
- */
-app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
-    const { password, targets } = req.body;
-    
-    // Safety check: Password must match standard admin password
-    if (password !== 'admin12nammamart') {
-        return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
-    }
 
-    if (!targets || !Array.isArray(targets) || targets.length === 0) {
-        return res.status(400).json({ success: false, message: 'No data categories selected for reset.' });
-    }
-
-    try {
-        // Safe chunked deletion - exactly one pass of 500
-        const deleteBatch = async (colRef) => {
-            const snapshot = await colRef.limit(500).get();
-            if (snapshot.size === 0) return 0;
-            
-            const batch = firestore.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            
-            return snapshot.size;
-        };
-
-        console.log(`🔨 Selective Batch Purge: ${targets.join(', ')}`);
-        const stats = {};
-        
-        for (const target of targets) {
-            const collections = collectionMap[target];
-            if (collections) {
-                const results = await Promise.all(collections.map(col => deleteBatch(col)));
-                stats[target] = results.reduce((a, b) => a + b, 0);
-            }
-        }
-
-        res.json({ success: true, stats });
-    } catch (e) {
-        console.error('Batch Purge Failed:', e);
-        res.status(500).json({ success: false, message: 'Server error during batch purge.' });
-    }
-});
 
 
 /**
