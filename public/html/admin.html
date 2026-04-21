@@ -318,15 +318,22 @@
                                     <button type="submit" class="modern-btn accent" style="width: 100%;">Update Recovery Info</button>
                                 </form>
 
-                                <!-- DANGER ZONE -->
-                                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed rgba(239, 68, 68, 0.2); width: 100%;">
-                                    <div style="display: flex; gap: 8px; align-items: center; color: #ef4444; margin-bottom: 12px; font-size: 13px; font-weight: 700;">
-                                        <i class="fas fa-exclamation-triangle"></i> DANGER ZONE
+                                <!-- DANGER ZONE (PRO POLISH) -->
+                                <div style="margin-top: 40px; padding: 24px; background: rgba(239, 68, 68, 0.03); border: 1.5px dashed rgba(239, 68, 68, 0.3); border-radius: 20px; width: 100%;">
+                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+                                        <div style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
+                                            <i class="fas fa-radiation"></i>
+                                        </div>
+                                        <div style="color: #ef4444; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                                            System Master Reset
+                                        </div>
+                                        <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 16px 0;">
+                                            This permanently wipes all attendance logs and session history. Irreversible action.
+                                        </p>
+                                        <button id="master-reset-attendance-btn" class="modern-btn" style="width: 100%; background: #ef4444; color: #FFFFFF; border: none; font-weight: 700; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
+                                            MASTER RESET LOGS
+                                        </button>
                                     </div>
-                                    <button id="master-reset-attendance-btn" class="modern-btn" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444;">
-                                        MASTER RESET LOGS
-                                    </button>
-                                    <p style="font-size: 11px; color: #94a3b8; margin-top: 8px; text-align: center;">Wipes all attendance logs & daily sessions. Irreversible.</p>
                                 </div>
                             </div>
                             <div class="summary-card"

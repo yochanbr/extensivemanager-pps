@@ -2381,19 +2381,31 @@ app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     }
 
     try {
-        const batch = firestore.batch();
-        
-        // 1. Clear attendance_logs
-        const logsSnapshot = await db.attendance_logs().get();
-        logsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-        
-        // 2. Clear daily_sessions
-        const sessionsSnapshot = await db.daily_sessions().get();
-        sessionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        // Recursive deletion to handle > 500 documents
+        const deleteCollection = async (colRef) => {
+            const snapshot = await colRef.limit(500).get();
+            if (snapshot.size === 0) return;
+            
+            const batch = firestore.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            
+            // Recurse to handle next chunk
+            if (snapshot.size === 500) {
+                await deleteCollection(colRef);
+            }
+        };
 
-        await batch.commit();
-        console.log('🚮 Attendance Data Master Reset Performed');
-        res.json({ success: true, message: 'All logs and sessions have been cleared.' });
+        console.log('🚮 Starting Attendance Data Master Reset...');
+        
+        // Clear collections in parallel
+        await Promise.all([
+            deleteCollection(db.attendance_logs()),
+            deleteCollection(db.daily_sessions())
+        ]);
+
+        console.log('✅ Attendance Data Master Reset Complete');
+        res.json({ success: true, message: 'All logs and sessions have been permanently cleared.' });
     } catch (e) {
         console.error('Reset Failed:', e);
         res.status(500).json({ success: false, message: 'Failed to clear data.' });

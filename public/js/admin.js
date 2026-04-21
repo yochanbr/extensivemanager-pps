@@ -1553,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (masterResetBtn) {
         masterResetBtn.addEventListener('click', async () => {
             const confirmed = await nammaModalSystem.confirm(
-                '☢️ CRITICAL DATA RESET ☢️ \n\nThis will PERMANENTLY DELETE all attendance logs and daily session history. This action cannot be undone.\n\nAre you absolutely sure you want to proceed?'
+                '☢️ SYSTEM RESET AUTHORITY ☢️ \n\nWarning: You are about to perform a Total System Wipe of daily attendance data. All logs, check-ins, and session history will be permanently destroyed.\n\nType the Master Password on the next screen to authorize.'
             );
 
             if (confirmed) {
