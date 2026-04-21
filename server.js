@@ -296,12 +296,7 @@ let employeeEndShiftOtp = {
 let updateInProgress = false;
 let updateStartTime = null;
 
-// In-memory OTP store for admin password resets
-let resetPasswordOtp = {
-    otp: null,
-    expiresAt: 0,
-    adminEmail: null
-};
+// Note: OTPs are now stored in Firestore to support serverless environments (Vercel)
 
 // Test close flag
 let testCloseDone = false;
@@ -1961,11 +1956,13 @@ app.post('/api/request-reset-otp', async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    resetPasswordOtp = {
+    
+    // STORE OTP IN FIRESTORE (Persists across Vercel instances)
+    await db.settings().doc('reset_otp_store').set({
         otp,
-        expiresAt: Date.now() + 10 * 60 * 1000, // valid for 10 minutes
+        expiresAt: Date.now() + 10 * 60 * 1000,
         adminEmail
-    };
+    });
 
     const mailOptions = {
         from: emailConfig.from,
@@ -1999,12 +1996,18 @@ app.post('/api/reset-admin-password', async (req, res) => {
         return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
     }
 
-    // Verify OTP
-    if (!resetPasswordOtp.otp || resetPasswordOtp.otp !== otp.trim()) {
+    // VERIFY OTP FROM FIRESTORE
+    const otpDoc = await db.settings().doc('reset_otp_store').get();
+    if (!otpDoc.exists) {
+        return res.status(401).json({ success: false, message: 'No active reset request found. Please request a new code.' });
+    }
+
+    const storedData = otpDoc.data();
+    if (!storedData.otp || storedData.otp !== otp.trim()) {
         return res.status(401).json({ success: false, message: 'Invalid or incorrect OTP.' });
     }
 
-    if (Date.now() > resetPasswordOtp.expiresAt) {
+    if (Date.now() > storedData.expiresAt) {
         return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
     }
 
@@ -2012,8 +2015,8 @@ app.post('/api/reset-admin-password', async (req, res) => {
         // Update Firestore
         await db.settings().doc('config').update({ adminPassword: newPassword });
         
-        // Clear OTP from memory
-        resetPasswordOtp = { otp: null, expiresAt: 0, adminEmail: null };
+        // Clear OTP from Firestore
+        await db.settings().doc('reset_otp_store').delete();
 
         res.json({ success: true, message: 'Password reset successful! You can now login with your new password.' });
     } catch (err) {
