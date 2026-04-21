@@ -258,6 +258,7 @@ const syncToBackupRepo = async () => {
 // Professional Directory Structure Static Serving
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
+app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 app.use(express.static(path.join(__dirname, 'public/html')));
 
 // Specifically serve models directory (Crucial for Vercel/Face-API)
