@@ -687,33 +687,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 let bg = '#FEE2E2';
 
                 if (session) {
-                    checkins++;
-                    totalBreakMs += (session.totalBreakDuration || 0);
-
-                    if (session.checkOutTime) {
-                        status = 'checkout';
-                        statusText = 'Checked Out';
-                        statusColor = '#64748b';
-                        bg = '#f1f5f9';
-                        checkouts++;
-                        totalWorkMs += (new Date(session.checkOutTime) - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
-                    } else if (session.isOnBreak) {
-                        status = 'break';
-                        statusText = 'On Break';
-                        statusColor = '#f59e0b';
-                        bg = 'rgba(245, 158, 11, 0.1)';
-                        breakCount++;
-                        totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
-                    } else {
-                        status = 'working';
-                        statusText = 'Working';
-                        statusColor = '#10b981';
-                        bg = 'rgba(16, 185, 129, 0.1)';
-                        active++;
-                        totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
+                    const isDeclined = session.approvalStatus === 'declined';
+                    if (!isDeclined) {
+                        checkins++;
+                        totalBreakMs += (session.totalBreakDuration || 0);
                     }
 
-                    if (emp.workingDays && !emp.workingDays.split(',').includes(targetDayName)) leaveWorked++;
+                    if (session.checkOutTime) {
+                        status = isDeclined ? 'checkout' : 'checkout'; // status stays checkout but we can add flag
+                        statusText = isDeclined ? 'Declined' : 'Checked Out';
+                        statusColor = isDeclined ? '#94A3B8' : '#64748b';
+                        bg = isDeclined ? '#F1F5F9' : '#f1f5f9';
+                        
+                        if (!isDeclined) {
+                            checkouts++;
+                            totalWorkMs += (new Date(session.checkOutTime) - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
+                        }
+                    } else if (session.isOnBreak) {
+                        status = 'break';
+                        statusText = isDeclined ? 'Declined (Break)' : 'On Break';
+                        statusColor = isDeclined ? '#94A3B8' : '#f59e0b';
+                        bg = isDeclined ? '#F1F5F9' : 'rgba(245, 158, 11, 0.1)';
+                        
+                        if (!isDeclined) {
+                            breakCount++;
+                            totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
+                        }
+                    } else {
+                        status = 'working';
+                        statusText = isDeclined ? 'Declined (Working)' : 'Working';
+                        statusColor = isDeclined ? '#94A3B8' : '#10b981';
+                        bg = isDeclined ? '#F1F5F9' : 'rgba(16, 185, 129, 0.1)';
+                        
+                        if (!isDeclined) {
+                            active++;
+                            totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
+                        }
+                    }
+
+                    if (emp.workingDays && !emp.workingDays.split(',').includes(targetDayName)) {
+                        if (!isDeclined) leaveWorked++;
+                    }
                 }
 
                 return { ...emp, status, statusText, statusColor, bg, session };
@@ -725,25 +739,39 @@ document.addEventListener('DOMContentLoaded', () => {
             setVal('dash-working', active);
             setVal('dash-break', breakCount);
 
-            // --- ALERT HUB ENGINE ---
+            // --- ALERT HUB ENGINE (REFINED FOR APPROVALS) ---
             const alerts = [];
-            const SHIFT_START_HOUR = 9;
-            employees.forEach(emp => {
-                const session = sessions.find(s => s.employeeId == emp.id);
-                if (session && session.checkInTime) {
-                    const checkInDate = new Date(session.checkInTime);
-                    const shiftStart = new Date(checkInDate);
-                    shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
-                    const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
-                    if (lateMin > 10) {
-                        alerts.push({
-                            type: 'late',
-                            title: 'Late Arrival',
-                            user: emp.name,
-                            desc: `Checked in ${lateMin}m late`,
-                            color: '#EF4444'
-                        });
+            sessions.forEach(session => {
+                if (session.approvalStatus === 'pending_approval') {
+                    const type = session.requiresApproval || 'DISCREPANCY';
+                    let title = 'Attention Required';
+                    let color = '#F59E0B'; // Amber for pending
+                    let icon = 'exclamation-triangle';
+
+                    if (type === 'LATE_ARRIVAL') {
+                        title = 'Late Arrival';
+                        color = '#EF4444';
+                        icon = 'clock';
+                    } else if (type === 'EARLY_EXIT') {
+                        title = 'Early Departure';
+                        color = '#F97316';
+                        icon = 'running';
+                    } else if (type === 'OVERTIME') {
+                        title = 'Overtime Recorded';
+                        color = '#8B5CF6';
+                        icon = 'stopwatch';
                     }
+
+                    alerts.push({
+                        id: session.id,
+                        type: 'discrepancy',
+                        icon: icon,
+                        title: title,
+                        user: session.employeeName,
+                        desc: type.replace('_', ' '),
+                        color: color,
+                        isActionable: true
+                    });
                 }
             });
             if (window.renderAlertHub) window.renderAlertHub(alerts);
@@ -2163,17 +2191,62 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.textContent = `${alerts.length} Issue${alerts.length > 1 ? 's' : ''}`;
 
         container.innerHTML = alerts.map(a => `
-            <div style="background: white; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}15; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px;">
-                    <i class="fas fa-${a.type === 'late' ? 'clock' : 'info-circle'}"></i>
+            <div style="background: white; border: 1px solid ${a.color}33; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 8px;">
+                <div style="width: 40px; height: 40px; border-radius: 12px; background: ${a.color}15; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                    <i class="fas fa-${a.icon || 'info-circle'}"></i>
                 </div>
                 <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 13px; color: #1E293B;">${a.user}</div>
-                    <div style="font-size: 11px; color: #64748B;">${a.desc}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 14px; color: #1E293B;">${a.user}</div>
+                            <div style="font-size: 11px; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${a.desc}</div>
+                        </div>
+                        ${a.isActionable ? `
+                            <div style="display: flex; gap: 6px;">
+                                <button onclick="window.reviewAttendance('${a.id}', 'approve')" 
+                                    style="padding: 4px 10px; border-radius: 8px; background: #10B981; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button onclick="window.reviewAttendance('${a.id}', 'decline')" 
+                                    style="padding: 4px 10px; border-radius: 8px; background: #EF4444; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-times"></i> Decline
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-                <div style="font-size: 10px; font-weight: 700; color: ${a.color}; text-transform: uppercase; letter-spacing: 0.05em;">${a.title}</div>
             </div>
         `).join('');
+    };
+
+    /**
+     * API Handler for Attendance Review
+     */
+    window.reviewAttendance = async function (sessionId, action) {
+        try {
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const response = await fetch('/api/attendance/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, action })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                if (window.nammaModalSystem) nammaModalSystem.success(result.message);
+                window.fetchLogsRealtime(); // Refresh logs to update UI
+            } else {
+                if (window.nammaModalSystem) nammaModalSystem.error(result.message);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (err) {
+            console.error('Review fetch error:', err);
+        }
     };
 
     // Bulk APIs placeholder hooking
