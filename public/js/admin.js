@@ -1258,8 +1258,24 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/employees/' + id)
             .then(res => res.json())
             .then(emp => {
-                // Populate modal fields safely
-                const setVal = (vid, val) => { const el = document.getElementById(vid); if (el) el.value = val !== undefined ? val : ''; };
+                // Helper: set value + handle select elements correctly
+                const setVal = (vid, val) => {
+                    const el = document.getElementById(vid);
+                    if (!el) return;
+                    if (el.tagName === 'SELECT') {
+                        // Find the matching option (case-insensitive)
+                        const target = (val || '').toString().toLowerCase();
+                        for (const opt of el.options) {
+                            if (opt.value.toLowerCase() === target || opt.text.toLowerCase() === target) {
+                                el.value = opt.value;
+                                return;
+                            }
+                        }
+                        el.value = val || '';
+                    } else {
+                        el.value = val !== undefined && val !== null ? val : '';
+                    }
+                };
 
                 setVal('spa-edit-id', emp.id || emp._id);
                 setVal('spa-edit-name', emp.name);
@@ -1272,16 +1288,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-guardian-phone', emp.guardianPhone);
                 setVal('spa-edit-aadhar-number', emp.aadharNumber);
 
-                if (emp.dob && document.getElementById('spa-edit-dob')) {
-                    document.getElementById('spa-edit-dob').value = new Date(emp.dob).toISOString().split('T')[0];
-                } else {
-                    setVal('spa-edit-dob', '');
+                // DOB - normalize to date input format
+                const dobEl = document.getElementById('spa-edit-dob');
+                if (dobEl) {
+                    try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
+                    catch(e) { dobEl.value = emp.dob || ''; }
                 }
 
                 setVal('spa-edit-gender', emp.gender);
                 setVal('spa-edit-marital-status', emp.maritalStatus);
                 setVal('spa-edit-email', emp.email);
-
                 setVal('spa-edit-bank-name', emp.bankName);
                 setVal('spa-edit-bank-branch', emp.bankBranch);
                 setVal('spa-edit-ifsc-code', emp.ifscCode);
@@ -1289,17 +1305,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-account-holder-name', emp.accountHolderName);
                 setVal('spa-edit-pan-number', emp.panNumber);
 
+                // Full-time select
                 const fullTimeEl = document.getElementById('spa-edit-full-time');
                 if (fullTimeEl) {
-                    fullTimeEl.value = emp.fullTime || '';
+                    fullTimeEl.value = emp.fullTime || 'yes';
                     fullTimeEl.dispatchEvent(new Event('change'));
                 }
                 setVal('spa-edit-start-time', emp.startTime);
                 setVal('spa-edit-end-time', emp.endTime);
                 setVal('spa-edit-break-time', emp.breakTime);
 
-                // Checkboxes
-                const days = emp.workingDays ? (Array.isArray(emp.workingDays) ? emp.workingDays : emp.workingDays.split(',')) : [];
+                // Working days checkboxes
+                const days = emp.workingDays
+                    ? (Array.isArray(emp.workingDays) ? emp.workingDays : emp.workingDays.split(',').map(d => d.trim()))
+                    : [];
                 document.querySelectorAll('input[name="working-days"]').forEach(cb => {
                     cb.checked = days.includes(cb.value);
                 });
@@ -1307,6 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-username', emp.username);
                 setVal('spa-edit-password', emp.password);
 
+                // Open modal with animation
                 const modal = document.getElementById('spa-edit-employee-modal');
                 if (modal) {
                     modal.style.display = 'flex';
@@ -1855,8 +1875,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const t = new Date(log.timestamp).getTime() || Date.now();
                     const action = (log.action || log.type || '').toUpperCase();
 
-                    if (action === 'CLOCK_IN' || action === 'CHECK_IN' || action === 'IN') {
-                        if (m.checkInTs === null) m.checkInTs = t; // only first check-in
+                    if (action === 'CLOCK_IN' || action === 'CLOCK_IN_PENDING' || action === 'CHECK_IN' || action === 'IN') {
+                        if (m.checkInTs === null) m.checkInTs = t; // only first check-in (including late arrivals)
                     } else if (action === 'BREAK_START') {
                         m.currentBreakStart = t;
                     } else if (action === 'BREAK_END' && m.currentBreakStart) {

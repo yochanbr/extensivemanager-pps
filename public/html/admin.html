@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -309,7 +309,7 @@
                                             placeholder="e.g. +91 98765 43210">
                                     </div>
                                     <div class="modern-form-group"><label>Current Master Password</label><input type="password"
-                                            id="current-admin-password" class="modern-input" placeholder="••••••••">
+                                            id="current-admin-password" class="modern-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
                                     </div>
                                     <button type="submit" class="modern-btn accent" style="width: 100%;">Update Recovery Info</button>
                                 </form>
@@ -605,158 +605,75 @@
 
     <!-- EMPLOYEE EDIT MODAL -->
     <div class="modal-overlay" id="spa-edit-employee-modal">
-        <div class="modern-modal" style="max-width: 800px;">
-            <div class="modern-modal-header">
-                <div class="modal-title-area">
-                    <h2>Edit Employee Details</h2>
-                    <p>Update profile, permissions, and shifts</p>
+        <div class="modern-modal" style="max-width: 820px; width: 95vw; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; box-shadow: 0 32px 80px rgba(0,0,0,0.18);">
+            <div style="background: linear-gradient(135deg, #1E293B 0%, #334155 100%); color: white; padding: 22px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;"><i class="fas fa-user-edit"></i></div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: white; font-family: inherit;">Edit Employee</h2>
+                        <p style="margin: 2px 0 0; font-size: 12px; color: rgba(255,255,255,0.6); font-family: inherit;">Update profile, permissions and shift schedule</p>
+                    </div>
                 </div>
-                <button class="close-modal-btn close-spa-edit">&times;</button>
+                <button class="close-modal-btn close-spa-edit" style="background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 10px; width: 36px; height: 36px; font-size: 18px; cursor: pointer;">&times;</button>
             </div>
-            <div class="modern-modal-body">
-                <form id="spa-edit-employee-form" class="modern-grid-form"
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-height: 70vh; overflow-y: auto; padding: 10px;">
+            <div style="overflow-y: auto; flex: 1; padding: 24px 28px; background: #F8FAFC;">
+                <form id="spa-edit-employee-form">
                     <input type="hidden" id="spa-edit-id" name="id">
-
-                    <!-- Section: Basic Information -->
-                    <div
-                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 10px;">
-                        <span
-                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Personal
-                            Information</span>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:28px;height:28px;border-radius:8px;background:#EFF6FF;color:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:12px;"><i class="fas fa-user"></i></div><span style="font-weight:800;font-size:12px;color:#1E293B;text-transform:uppercase;letter-spacing:0.08em;">Personal Information</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Full Name</label><input type="text" id="spa-edit-name" name="name" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Employee ID</label><input type="text" id="spa-edit-employee-id" name="employee-id" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Phone Number</label><input type="text" id="spa-edit-phone" name="phone" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Role / Position</label><input type="text" id="spa-edit-blood-group" name="blood-group" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Base Salary</label><input type="text" id="spa-edit-aadhar-number" name="aadhar-number" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Personal Email</label><input type="email" id="spa-edit-email" name="email" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Date of Birth</label><input type="date" id="spa-edit-dob" name="dob" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Gender</label><select id="spa-edit-gender" name="gender" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;cursor:pointer;outline:none;font-family:inherit;"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Marital Status</label><select id="spa-edit-marital-status" name="marital-status" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;cursor:pointer;outline:none;font-family:inherit;"><option value="">Select Status</option><option value="Single">Single</option><option value="Married">Married</option></select></div>
+                        <div style="grid-column:span 2;"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Full Address</label><textarea id="spa-edit-address" name="address" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;height:70px;resize:none;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></textarea></div>
                     </div>
-                    <div class="modern-form-group"><label>Full Name</label><input type="text" id="spa-edit-name"
-                            name="name" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Employee ID</label><input type="text"
-                            id="spa-edit-employee-id" name="employee-id" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Phone Number</label><input type="text" id="spa-edit-phone"
-                            name="phone" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Role / Position</label><input type="text"
-                            id="spa-edit-blood-group" name="blood-group" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Base Salary</label><input type="text"
-                            id="spa-edit-aadhar-number" name="aadhar-number" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Personal Email</label><input type="email" id="spa-edit-email"
-                            name="email" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Date of Birth</label><input type="date" id="spa-edit-dob"
-                            name="dob" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Gender</label>
-                        <select id="spa-edit-gender" name="gender" class="modern-input">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:28px;height:28px;border-radius:8px;background:#F0FDF4;color:#10B981;display:flex;align-items:center;justify-content:center;font-size:12px;"><i class="fas fa-briefcase"></i></div><span style="font-weight:800;font-size:12px;color:#1E293B;text-transform:uppercase;letter-spacing:0.08em;">Work and Access</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Login Username</label><input type="text" id="spa-edit-username" name="username" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Login Password</label><input type="password" id="spa-edit-password" name="password" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Employment Type</label><select id="spa-edit-full-time" name="full-time" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;cursor:pointer;outline:none;font-family:inherit;"><option value="yes">Full Time</option><option value="no">Part Time</option></select></div>
+                        <div class="spa-edit-time-group"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Shift Start Time</label><input type="time" id="spa-edit-start-time" name="start-time" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div class="spa-edit-time-group"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Shift End Time</label><input type="time" id="spa-edit-end-time" name="end-time" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div class="spa-edit-time-group"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Break Duration (Mins)</label><input type="number" id="spa-edit-break-time" name="break-time" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
                     </div>
-                    <div class="modern-form-group"><label>Marital Status</label>
-                        <select id="spa-edit-marital-status" name="marital-status" class="modern-input">
-                            <option value="Single">Single</option>
-                            <option value="Married">Married</option>
-                        </select>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:28px;height:28px;border-radius:8px;background:#FFF7ED;color:#F97316;display:flex;align-items:center;justify-content:center;font-size:12px;"><i class="fas fa-calendar-week"></i></div><span style="font-weight:800;font-size:12px;color:#1E293B;text-transform:uppercase;letter-spacing:0.08em;">Working Days</span></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;padding:16px;background:white;border:1.5px solid #E2E8F0;border-radius:12px;margin-bottom:24px;">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Monday" style="accent-color:#F95A2C;"> Mon</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Tuesday" style="accent-color:#F95A2C;"> Tue</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Wednesday" style="accent-color:#F95A2C;"> Wed</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Thursday" style="accent-color:#F95A2C;"> Thu</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Friday" style="accent-color:#F95A2C;"> Fri</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Saturday" style="accent-color:#F95A2C;"> Sat</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;padding:8px 14px;border-radius:8px;background:#F8FAFC;border:1.5px solid #E2E8F0;"><input type="checkbox" name="working-days" value="Sunday" style="accent-color:#F95A2C;"> Sun</label>
                     </div>
-                    <div class="modern-form-group" style="grid-column: span 2;"><label>Full Address</label><textarea
-                            id="spa-edit-address" name="address" class="modern-input" style="height: 60px;"></textarea>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:28px;height:28px;border-radius:8px;background:#FFF1F2;color:#EF4444;display:flex;align-items:center;justify-content:center;font-size:12px;"><i class="fas fa-phone-alt"></i></div><span style="font-weight:800;font-size:12px;color:#1E293B;text-transform:uppercase;letter-spacing:0.08em;">Emergency Information</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Guardian Name</label><input type="text" id="spa-edit-guardian-name" name="guardian-name" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Relationship</label><input type="text" id="spa-edit-relationship" name="relationship" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div style="grid-column:span 2;"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Guardian Phone</label><input type="text" id="spa-edit-guardian-phone" name="guardian-phone" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
                     </div>
-
-                    <!-- Section: Work & Access -->
-                    <div
-                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
-                        <span
-                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Work
-                            & Access</span>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><div style="width:28px;height:28px;border-radius:8px;background:#EFF6FF;color:#6366F1;display:flex;align-items:center;justify-content:center;font-size:12px;"><i class="fas fa-university"></i></div><span style="font-weight:800;font-size:12px;color:#1E293B;text-transform:uppercase;letter-spacing:0.08em;">Bank Account Details</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-bottom:8px;">
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Bank Name</label><input type="text" id="spa-edit-bank-name" name="bank-name" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Bank Branch</label><input type="text" id="spa-edit-bank-branch" name="bank-branch" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Account Number</label><input type="text" id="spa-edit-account-number" name="account-number" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">IFSC Code</label><input type="text" id="spa-edit-ifsc-code" name="ifsc-code" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Account Holder Name</label><input type="text" id="spa-edit-account-holder-name" name="account-holder-name" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
+                        <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">PAN Number</label><input type="text" id="spa-edit-pan-number" name="pan-number" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'"></div>
                     </div>
-                    <div class="modern-form-group"><label>Login Username</label><input type="text"
-                            id="spa-edit-username" name="username" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Login Password</label><input type="password"
-                            id="spa-edit-password" name="password" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Full Time Status</label>
-                        <select id="spa-edit-full-time" name="full-time" class="modern-input">
-                            <option value="yes">Full Time</option>
-                            <option value="no">Part Time</option>
-                        </select>
-                    </div>
-
-                    <div class="modern-form-group spa-edit-time-group"><label>Shift Start Time</label><input type="time"
-                            id="spa-edit-start-time" name="start-time" class="modern-input"></div>
-                    <div class="modern-form-group spa-edit-time-group"><label>Shift End Time</label><input type="time"
-                            id="spa-edit-end-time" name="end-time" class="modern-input"></div>
-                    <div class="modern-form-group spa-edit-time-group" style="grid-column: span 2;"><label>Break
-                            Duration (Mins)</label><input type="number" id="spa-edit-break-time" name="break-time"
-                            class="modern-input"></div>
-
-                    <!-- Section: Working Days -->
-                    <div
-                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
-                        <span
-                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Weekly
-                            Working Days</span>
-                    </div>
-                    <div
-                        style="grid-column: span 2; display: flex; flex-wrap: wrap; gap: 15px; padding: 10px; background: #F8FAFC; border-radius: 12px;">
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Monday"> Mon</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Tuesday"> Tue</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Wednesday"> Wed</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Thursday"> Thu</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Friday"> Fri</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Saturday"> Sat</label>
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569;"><input
-                                type="checkbox" name="working-days" value="Sunday"> Sun</label>
-                    </div>
-
-                    <!-- Section: Emergency Information -->
-                    <div
-                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
-                        <span
-                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Emergency
-                            Information</span>
-                    </div>
-                    <div class="modern-form-group"><label>Guardian / Emergency Name</label><input type="text"
-                            id="spa-edit-guardian-name" name="guardian-name" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Relationship</label><input type="text"
-                            id="spa-edit-relationship" name="relationship" class="modern-input"></div>
-                    <div class="modern-form-group" style="grid-column: span 2;"><label>Guardian / Emergency
-                            Phone</label><input type="text" id="spa-edit-guardian-phone" name="guardian-phone"
-                            class="modern-input"></div>
-
-                    <!-- Section: Bank Account Details -->
-                    <div
-                        style="grid-column: span 2; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; margin-top: 20px;">
-                        <span
-                            style="font-weight: 800; font-size: 13px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Bank
-                            Account Details</span>
-                    </div>
-                    <div class="modern-form-group"><label>Bank Name</label><input type="text" id="spa-edit-bank-name"
-                            name="bank-name" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Bank Branch</label><input type="text"
-                            id="spa-edit-bank-branch" name="bank-branch" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Account Number</label><input type="text"
-                            id="spa-edit-account-number" name="account-number" class="modern-input"></div>
-                    <div class="modern-form-group"><label>IFSC Code</label><input type="text" id="spa-edit-ifsc-code"
-                            name="ifsc-code" class="modern-input"></div>
-                    <div class="modern-form-group"><label>Account Holder Name</label><input type="text"
-                            id="spa-edit-account-holder-name" name="account-holder-name" class="modern-input"></div>
-                    <div class="modern-form-group"><label>PAN Number</label><input type="text" id="spa-edit-pan-number"
-                            name="pan-number" class="modern-input"></div>
                 </form>
             </div>
-            <div class="modern-modal-footer">
-                <button class="modern-btn secondary close-spa-edit-btn">Cancel</button>
-                <button id="spa-edit-save-btn" class="modern-btn accent">Save Changes</button>
+            <div style="padding:16px 28px;background:white;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:12px;flex-shrink:0;">
+                <button class="modern-btn secondary close-spa-edit-btn" style="padding:10px 22px;border-radius:10px;border:1.5px solid #E2E8F0;background:white;color:#64748B;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">Cancel</button>
+                <button id="spa-edit-save-btn" class="modern-btn accent" style="padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,#F95A2C,#FF8C42);color:white;border:none;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit;"><i class="fas fa-save"></i> Save Changes</button>
             </div>
         </div>
     </div>
-
     <!-- SHIFT SNAPSHOT PICKER MODAL -->
     <div class="modal-overlay" id="employee-selection-modal">
         <div class="modern-modal" style="max-width: 450px;">
