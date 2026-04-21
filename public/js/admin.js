@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attendanceBtn = document.querySelector('.attendance-btn');
     const endShiftBtn = document.querySelector('.end-shift-btn') || document.createElement('button');
     const startShiftBtn = document.querySelector('.start-shift-btn') || document.createElement('button');
+    const helpBtn = null;
     const updateContainer = document.querySelector('.sidebar') || document.body; // Use sidebar as container for update-available class
 
 
@@ -130,6 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+
 
     // Check store status on page load
     fetch('/api/store-status')
