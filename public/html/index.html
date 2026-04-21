@@ -257,7 +257,7 @@
     <div class="bg-shape-2"></div>
 
     <div class="login-wrapper">
-        <!-- Modern Left Branding Panel -->
+        <!-- ... existing left panel ... -->
         <div class="branding-panel">
             <div class="logo-area">
                 <i class="fas fa-certificate"></i>
@@ -296,13 +296,60 @@
                         <input type="password" id="password" name="password" placeholder="Enter your password" required>
                     </div>
                 </div>
-                <button type="submit" class="submit-btn">Check My Credentials</button>
+                <button type="submit" class="submit-btn" id="login-submit-btn">Check My Credentials</button>
                 <div style="text-align: center; margin-top: 20px;">
                     <a href="#" id="forgot-password-link" style="color: #64748B; font-size: 13px; text-decoration: none; font-weight: 500; transition: color 0.2s;">Forgot Password?</a>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- ROLE SELECTION MODAL -->
+    <div id="forgot-password-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; width: 90%; max-width: 450px; border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); position: relative; animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <button id="close-forgot-modal" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer;">&times;</button>
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 64px; height: 64px; background: #FDE6E1; color: #F95A2C; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3 style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">Identity Verification</h3>
+                <p style="color: #64748B; font-size: 14px;">Select your role to proceed with password recovery</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <button id="forgot-role-employee" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #EEF2FF; color: #6366F1; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Employee</div>
+                        <div style="font-size: 12px; color: #64748B;">Contact admin for access</div>
+                    </div>
+                </button>
+                <button id="forgot-role-admin" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #F97316; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Admin</div>
+                        <div style="font-size: 12px; color: #64748B;">Request secure security OTP</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        #forgot-role-employee:hover, #forgot-role-admin:hover {
+            background: #FFFFFF !important;
+            border-color: #0A0A0A !important;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -316,11 +363,52 @@
 
             // Forgot Password logic
             const forgotLink = document.getElementById('forgot-password-link');
-            if (forgotLink) {
+            const forgotModal = document.getElementById('forgot-password-modal');
+            const closeForgotModal = document.getElementById('close-forgot-modal');
+            const employeeBtn = document.getElementById('forgot-role-employee');
+            const adminBtn = document.getElementById('forgot-role-admin');
+
+            if (forgotLink && forgotModal) {
                 forgotLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    // Assuming nammaModalSystem or a standard alert if script.js isn't loaded yet
-                    alert('🔐 Security Protected\n\nTo reset your admin credentials, please contact PinPoint Startups support with your device ID and store authorization code.\n\nEmail: pinpointstartups@gmail.com');
+                    forgotModal.style.display = 'flex';
+                });
+
+                closeForgotModal.addEventListener('click', () => {
+                    forgotModal.style.display = 'none';
+                });
+
+                window.addEventListener('click', (e) => {
+                    if (e.target === forgotModal) forgotModal.style.display = 'none';
+                });
+
+                employeeBtn.addEventListener('click', () => {
+                    forgotModal.style.display = 'none';
+                    alert('👤 Employee Access\n\nPlease contact your store manager or administrator to reset your login credentials. If you are an admin, please select the Admin option.');
+                });
+
+                adminBtn.addEventListener('click', async () => {
+                    const originalContent = adminBtn.innerHTML;
+                    adminBtn.disabled = true;
+                    adminBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending OTP...';
+
+                    try {
+                        const res = await fetch('/api/request-reset-otp', { method: 'POST' });
+                        const data = await res.json();
+                        
+                        forgotModal.style.display = 'none';
+                        if (data.success) {
+                            alert('📧 OTP Sent!\n\n' + data.message);
+                        } else {
+                            alert('❌ Request Failed\n\n' + data.message);
+                        }
+                    } catch (err) {
+                        console.error('Reset Request Error:', err);
+                        alert('❌ Network Error\n\nUnable to reach servers. Please try again later.');
+                    } finally {
+                        adminBtn.disabled = false;
+                        adminBtn.innerHTML = originalContent;
+                    }
                 });
             }
         });

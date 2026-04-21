@@ -1442,6 +1442,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const s = data.data;
                 // Apply accent color to document if present in database
                 if (s.accentColor) document.documentElement.style.setProperty('--accent-primary', s.accentColor);
+                
+                // Populate contact info if present
+                const emailInput = document.getElementById('admin-contact-email');
+                const phoneInput = document.getElementById('admin-contact-phone');
+                if (emailInput && s.adminEmail) emailInput.value = s.adminEmail;
+                if (phoneInput && s.adminPhone) phoneInput.value = s.adminPhone;
             }
         } catch (err) {
             console.error('Failed to fetch settings:', err);
@@ -1456,6 +1462,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const current = document.getElementById('current-admin-password').value;
             const nextPass = document.getElementById('new-admin-password').value;
             const nextUser = document.getElementById('new-admin-username').value;
+            const nextEmail = document.getElementById('admin-contact-email').value;
+            const nextPhone = document.getElementById('admin-contact-phone').value;
 
             if (!current) return await nammaModalSystem.alert('Current password is required to save changes.');
             if (nextPass && nextPass.length < 6) return await nammaModalSystem.alert('New password must be at least 6 characters');
@@ -1467,7 +1475,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ 
                         currentPassword: current, 
                         newPassword: nextPass || null, 
-                        newUsername: nextUser || null 
+                        newUsername: nextUser || null,
+                        newEmail: nextEmail || null,
+                        newPhone: nextPhone || null
                     })
                 });
                 const result = await res.json();

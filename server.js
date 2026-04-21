@@ -296,11 +296,11 @@ let employeeEndShiftOtp = {
 let updateInProgress = false;
 let updateStartTime = null;
 
-// In-memory OTP store for admin approvals
-let adminApprovalOtp = {
+// In-memory OTP store for admin password resets
+let resetPasswordOtp = {
     otp: null,
     expiresAt: 0,
-    employeeId: null
+    adminEmail: null
 };
 
 // Test close flag
@@ -1916,7 +1916,7 @@ app.post('/api/settings', verifyAdmin, async (req, res) => {
 
 // Change admin password
 app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
-    const { currentPassword, newPassword, newUsername } = req.body;
+    const { currentPassword, newPassword, newUsername, newEmail, newPhone } = req.body;
     const doc = await db.settings().doc('config').get();
     const settings = doc.exists ? doc.data() : { adminUsername: 'nammamart', adminPassword: 'admin12nammamart' };
 
@@ -1935,13 +1935,52 @@ app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
     if (newUsername && newUsername.trim()) {
         updates.adminUsername = newUsername.trim();
     }
+    
+    if (newEmail !== undefined) updates.adminEmail = newEmail;
+    if (newPhone !== undefined) updates.adminPhone = newPhone;
 
     if (Object.keys(updates).length === 0) {
         return res.status(400).json({ success: false, message: 'No updates provided.' });
     }
 
-    await db.settings().doc('config').update(updates);
+    await db.settings().doc('config').set(updates, { merge: true });
     res.json({ success: true, message: 'Admin credentials updated successfully.' });
+});
+
+// Request Admin Password Reset OTP
+app.post('/api/request-reset-otp', async (req, res) => {
+    const doc = await db.settings().doc('config').get();
+    const settings = doc.exists ? doc.data() : {};
+    const adminEmail = settings.adminEmail;
+
+    if (!adminEmail) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Admin recovery email is not configured. Please contact the developer directly for a secure reset.' 
+        });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    resetPasswordOtp = {
+        otp,
+        expiresAt: Date.now() + 10 * 60 * 1000, // valid for 10 minutes
+        adminEmail
+    };
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: '🔐 Namma Mart - Admin Password Reset OTP',
+        text: `Your Identity Verification OTP is: ${otp}\n\nThis code is valid for 10 minutes. If you did not request this, please secure your account immediately.`
+    };
+
+    try {
+        await emailConfig.transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'OTP sent to your registered email.' });
+    } catch (err) {
+        console.error('Failed to send reset OTP:', err);
+        res.status(500).json({ success: false, message: 'Failed to send recovery email. Please try again later.' });
+    }
 });
 
 // Get system status (uptime, storage)
