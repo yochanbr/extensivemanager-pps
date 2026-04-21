@@ -1983,6 +1983,45 @@ app.post('/api/request-reset-otp', async (req, res) => {
     }
 });
 
+// Complete Admin Password Reset with OTP
+app.post('/api/reset-admin-password', async (req, res) => {
+    const { otp, newPassword, confirmPassword } = req.body;
+
+    if (!otp || !newPassword || !confirmPassword) {
+        return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+    }
+
+    // Verify OTP
+    if (!resetPasswordOtp.otp || resetPasswordOtp.otp !== otp.trim()) {
+        return res.status(401).json({ success: false, message: 'Invalid or incorrect OTP.' });
+    }
+
+    if (Date.now() > resetPasswordOtp.expiresAt) {
+        return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    try {
+        // Update Firestore
+        await db.settings().doc('config').update({ adminPassword: newPassword });
+        
+        // Clear OTP from memory
+        resetPasswordOtp = { otp: null, expiresAt: 0, adminEmail: null };
+
+        res.json({ success: true, message: 'Password reset successful! You can now login with your new password.' });
+    } catch (err) {
+        console.error('Failed to reset admin password:', err);
+        res.status(500).json({ success: false, message: 'Database error. Please contact developer.' });
+    }
+});
+
 // Get system status (uptime, storage)
 app.get('/api/system/status', (req, res) => {
     const fs = require('fs');

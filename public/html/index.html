@@ -306,34 +306,74 @@
 
     <!-- ROLE SELECTION MODAL -->
     <div id="forgot-password-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; width: 90%; max-width: 450px; border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); position: relative; animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <div id="forgot-modal-content" style="background: white; width: 90%; max-width: 450px; border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); position: relative; animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
             <button id="close-forgot-modal" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer;">&times;</button>
-            <div style="text-align: center; margin-bottom: 32px;">
-                <div style="width: 64px; height: 64px; background: #FDE6E1; color: #F95A2C; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">
-                    <i class="fas fa-user-shield"></i>
+            
+            <!-- SECTION 1: ROLE SELECTION -->
+            <div id="forgot-selection-section">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <div style="width: 64px; height: 64px; background: #FDE6E1; color: #F95A2C; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3 style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">Identity Verification</h3>
+                    <p style="color: #64748B; font-size: 14px;">Select your role to proceed with password recovery</p>
                 </div>
-                <h3 style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">Identity Verification</h3>
-                <p style="color: #64748B; font-size: 14px;">Select your role to proceed with password recovery</p>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <button id="forgot-role-employee" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px; width: 100%;">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: #EEF2FF; color: #6366F1; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Employee</div>
+                            <div style="font-size: 12px; color: #64748B;">Contact admin for access</div>
+                        </div>
+                    </button>
+                    <button id="forgot-role-admin" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px; width: 100%;">
+                        <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #F97316; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Admin</div>
+                            <div style="font-size: 12px; color: #64748B;">Request secure security OTP</div>
+                        </div>
+                    </button>
+                </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                <button id="forgot-role-employee" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px;">
-                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #EEF2FF; color: #6366F1; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                        <i class="fas fa-user"></i>
+
+            <!-- SECTION 2: RESET FORM (HIDDEN BY DEFAULT) -->
+            <div id="forgot-reset-section" style="display: none;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="width: 64px; height: 64px; background: #E1F9EB; color: #10B981; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">
+                        <i class="fas fa-key"></i>
                     </div>
-                    <div>
-                        <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Employee</div>
-                        <div style="font-size: 12px; color: #64748B;">Contact admin for access</div>
+                    <h3 style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">Reset Password</h3>
+                    <p style="color: #64748B; font-size: 14px;">Enter the 6-digit code from your email</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="input-group">
+                        <label>Security OTP</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-shield-alt"></i>
+                            <input type="text" id="reset-otp-input" placeholder="Enter 6-digit code" maxlength="6" style="padding-left: 45px;">
+                        </div>
                     </div>
-                </button>
-                <button id="forgot-role-admin" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 16px;">
-                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #F97316; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                        <i class="fas fa-crown"></i>
+                    <div class="input-group">
+                        <label>New Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="reset-new-password" placeholder="Minimum 6 characters" style="padding-left: 45px;">
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-weight: 700; color: #1E293B; font-size: 15px;">I am an Admin</div>
-                        <div style="font-size: 12px; color: #64748B;">Request secure security OTP</div>
+                    <div class="input-group">
+                        <label>Confirm Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-check-circle"></i>
+                            <input type="password" id="reset-confirm-password" placeholder="Repeat new password" style="padding-left: 45px;">
+                        </div>
                     </div>
-                </button>
+                    <button id="complete-reset-btn" class="submit-btn" style="margin-top: 10px;">Verify & Set Password</button>
+                    <button id="back-to-selection" style="background: none; border: none; color: #64748B; font-size: 13px; cursor: pointer; text-decoration: underline;">Back to selection</button>
+                </div>
             </div>
         </div>
     </div>
@@ -367,10 +407,17 @@
             const closeForgotModal = document.getElementById('close-forgot-modal');
             const employeeBtn = document.getElementById('forgot-role-employee');
             const adminBtn = document.getElementById('forgot-role-admin');
+            
+            const selectionSection = document.getElementById('forgot-selection-section');
+            const resetSection = document.getElementById('forgot-reset-section');
+            const backBtn = document.getElementById('back-to-selection');
+            const completeResetBtn = document.getElementById('complete-reset-btn');
 
             if (forgotLink && forgotModal) {
                 forgotLink.addEventListener('click', (e) => {
                     e.preventDefault();
+                    selectionSection.style.display = 'block';
+                    resetSection.style.display = 'none';
                     forgotModal.style.display = 'flex';
                 });
 
@@ -380,6 +427,11 @@
 
                 window.addEventListener('click', (e) => {
                     if (e.target === forgotModal) forgotModal.style.display = 'none';
+                });
+
+                backBtn.addEventListener('click', () => {
+                    resetSection.style.display = 'none';
+                    selectionSection.style.display = 'block';
                 });
 
                 employeeBtn.addEventListener('click', () => {
@@ -396,10 +448,13 @@
                         const res = await fetch('/api/request-reset-otp', { method: 'POST' });
                         const data = await res.json();
                         
-                        forgotModal.style.display = 'none';
                         if (data.success) {
-                            alert('📧 OTP Sent!\n\n' + data.message);
+                            // TRANSITION TO RESET FORM
+                            selectionSection.style.display = 'none';
+                            resetSection.style.display = 'block';
+                            alert('📧 OTP Sent!\n\nPlease check your registered email for the 6-digit code.');
                         } else {
+                            forgotModal.style.display = 'none';
                             alert('❌ Request Failed\n\n' + data.message);
                         }
                     } catch (err) {
@@ -408,6 +463,46 @@
                     } finally {
                         adminBtn.disabled = false;
                         adminBtn.innerHTML = originalContent;
+                    }
+                });
+
+                completeResetBtn.addEventListener('click', async () => {
+                    const otp = document.getElementById('reset-otp-input').value;
+                    const newPass = document.getElementById('reset-new-password').value;
+                    const confirmPass = document.getElementById('reset-confirm-password').value;
+
+                    if (!otp || otp.length !== 6) return alert('Please enter the 6-digit OTP code.');
+                    if (!newPass || newPass.length < 6) return alert('New password must be at least 6 characters.');
+                    if (newPass !== confirmPass) return alert('Passwords do not match.');
+
+                    completeResetBtn.disabled = true;
+                    const originalText = completeResetBtn.textContent;
+                    completeResetBtn.textContent = 'Verifying...';
+
+                    try {
+                        const res = await fetch('/api/reset-admin-password', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ otp, newPassword: newPass, confirmPassword: confirmPass })
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            alert('✅ Success!\n\n' + data.message);
+                            forgotModal.style.display = 'none';
+                            // Optionally clear inputs
+                            document.getElementById('reset-otp-input').value = '';
+                            document.getElementById('reset-new-password').value = '';
+                            document.getElementById('reset-confirm-password').value = '';
+                        } else {
+                            alert('❌ Error\n\n' + data.message);
+                        }
+                    } catch (err) {
+                        console.error('Final Reset Error:', err);
+                        alert('❌ Server Error\n\nUnable to complete reset. Please try again.');
+                    } finally {
+                        completeResetBtn.disabled = false;
+                        completeResetBtn.textContent = originalText;
                     }
                 });
             }
