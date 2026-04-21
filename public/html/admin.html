@@ -17,6 +17,7 @@
     <!-- Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
+    <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/admin.css">
 </head>
 
@@ -300,10 +301,9 @@
                                     </div><strong>Security Hub</strong>
                                 </div>
                                 <form id="security-hub-form" style="width: 100%;">
-                                    <div class="modern-form-group"><label>New Admin Username</label><input type="text"
-                                            id="new-admin-username" class="modern-input"
-                                            placeholder="Leave blank to keep current">
-                                    </div>
+                                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                                        Administrative access is restricted to the standardized master account. Use this section to update recovery contact details.
+                                    </p>
                                     <div class="modern-form-group"><label>Admin Contact Email</label><input type="email"
                                             id="admin-contact-email" class="modern-input"
                                             placeholder="e.g. admin@nammamart.com">
@@ -312,16 +312,22 @@
                                             id="admin-contact-phone" class="modern-input"
                                             placeholder="e.g. +91 98765 43210">
                                     </div>
-                                    <div class="modern-form-group"><label>Current Password</label><input type="password"
+                                    <div class="modern-form-group"><label>Current Master Password</label><input type="password"
                                             id="current-admin-password" class="modern-input" placeholder="••••••••">
                                     </div>
-                                    <div class="modern-form-group"><label>New Password</label><input type="password"
-                                            id="new-admin-password" class="modern-input"
-                                            placeholder="Min 6 chars (optional)">
-                                    </div>
-                                    <button type="submit" class="modern-btn accent" style="width: 100%;">Update
-                                        Credentials</button>
+                                    <button type="submit" class="modern-btn accent" style="width: 100%;">Update Recovery Info</button>
                                 </form>
+
+                                <!-- DANGER ZONE -->
+                                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed rgba(239, 68, 68, 0.2); width: 100%;">
+                                    <div style="display: flex; gap: 8px; align-items: center; color: #ef4444; margin-bottom: 12px; font-size: 13px; font-weight: 700;">
+                                        <i class="fas fa-exclamation-triangle"></i> DANGER ZONE
+                                    </div>
+                                    <button id="master-reset-attendance-btn" class="modern-btn" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444;">
+                                        MASTER RESET LOGS
+                                    </button>
+                                    <p style="font-size: 11px; color: #94a3b8; margin-top: 8px; text-align: center;">Wipes all attendance logs & daily sessions. Irreversible.</p>
+                                </div>
                             </div>
                             <div class="summary-card"
                                 style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">

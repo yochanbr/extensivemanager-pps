@@ -2370,6 +2370,38 @@ app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
 });
 
 /**
+ * Endpoint: Master Reset - Clear All Attendance Data
+ */
+app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
+    const { password } = req.body;
+    
+    // Safety check: Password must match standard admin password
+    if (password !== 'admin12nammamart') {
+        return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
+    }
+
+    try {
+        const batch = firestore.batch();
+        
+        // 1. Clear attendance_logs
+        const logsSnapshot = await db.attendance_logs().get();
+        logsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        
+        // 2. Clear daily_sessions
+        const sessionsSnapshot = await db.daily_sessions().get();
+        sessionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        console.log('🚮 Attendance Data Master Reset Performed');
+        res.json({ success: true, message: 'All logs and sessions have been cleared.' });
+    } catch (e) {
+        console.error('Reset Failed:', e);
+        res.status(500).json({ success: false, message: 'Failed to clear data.' });
+    }
+});
+
+
+/**
  * Endpoint: Recalculate Sessions
  */
 app.post('/api/attendance/sessions/recalculate', verifyAdmin, async (req, res) => {
