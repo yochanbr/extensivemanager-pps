@@ -47,7 +47,7 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
     z-index: 100;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .sidebar-header {
