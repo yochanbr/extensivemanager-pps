@@ -934,23 +934,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         varColorClass = '';
                     }
 
-                    // Status Color Mapping: ONLY 'A' is highlighted RED
-                    const statusConfig = {
-                        'P': { bg: 'transparent', text: '#0F172A' },
-                        'A': { bg: '#DC2626', text: 'white' },
-                        'L': { bg: 'rgba(217, 119, 6, 0.05)', text: '#D97706' },
-                        'WO': { bg: 'rgba(51, 65, 85, 0.05)', text: '#334155' },
-                        'Pending': { bg: '#F8FAFC', text: '#94A3B8' }
-                    };
-
-                    const cfg = statusConfig[dayData.status] || { bg: 'transparent', text: '#1E293B' };
-                    const style = `background: ${cfg.bg}; color: ${cfg.text};`;
-
+                    const statusRowClass = (dayData.status === 'A') ? 'matrix-status-row status-a-filled' : 'matrix-status-row';
+                    
                     rowHtml += `
-                        <td style="${style} transition: all 0.2s; border-right: 1px solid #F1F5F9;">
+                        <td>
                             <div class="matrix-cell">
-                                <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.8; font-size: 8px;">${varDisplay}</div>
+                                <div class="${statusRowClass}">${dayData.status}</div>
+                                <div class="matrix-variance-row ${varColorClass}">${varDisplay}</div>
                             </div>
                         </td>
                     `;
