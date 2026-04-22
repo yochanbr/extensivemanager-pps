@@ -609,10 +609,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const shiftSummaryView = document.getElementById('shift-summary-view');
     const attendanceView = document.getElementById('attendance-view');
     const settingsView = document.getElementById('settings-view');
+    const masterReportsView = document.getElementById('master-reports-view');
 
     function switchSpaView(targetView, activeBtn) {
-        const views = [dashboardView, employeesView, reportsView, shiftSummaryView, attendanceView, settingsView];
-        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn];
+        const views = [dashboardView, employeesView, reportsView, shiftSummaryView, attendanceView, settingsView, masterReportsView];
+        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterReportBtn];
 
         views.forEach(v => { if (v) v.style.display = 'none'; });
         buttons.forEach(b => { if (b) b.classList.remove('active'); });
@@ -652,12 +653,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (settingsBtn) settingsBtn.addEventListener('click', () => switchSpaView(settingsView, settingsBtn));
     
-    // Master Report (Modal Trigger)
+    // Master Report (Now as SPA Section)
     const masterReportBtn = document.querySelector('.master-report-btn');
     if (masterReportBtn) {
         masterReportBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            window.openReportSelection();
+            switchSpaView(masterReportsView, masterReportBtn);
         });
     }
 
