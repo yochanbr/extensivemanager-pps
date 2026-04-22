@@ -1497,4 +1497,117 @@ body {
     border-color: #F95A2C;
 }
 
+/* ATTENDANCE MATRIX GRID (EXPERIMENTAL) */
+.grid-scroll-container {
+    width: 100%;
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+    min-width: 2500px; /* Force scroll */
+}
+
+.matrix-table th {
+    background: #F1F5F9;
+    color: #475569;
+    font-weight: 700;
+    padding: 12px 8px;
+    border: 1px solid #E2E8F0;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.matrix-table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 30;
+    background: #F8FAFC;
+    width: 180px;
+}
+
+.matrix-table td {
+    padding: 0;
+    border: 1px solid #E2E8F0;
+    text-align: center;
+    height: 70px; /* Fixed height for 2-line layout */
+}
+
+.matrix-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: #F8FAFC;
+    font-weight: 700;
+    color: #1E293B;
+    padding: 12px;
+    text-align: left;
+}
+
+.matrix-cell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.matrix-status {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.matrix-variance {
+    height: 24px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    position: absolute;
+    bottom: 0;
+}
+
+/* Color Coding based on reference image */
+.grid-p .matrix-status { background: #4D7C0F; } /* Present - Green */
+.grid-a .matrix-status { background: #DC2626; } /* Absent - Red */
+.grid-l .matrix-status { background: #D97706; } /* Leave - Orange */
+.grid-wo .matrix-status { background: #334155; } /* Week-off - Dark Slate */
+.grid-pending .matrix-status { background: #6366F1; } /* Pending - Indigo */
+.grid-empty .matrix-status { background: #F8FAFC; color: #CBD5E1; }
+
+.grid-variance-pos { color: #166534 !important; }
+.grid-variance-neg { color: #991B1B !important; }
+
+/* Scroll Smoothing */
+.grid-scroll-container::-webkit-scrollbar {
+    height: 12px;
+}
+.grid-scroll-container::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+.grid-scroll-container::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 10px;
+    border: 3px solid #F1F5F9;
+}
+.grid-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
     

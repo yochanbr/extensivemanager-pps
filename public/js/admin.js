@@ -631,7 +631,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+
     window.staffData = [];
+
+    // EXPERIMENTAL: ATTENDANCE GRID GENERATOR
+    window.loadAttendanceGrid = async function() {
+        const picker = document.getElementById('grid-month-picker');
+        let selectedMonth = picker ? picker.value : '';
+        
+        if (!selectedMonth) {
+            // Default to current month
+            const now = new Date();
+            selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            if (picker) picker.value = selectedMonth;
+        }
+
+        const thead = document.getElementById('matrix-thead');
+        const tbody = document.getElementById('matrix-tbody');
+        if (!thead || !tbody) return;
+
+        thead.innerHTML = '<tr><th style="padding: 40px; text-align: center;" colspan="100">Generating Matrix...</th></tr>';
+        tbody.innerHTML = '';
+
+        try {
+            const res = await fetch(`/api/reports/attendance-grid?month=${selectedMonth}`);
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message);
+
+            // 1. Render Headers
+            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">Employee Name</th>';
+            let dayHtml = '<tr>';
+            
+            data.headers.forEach(h => {
+                headerHtml += `<th>${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
+                dayHtml += `<th style="font-size: 10px; font-weight: 500; background: #F8FAFC;">${h.weekday.substring(0, 3)}</th>`;
+            });
+            headerHtml += '</tr>';
+            dayHtml += '</tr>';
+            thead.innerHTML = headerHtml + dayHtml;
+
+            // 2. Render Rows
+            if (data.grid.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
+                return;
+            }
+
+            data.grid.forEach(emp => {
+                let rowHtml = `<tr><td>${emp.name}</td>`;
+                
+                data.headers.forEach(h => {
+                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
+                    let varDisplay = dayData.variance;
+                    let varColorClass = '';
+                    
+                    if (dayData.status === 'P') {
+                        if (parseFloat(dayData.variance) > 0) {
+                            varDisplay = `+${dayData.variance}`;
+                            varColorClass = 'grid-variance-pos';
+                        } else if (parseFloat(dayData.variance) < 0) {
+                            varColorClass = 'grid-variance-neg';
+                        }
+                    } else if (dayData.status === 'Pending') {
+                        varDisplay = '...';
+                    } else {
+                        varDisplay = '0';
+                    }
+
+                    rowHtml += `
+                        <td class="${dayData.colorClass}">
+                            <div class="matrix-cell">
+                                <div class="matrix-status">${dayData.status}</div>
+                                <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
+                            </div>
+                        </td>
+                    `;
+                });
+                
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+
+        } catch (err) {
+            console.error('Grid Matrix Load Error:', err);
+            thead.innerHTML = `<tr><th colspan="100" style="color: #ef4444; padding: 20px;">Failed to load attendance matrix: ${err.message}</th></tr>`;
+        }
+    };
+
+    // Initialize the grid on load if in attendance view
+    const originalLoadAttendanceLogs = window.loadAttendanceLogs;
+    window.loadAttendanceLogs = function() {
+        if (originalLoadAttendanceLogs) originalLoadAttendanceLogs();
+        window.loadAttendanceGrid();
+    };
+
+
     window.loadDashboardData = async function () {
         try {
             const dateInput = document.getElementById('mainDateFilter');

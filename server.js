@@ -1829,6 +1829,101 @@ app.put('/api/:type/:id', async (req, res) => {
     await doc.ref.update({ [type]: dataArray, history: employee.history || [] });
 
     res.json({ success: true, message: 'Data updated successfully.' });
+
+/**
+ * Experimental: Attendance Grid Report Data
+ * Aggregates monthly data into a 2D structure (Employees x Dates)
+ */
+app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
+    try {
+        const monthStr = req.query.month; // Expected YYYY-MM
+        if (!monthStr) return res.status(400).json({ success: false, message: 'Month parameter is required.' });
+
+        const [year, month] = monthStr.split('-').map(Number);
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0); // Last day of month
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // 1. Get all employees
+        const empSnap = await db.employees().get();
+        const employees = empSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Get all daily_sessions for the month
+        const sessionSnap = await db.daily_sessions().get();
+        const rawSessions = sessionSnap.docs.map(doc => doc.data());
+
+        // 3. Get all leave_swaps for the month
+        const leaveSnap = await db.leave_swaps().get();
+        const rawLeaves = leaveSnap.docs.map(doc => doc.data());
+
+        // Prepare Grid Headers
+        const dateHeaders = [];
+        for (let d = 1; d <= endDate.getDate(); d++) {
+            const dateObj = new Date(year, month - 1, d);
+            const dateIso = dateObj.toISOString().split('T')[0];
+            const dayName = dateObj.toLocaleString('en-us', { weekday: 'long' });
+            dateHeaders.push({ day: d, label: `${d}-${dateObj.toLocaleString('en-us', { month: 'short' })}-${year}`, weekday: dayName, iso: dateIso });
+        }
+
+        const grid = [];
+        for (const emp of employees) {
+            const empData = { name: emp.name, id: emp.id, daily: {} };
+            
+            // Standard Shift Duration from Profile
+            let expectedMins = 480; // Default 8 hours
+            if (emp.startTime && emp.endTime) {
+                const [h1, m1] = emp.startTime.split(':').map(Number);
+                const [h2, m2] = emp.endTime.split(':').map(Number);
+                expectedMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                if (expectedMins < 0) expectedMins += 1440; // Over midnight
+            }
+
+            for (const header of dateHeaders) {
+                const dateKey = header.iso;
+                const sessions = rawSessions.filter(s => s.employeeId == emp.id && s.date === dateKey);
+                const leaves = rawLeaves.filter(l => l.employeeId == emp.id && l.date === dateKey && l.status === 'approved');
+
+                let status = 'A'; // Default Absent
+                let variance = 0;
+                let colorClass = 'grid-a';
+
+                // Week Off check
+                const dayLower = header.weekday.toLowerCase();
+                const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
+                
+                if (dayLower === empWeekOff) {
+                    status = 'WO';
+                    colorClass = 'grid-wo';
+                } else if (leaves.length > 0) {
+                    status = 'L';
+                    colorClass = 'grid-l';
+                    variance = 0;
+                } else if (sessions.length > 0) {
+                    const s = sessions[0];
+                    if (dateKey === todayStr && !s.checkOut) {
+                        status = 'Pending';
+                        colorClass = 'grid-pending';
+                    } else {
+                        status = 'P';
+                        colorClass = 'grid-p';
+                        const actualMins = (s.totalWorkDuration || 0) / 60000;
+                        variance = ((actualMins - expectedMins) / 60).toFixed(1);
+                    }
+                } else if (dateKey >= todayStr) {
+                    status = '-'; // Future or Today not started
+                    colorClass = 'grid-empty';
+                }
+
+                empData.daily[dateKey] = { status, variance, colorClass };
+            }
+            grid.push(empData);
+        }
+
+        res.json({ success: true, headers: dateHeaders, grid });
+    } catch (err) {
+        console.error('Grid Report Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 // --- DIAGNOSTICS & SUMMARY APIS (Migrated) ---
