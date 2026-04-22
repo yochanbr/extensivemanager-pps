@@ -1523,7 +1523,6 @@ app.post('/api/end-employee-shift', async (req, res) => {
 
     return res.json({ success: true, message: 'Shift ended and cloud report generated.' });
 });
-});
 
 /**
  * Verify admin approval OTP for employee relogin
