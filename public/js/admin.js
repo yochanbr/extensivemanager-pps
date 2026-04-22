@@ -634,12 +634,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.staffData = [];
 
+    // DRAGGABLE UTILITY (EXPERIMENTAL)
+    window.initDraggable = function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        const content = modal.querySelector('.modern-modal-content');
+        const header = content.querySelector('.modal-header');
+        if (!content || !header) return;
+
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        header.onmousedown = function(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Get current positions
+            const bounds = content.getBoundingClientRect();
+            initialX = bounds.left;
+            initialY = bounds.top;
+
+            content.style.margin = '0'; // Prevent offset jumping
+            content.style.left = initialX + 'px';
+            content.style.top = initialY + 'px';
+
+            document.onmousemove = function(e) {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                content.style.left = (initialX + dx) + 'px';
+                content.style.top = (initialY + dy) + 'px';
+            };
+
+            document.onmouseup = function() {
+                isDragging = false;
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+        };
+    };
+
     // EXPERIMENTAL: ATTENDANCE GRID GENERATOR
     window.openReportSelection = function() {
         const modal = document.getElementById('matrix-selection-modal');
         if (modal) {
             modal.style.display = 'flex';
             modal.classList.add('show');
+            window.initDraggable('matrix-selection-modal'); // Initialize Dragging
             
             // Set defaults
             const now = new Date();
@@ -698,6 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modal) {
             modal.style.display = 'flex';
             modal.classList.add('show');
+            window.initDraggable('matrix-modal'); // Initialize Dragging
             window.loadAttendanceGrid(queryParams);
         }
     };
