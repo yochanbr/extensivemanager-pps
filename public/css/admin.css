@@ -1552,10 +1552,11 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative; /* REQUIRED */
 }
 
 .matrix-status {
-    height: 100%;
+    height: 65%; /* Adjusted to leave room for variance */
     width: 100%;
     display: flex;
     align-items: center;
@@ -1565,22 +1566,20 @@ body {
     font-size: 14px;
     letter-spacing: 0.5px;
     text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    position: relative;
 }
 
 .matrix-variance {
-    height: 24px;
+    height: 35%; /* Fixed height for numeric value */
     width: 100%;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.85); /* Slick overlay */
     border-top: 1px solid rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     color: #334155;
-    position: absolute;
-    bottom: 0;
+    z-index: 5;
 }
 
 /* Color Coding based on reference image */

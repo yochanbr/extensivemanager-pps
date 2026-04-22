@@ -635,16 +635,38 @@ document.addEventListener('DOMContentLoaded', () => {
     window.staffData = [];
 
     // EXPERIMENTAL: ATTENDANCE GRID GENERATOR
+    window.openAttendanceMatrix = function() {
+        const modal = document.getElementById('matrix-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            window.loadAttendanceGrid();
+        }
+    };
+
+    window.closeAttendanceMatrix = function() {
+        const modal = document.getElementById('matrix-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    };
+
     window.loadAttendanceGrid = async function() {
         const picker = document.getElementById('grid-month-picker');
         let selectedMonth = picker ? picker.value : '';
         
         if (!selectedMonth) {
-            // Default to current month
             const now = new Date();
             selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             if (picker) picker.value = selectedMonth;
         }
+
+        // Handle Subtitle
+        const [y, m] = selectedMonth.split('-');
+        const monthName = new Date(y, m - 1).toLocaleString('en-us', { month: 'long', year: 'numeric' });
+        const subtitle = document.getElementById('matrix-modal-subtitle');
+        if (subtitle) subtitle.innerText = `Detailed Monthly Report: ${monthName}`;
 
         const thead = document.getElementById('matrix-thead');
         const tbody = document.getElementById('matrix-tbody');
@@ -660,12 +682,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) throw new Error(data.message);
 
             // 1. Render Headers
-            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">Employee Name</th>';
+            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; width: 180px; min-width: 180px;">Employee Name</th>';
             let dayHtml = '<tr>';
             
             data.headers.forEach(h => {
-                headerHtml += `<th>${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
-                dayHtml += `<th style="font-size: 10px; font-weight: 500; background: #F8FAFC;">${h.weekday.substring(0, 3)}</th>`;
+                headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
+                dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
             });
             headerHtml += '</tr>';
             dayHtml += '</tr>';
@@ -678,24 +700,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             data.grid.forEach(emp => {
-                let rowHtml = `<tr><td>${emp.name}</td>`;
+                let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
                 
                 data.headers.forEach(h => {
                     const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
                     let varDisplay = dayData.variance;
                     let varColorClass = '';
                     
-                    if (dayData.status === 'P') {
-                        if (parseFloat(dayData.variance) > 0) {
-                            varDisplay = `+${dayData.variance}`;
+                    const numVar = parseFloat(dayData.variance);
+                    if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
+                        if (numVar > 0) {
+                            varDisplay = `+${numVar}`;
                             varColorClass = 'grid-variance-pos';
-                        } else if (parseFloat(dayData.variance) < 0) {
+                        } else if (numVar < 0) {
+                            varDisplay = `${numVar}`;
                             varColorClass = 'grid-variance-neg';
+                        } else {
+                            varDisplay = '0';
                         }
                     } else if (dayData.status === 'Pending') {
                         varDisplay = '...';
                     } else {
-                        varDisplay = '0';
+                        varDisplay = ''; // Future
                     }
 
                     rowHtml += `
