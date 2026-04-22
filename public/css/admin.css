@@ -1903,3 +1903,147 @@ TTENDANCE REPORTING STUDIO (UNIQUE NAMESPACE) */ .reporting-studio-overlay {
 .reporting-studio-header:active {
     cursor: grabbing;
 }
+
+/* ==========================================================================
+   RESPONSIVE DESIGN SYSTEM (UNIVERSAL COMPATIBILITY)
+   ========================================================================== */
+
+/* 1. TABLET & LAPTOP SMALL (Under 1024px) */
+@media screen and (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9999;
+    }
+
+    .layout.sidebar-active .sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+    }
+
+    .layout.sidebar-active .sidebar-overlay {
+        display: block;
+    }
+
+    .topbar {
+        padding: 20px;
+        height: 80px;
+    }
+
+    .mobile-menu-btn {
+        display: flex !important;
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        cursor: pointer;
+        color: #1E293B;
+        font-size: 18px;
+    }
+}
+
+/* 2. MOBILE LANDSCAPE & PHONES (Under 768px) */
+@media screen and (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .live-status-section {
+        grid-column: span 1 !important;
+    }
+
+    .topbar-right .user-name, 
+    .topbar-right .user-role,
+    .topbar-right .dropdown-icon {
+        display: none;
+    }
+
+    .user-profile {
+        padding: 5px;
+    }
+
+    .view-title {
+        font-size: 18px;
+    }
+
+    /* Modals Responsiveness */
+    .reporting-studio-window {
+        width: 95% !important;
+        left: 2.5% !important;
+        top: 50% !important;
+        transform: translate(0, -50%) !important;
+        max-height: 90vh;
+    }
+
+    .matrix-table th, .matrix-table td {
+        padding: 8px !important;
+        font-size: 11px !important;
+    }
+
+    .beta-notice-banner {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* 3. SMALL MOBILE (Under 480px) */
+@media screen and (max-width: 480px) {
+    .topbar {
+        padding: 15px;
+    }
+
+    .content-area {
+        padding: 15px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .section-header div {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .filter-dropdown, .input-dark {
+        width: 100% !important;
+    }
+    
+    .reporting-studio-window {
+        padding: 20px !important;
+    }
+    
+    .reporting-studio-header {
+        margin: -20px -20px 20px -20px !important;
+        padding: 15px 20px !important;
+    }
+}
+

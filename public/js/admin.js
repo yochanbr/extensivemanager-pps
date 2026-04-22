@@ -39,6 +39,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpBtn = null;
     const updateContainer = document.querySelector('.sidebar') || document.body; // Use sidebar as container for update-available class
 
+    // MOBILE SIDEBAR TOGGLE LOGIC
+    const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const mainLayout = document.getElementById('main-layout');
+
+    if (mobileMenuBtn && sidebarOverlay && mainLayout) {
+        const toggleSidebar = () => mainLayout.classList.toggle('sidebar-active');
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking a nav item on mobile
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    mainLayout.classList.remove('sidebar-active');
+                }
+            });
+        });
+    }
+
 
     // Function to check for updates
     const checkForUpdates = () => {
