@@ -2708,7 +2708,6 @@ window.addEventListener('error', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
 });
-});
 
 window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
