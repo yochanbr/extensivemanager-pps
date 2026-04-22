@@ -1019,10 +1019,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:10px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500;">${s.name}</div></div></td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569;">${role}</span></td>
-                            <td style="color:#64748b;">${timeStr}</td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${s.bg}; color:${s.statusColor};">${s.statusText}</span></td>
+                            <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500;">${s.name}</div></div></td>
+                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
+                            <td style="color:#64748b; white-space: nowrap;">${timeStr}</td>
+                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${s.bg}; color:${s.statusColor}; white-space: nowrap;">${s.statusText}</span></td>
                         </tr>
                     `;
                 });
@@ -1034,10 +1034,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const role = s.fullTime === 'yes' ? 'Full Time' : 'Part Time';
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:10px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #94A3B8;">${s.name}</div></div></td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569;">${role}</span></td>
-                            <td style="color:#94A3B8;">--:--</td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#FEE2E2; color:#EF4444;">Absent</span></td>
+                            <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #94A3B8;">${s.name}</div></div></td>
+                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
+                            <td style="color:#94A3B8; white-space: nowrap;">--:--</td>
+                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#FEE2E2; color:#EF4444; white-space: nowrap;">Absent</span></td>
                         </tr>
                     `;
                 });
@@ -1171,11 +1171,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </td>
                                 <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${emp.isActive === false ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; color:${emp.isActive === false ? '#ef4444' : '#10b981'};">${emp.isActive === false ? 'Deactivated' : 'Active'}</span></td>
-                                <td>
-                                    <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="spaToggleEmployeeStatus('${emp.id}', ${emp.isActive !== false})"><i class="fas fa-${emp.isActive === false ? 'check' : 'ban'}"></i> ${emp.isActive === false ? 'Activate' : 'Deactivate'}</button>
-                                    <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; margin-left: 5px; border-radius: 8px;" onclick="window.openFaceRegistration('${emp.id}')"><i class="fas fa-camera"></i> Face</button>
-                                    <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; margin-left: 5px; border-radius: 8px;" onclick="window.spaEditEmployee('${emp.id}')"><i class="fas fa-edit"></i> Edit</button>
-                                    <button class="action-btn danger" style="padding: 6px 10px; font-size: 12px; margin-left: 5px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 8px;" onclick="spaDeleteEmployee('${emp.id}')"><i class="fas fa-trash"></i> Delete</button>
+                                 <td>
+                                    <div class="actions-cell">
+                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="spaToggleEmployeeStatus('${emp.id}', ${emp.isActive !== false})"><i class="fas fa-${emp.isActive === false ? 'check' : 'ban'}"></i> <span>${emp.isActive === false ? 'Activate' : 'Deactivate'}</span></button>
+                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.openFaceRegistration('${emp.id}')"><i class="fas fa-camera"></i> <span>Face</span></button>
+                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.spaEditEmployee('${emp.id}')"><i class="fas fa-edit"></i> <span>Edit</span></button>
+                                        <button class="action-btn danger" style="padding: 6px 10px; font-size: 12px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 8px;" onclick="spaDeleteEmployee('${emp.id}')"><i class="fas fa-trash"></i> <span>Delete</span></button>
+                                    </div>
                                 </td>
                             </tr>
                         `;

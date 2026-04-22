@@ -1975,6 +1975,11 @@ body {
 
     .live-status-section {
         grid-column: span 1 !important;
+        overflow-x: auto;
+    }
+
+    .status-table {
+        min-width: 600px; /* Forces horizontal scroll instead of squashing */
     }
 
     .topbar-right .user-name, 
@@ -2008,6 +2013,22 @@ body {
     .beta-notice-banner {
         flex-direction: column;
         gap: 15px;
+    }
+
+    /* Actions Column Optimization */
+    .actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-start;
+    }
+
+    .actions-cell .action-btn span {
+        display: none; /* Hide labels on mobile to save space */
+    }
+
+    .actions-cell .action-btn i {
+        margin: 0;
     }
 }
 
