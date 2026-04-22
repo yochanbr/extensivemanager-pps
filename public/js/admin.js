@@ -41,9 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // MOBILE SIDEBAR TOGGLE LOGIC
     const mainLayout = document.getElementById('main-layout');
-    const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    
+
     // Trigger Mobile Experience Pop-up on Page Load
     if (window.innerWidth <= 1024) {
         // Delay slightly to ensure smooth loading transition
@@ -54,7 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }, 1500);
     }
-    
+
+    const mainLayout = document.getElementById('main-layout');
+
     if (mobileMenuBtn && sidebarOverlay && mainLayout) {
         const toggleSidebar = () => mainLayout.classList.toggle('sidebar-active');
         mobileMenuBtn.addEventListener('click', toggleSidebar);
@@ -665,7 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.staffData = [];
 
     // DRAGGABLE UTILITY (PRODUCTION GRADE - NAMESPACED)
-    window.initDraggable = function(modalId) {
+    window.initDraggable = function (modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         const content = modal; // The window itself is the draggable target
@@ -682,29 +682,29 @@ document.addEventListener('DOMContentLoaded', () => {
         let isDragging = false;
         let startX, startY, initialX, initialY;
 
-        header.onmousedown = function(e) {
+        header.onmousedown = function (e) {
             isDragging = true;
-            
+
             const bounds = content.getBoundingClientRect();
             content.style.transform = 'none';
             content.style.left = bounds.left + 'px';
             content.style.top = bounds.top + 'px';
-            
+
             startX = e.clientX;
             startY = e.clientY;
             initialX = bounds.left;
             initialY = bounds.top;
 
-            document.onmousemove = function(e) {
+            document.onmousemove = function (e) {
                 if (!isDragging) return;
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                
+
                 content.style.left = (initialX + dx) + 'px';
                 content.style.top = (initialY + dy) + 'px';
             };
 
-            document.onmouseup = function() {
+            document.onmouseup = function () {
                 isDragging = false;
                 document.onmousemove = null;
                 document.onmouseup = null;
@@ -712,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    window.openReportSelection = function() {
+    window.openReportSelection = function () {
         const overlay = document.getElementById('matrix-selection-modal-overlay');
         const modal = document.getElementById('matrix-selection-modal');
         if (overlay && modal) {
@@ -721,11 +721,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 overlay.classList.add('active');
                 window.initDraggable('matrix-selection-modal');
             }, 10);
-            
+
             const now = new Date();
             const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const dayStr = now.toISOString().split('T')[0];
-            
+
             const monthInput = document.getElementById('selection-month-input');
             const dayInput = document.getElementById('selection-day-input');
             if (monthInput) monthInput.value = monthStr;
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closeReportSelection = function() {
+    window.closeReportSelection = function () {
         const overlay = document.getElementById('matrix-selection-modal-overlay');
         if (overlay) {
             overlay.classList.remove('active');
@@ -741,11 +741,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.toggleRangeType = function() {
+    window.toggleRangeType = function () {
         const type = document.getElementById('matrix-range-type').value;
         const monthGroup = document.getElementById('selection-month-group');
         const dayGroup = document.getElementById('selection-day-group');
-        
+
         if (type === 'day') {
             monthGroup.style.display = 'none';
             dayGroup.style.display = 'block';
@@ -755,10 +755,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.generateMatrixFromSelection = function() {
+    window.generateMatrixFromSelection = function () {
         const type = document.getElementById('matrix-range-type').value;
         let queryParams = '';
-        
+
         if (type === 'day') {
             const val = document.getElementById('selection-day-input').value;
             if (!val) return alert('Please select a date');
@@ -773,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openAttendanceMatrix(queryParams);
     };
 
-    window.openAttendanceMatrix = function(queryParams) {
+    window.openAttendanceMatrix = function (queryParams) {
         const overlay = document.getElementById('matrix-modal-overlay');
         const modal = document.getElementById('matrix-modal');
         if (overlay && modal) {
@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closeAttendanceMatrix = function() {
+    window.closeAttendanceMatrix = function () {
         const overlay = document.getElementById('matrix-modal-overlay');
         if (overlay) {
             overlay.classList.remove('active');
@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.loadAttendanceGrid = async function(queryParams) {
+    window.loadAttendanceGrid = async function (queryParams) {
         if (!queryParams) {
             const now = new Date();
             const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -811,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const [y, m] = monthStr.split('-');
             displayTitle = `Monthly Report: ${new Date(y, m - 1).toLocaleString('en-us', { month: 'long', year: 'numeric' })}`;
         }
-        
+
         const subtitle = document.getElementById('matrix-modal-subtitle');
         if (subtitle) subtitle.innerText = displayTitle;
 
@@ -829,51 +829,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) throw new Error(data.message);
 
             // 1. Render Headers
-            let headerHtml = '<tr><th rowspan="2">Employee Name</th>';
+            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; width: 180px; min-width: 180px;">Employee Name</th>';
             let dayHtml = '<tr>';
-            
+
             data.headers.forEach(h => {
-                headerHtml += `<th>${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
-                dayHtml += `<th style="font-size: 10px; font-weight: 500; opacity: 0.6;">${h.weekday.substring(0, 3)}</th>`;
+                headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
+                dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
             });
-
-            // Add Summary Headers
-            headerHtml += '<th rowspan="2">P</th>';
-            headerHtml += '<th rowspan="2">A</th>';
-            headerHtml += '<th rowspan="2">L</th>';
-            headerHtml += '<th rowspan="2">WO</th>';
-            headerHtml += '<th rowspan="2">Var</th>';
-
             headerHtml += '</tr>';
             dayHtml += '</tr>';
             thead.innerHTML = headerHtml + dayHtml;
 
             // 2. Render Rows
             if (data.grid.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: var(--text-secondary);">No employee data available for this range.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
                 return;
             }
 
-            let fullGridHtml = '';
             data.grid.forEach(emp => {
-                let rowHtml = `<tr><td style="font-weight: 700; text-align: left; padding-left: 20px;">${emp.name}</td>`;
-                
-                let totalP = 0, totalA = 0, totalL = 0, totalWO = 0, totalVar = 0;
+                let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
 
                 data.headers.forEach(h => {
-                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty', inTime: '-', outTime: '-', totalHrs: 0 };
+                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
                     let varDisplay = dayData.variance;
                     let varColorClass = '';
-                    
-                    const numVar = parseFloat(dayData.variance) || 0;
-                    totalVar += numVar;
 
-                    let statusClass = 'status';
-                    if (dayData.status === 'P') { totalP++; statusClass += ' status-p'; }
-                    else if (dayData.status === 'A') { totalA++; statusClass += ' status-a'; }
-                    else if (dayData.status === 'L') { totalL++; statusClass += ' status-l'; }
-                    else if (dayData.status === 'WO') { totalWO++; statusClass += ' status-wo'; }
-
+                    const numVar = parseFloat(dayData.variance);
                     if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
                         if (numVar > 0) {
                             varDisplay = `+${numVar}`;
@@ -887,34 +868,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (dayData.status === 'Pending') {
                         varDisplay = '...';
                     } else {
-                        varDisplay = '';
+                        varDisplay = ''; // Future
                     }
 
-                    const tooltip = `Date: ${h.label}\nIn: ${dayData.inTime}\nOut: ${dayData.outTime}\nWork: ${dayData.totalHrs}h`;
-
                     rowHtml += `
-                        <td title="${tooltip}">
+                        <td class="${dayData.colorClass}">
                             <div class="matrix-cell">
-                                <span class="${statusClass}">${dayData.status}</span>
+                                <div class="matrix-status">${dayData.status}</div>
                                 <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
                             </div>
                         </td>
                     `;
                 });
-
-                // Add Summary Cells
-                rowHtml += `
-                    <td><span class="status status-p">${totalP}</span></td>
-                    <td><span class="status status-a">${totalA}</span></td>
-                    <td><span class="status status-l">${totalL}</span></td>
-                    <td><span class="status status-wo" style="background:transparent;">${totalWO}</span></td>
-                    <td style="font-weight: 700;" class="${totalVar < 0 ? 'grid-variance-neg' : 'grid-variance-pos'}">${totalVar.toFixed(1)}h</td>
-                `;
-
                 rowHtml += '</tr>';
-                fullGridHtml += rowHtml;
+                tbody.innerHTML += rowHtml;
             });
-            tbody.innerHTML = fullGridHtml;
 
         } catch (err) {
             console.error('Matrix Error:', err);
@@ -2744,43 +2712,4 @@ window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
 });
-
-/**
- * REPORTING STUDIO - EXPORT ENGINE
- * Generates a non-editable PDF with integrated Pinpointstartups watermark.
- */
-window.exportToPDF = async function() {
-    const element = document.getElementById('matrix-modal');
-    if (!element) return;
-
-    // Show loading state on button
-    const btn = event.currentTarget;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERATING PDF...';
-    btn.disabled = true;
-
-    // Configuration for html2pdf
-    const opt = {
-        margin: [10, 10, 10, 10],
-        filename: 'Attendance_Report_Pinpointstartups_' + new Date().getTime() + '.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            logging: false,
-            letterRendering: true
-        },
-        jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' }
-    };
-
-    try {
-        // html2pdf captures the DOM exactly as it is (including the watermark)
-        await html2pdf().set(opt).from(element).save();
-    } catch (err) {
-        console.error('PDF Export Error:', err);
-        alert('Failed to generate PDF. Please try again.');
-    } finally {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-    }
 };

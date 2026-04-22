@@ -1841,7 +1841,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
     try {
         const monthStr = req.query.month; // Expected YYYY-MM
         const dayStr = req.query.day; // Expected YYYY-MM-DD
-        
+
         let startDate, endDate;
         if (dayStr) {
             startDate = new Date(dayStr);
@@ -1853,7 +1853,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
         } else {
             return res.status(400).json({ success: false, message: 'Month or Day parameter is required.' });
         }
-        
+
         const year = startDate.getFullYear();
         const month = startDate.getMonth() + 1;
         const todayStr = new Date().toISOString().split('T')[0];
@@ -1879,20 +1879,20 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
             const dateObj = new Date(year, month - 1, d);
             const dateIso = dateObj.toISOString().split('T')[0];
             const dayName = dateObj.toLocaleString('en-us', { weekday: 'long' });
-            dateHeaders.push({ 
-                day: d, 
-                label: `${d}-${dateObj.toLocaleString('en-us', { month: 'short' })}-${year}`, 
-                weekday: dayName, 
-                iso: dateIso 
+            dateHeaders.push({
+                day: d,
+                label: `${d}-${dateObj.toLocaleString('en-us', { month: 'short' })}-${year}`,
+                weekday: dayName,
+                iso: dateIso
             });
         }
 
         const grid = [];
         for (const emp of employees) {
             const empData = { name: emp.name, id: emp.id, daily: {} };
-            
+
             // Expected Minutes Logic
-            let expectedMins = 480; 
+            let expectedMins = 480;
             if (emp.startTime && emp.endTime) {
                 const [h1, m1] = emp.startTime.split(':').map(Number);
                 const [h2, m2] = emp.endTime.split(':').map(Number);
@@ -1909,13 +1909,9 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                 let variance = 0;
                 let colorClass = 'grid-a';
 
-                let inTime = '-';
-                let outTime = '-';
-                let totalHrs = 0;
-
                 const dayLower = header.weekday.toLowerCase();
                 const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
-                
+
                 if (dayLower === empWeekOff) {
                     status = 'WO';
                     colorClass = 'grid-wo';
@@ -1924,11 +1920,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     colorClass = 'grid-l';
                 } else if (sessions.length > 0) {
                     const s = sessions[0];
-                    inTime = s.checkInTime ? new Date(s.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
-                    outTime = s.checkOutTime ? new Date(s.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
-                    totalHrs = ((s.totalWorkDuration || 0) / 3600000).toFixed(2);
-
-                    if (dateKey === todayStr && !s.checkOutTime) {
+                    if (dateKey === todayStr && !s.checkOut) {
                         status = 'Pending';
                         colorClass = 'grid-pending';
                     } else {
@@ -1942,7 +1934,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     colorClass = 'grid-empty';
                 }
 
-                empData.daily[dateKey] = { status, variance, colorClass, inTime, outTime, totalHrs };
+                empData.daily[dateKey] = { status, variance, colorClass };
             }
             grid.push(empData);
         }
