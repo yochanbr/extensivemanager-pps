@@ -53,8 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1500);
     }
     
-    const mainLayout = document.getElementById('main-layout');
-
     if (mobileMenuBtn && sidebarOverlay && mainLayout) {
         const toggleSidebar = () => mainLayout.classList.toggle('sidebar-active');
         mobileMenuBtn.addEventListener('click', toggleSidebar);
