@@ -2679,4 +2679,3 @@ window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
 });
-});
