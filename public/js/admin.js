@@ -928,11 +928,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         varDisplay = ''; // Future
                     }
 
+                    // Status Color Mapping from Legend
+                    const statusConfig = {
+                        'P': { bg: '#4D7C0F', text: 'white' },
+                        'A': { bg: '#DC2626', text: 'white' },
+                        'L': { bg: '#D97706', text: 'white' },
+                        'WO': { bg: '#334155', text: 'white' },
+                        'Pending': { bg: '#F1F5F9', text: '#64748B' }
+                    };
+
+                    const style = statusConfig[dayData.status] 
+                        ? `background: ${statusConfig[dayData.status].bg}; color: ${statusConfig[dayData.status].text};`
+                        : '';
+
                     rowHtml += `
-                        <td class="${dayData.colorClass}">
+                        <td style="${style} transition: all 0.2s;">
                             <div class="matrix-cell">
-                                <div class="matrix-status">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
+                                <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
+                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.9; font-size: 9px;">${varDisplay}</div>
                             </div>
                         </td>
                     `;
