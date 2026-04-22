@@ -1980,49 +1980,38 @@ body {
 
 .reporting-studio-table th:first-child { z-index: 12; }
 
-/* 2-Row Matrix Cell Architecture */
-.matrix-table td {
-    padding: 0 !important; /* Allow internal divs to fill space */
-    border-bottom: 1px solid #F1F5F9;
-    border-right: 1px solid #F1F5F9;
-    height: 54px;
-    vertical-align: top;
+.reporting-studio-table td {
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    font-size: 13px;
 }
 
+/* Matrix Cell Styles */
 .matrix-cell {
     display: flex;
     flex-direction: column;
-    height: 100%;
-}
-
-.matrix-status-row {
-    flex: 1;
-    display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    gap: 2px;
+}
+
+.matrix-status {
+    font-size: 16px;
     font-weight: 800;
-    transition: all 0.2s;
 }
 
-.matrix-variance-row {
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
+.matrix-variance {
+    font-size: 9px;
     font-weight: 700;
-    background: transparent;
+    padding: 1px 4px;
+    border-radius: 4px;
 }
 
-.matrix-status-row.status-a-filled {
-    background: #DC2626;
-    color: white;
-}
-
-.grid-variance-pos { color: #15803D !important; }
-.grid-variance-neg { color: #DC2626 !important; }
-.grid-variance-neutral { color: #0F172A !important; opacity: 0.6; }
+.grid-variance-pos { background: transparent; color: #15803D !important; opacity: 1 !important; } /* Deep Green */
+.grid-variance-neg { background: transparent; color: #DC2626 !important; opacity: 1 !important; } /* Deep Red */
+.grid-variance-neutral { background: transparent; color: #0F172A !important; opacity: 0.6; } /* Black/Slate */
 
 /* Status Badges */
 .status {
