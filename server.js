@@ -1838,11 +1838,20 @@ app.put('/api/:type/:id', async (req, res) => {
 app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
     try {
         const monthStr = req.query.month; // Expected YYYY-MM
-        if (!monthStr) return res.status(400).json({ success: false, message: 'Month parameter is required.' });
-
-        const [year, month] = monthStr.split('-').map(Number);
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 0); // Last day of month
+        const dayStr = req.query.day; // Expected YYYY-MM-DD
+        
+        let startDate, endDate;
+        if (dayStr) {
+            startDate = new Date(dayStr);
+            endDate = new Date(dayStr);
+        } else if (monthStr) {
+            const [year, month] = monthStr.split('-').map(Number);
+            startDate = new Date(year, month - 1, 1);
+            endDate = new Date(year, month, 0); // Last day of month
+        } else {
+            return res.status(400).json({ success: false, message: 'Month or Day parameter is required.' });
+        }
+        
         const todayStr = new Date().toISOString().split('T')[0];
 
         // 1. Get all employees

@@ -388,13 +388,45 @@
                     <!-- EXPERIMENTAL: ATTENDANCE GRID TRIGGER -->
                     <div class="live-status-section" style="border-radius: 28px; padding: 24px; margin-bottom: 32px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.4); display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <h3 style="font-size: 18px; font-weight: 800; color: #1E293B; margin-bottom: 2px;">Experimental: Attendance Matrix</h3>
-                            <p style="font-size: 12px; color: #64748B;">Open the interactive monthly cross-reference directory.</p>
+                            <h3 style="font-size: 18px; font-weight: 800; color: #1E293B; margin-bottom: 2px;">Attendance Reporting Studio</h3>
+                            <p style="font-size: 12px; color: #64748B;">Generate professional cross-reference reports for any period.</p>
                         </div>
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <input type="month" id="grid-month-picker" class="modern-input" style="width: 180px;">
-                            <button class="action-btn" onclick="window.openAttendanceMatrix()" style="background: #0A0A0A; border-radius: 12px; padding: 12px 24px;">
-                                <i class="fas fa-expand"></i> Launch Interactive Matrix
+                        <button class="action-btn" onclick="window.openReportSelection()" style="background: #0A0A0A; border-radius: 12px; padding: 12px 28px;">
+                            <i class="fas fa-layer-group"></i> Choose Period
+                        </button>
+                    </div>
+
+                    <!-- REPORT SELECTION MODAL (Image 2 Style) -->
+                    <div id="matrix-selection-modal" class="modern-modal" style="display: none;">
+                        <div class="modern-modal-content" style="width: 480px; padding: 40px; border-radius: 32px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+                                <div>
+                                    <h2 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0;">Select Report Period</h2>
+                                    <p style="font-size: 13px; color: #64748B; margin-top: 4px;">Choose the time range for analysis</p>
+                                </div>
+                                <button class="close-modal-btn" onclick="window.closeReportSelection()" style="background: #F1F5F9; color: #64748B;">&times;</button>
+                            </div>
+
+                            <div style="margin-bottom: 24px;">
+                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Range Type</label>
+                                <select id="matrix-range-type" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;" onchange="window.toggleRangeType()">
+                                    <option value="month">Full Month</option>
+                                    <option value="day">Single Day</option>
+                                </select>
+                            </div>
+
+                            <div id="selection-month-group" style="margin-bottom: 40px;">
+                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Month</label>
+                                <input type="month" id="selection-month-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
+                            </div>
+
+                            <div id="selection-day-group" style="margin-bottom: 40px; display: none;">
+                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Date</label>
+                                <input type="date" id="selection-day-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
+                            </div>
+
+                            <button onclick="window.generateMatrixFromSelection()" style="width: 100%; height: 60px; background: #FF5B22; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(255, 91, 34, 0.2);">
+                                Generate Activity Report
                             </button>
                         </div>
                     </div>

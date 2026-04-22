@@ -635,12 +635,70 @@ document.addEventListener('DOMContentLoaded', () => {
     window.staffData = [];
 
     // EXPERIMENTAL: ATTENDANCE GRID GENERATOR
-    window.openAttendanceMatrix = function() {
+    window.openReportSelection = function() {
+        const modal = document.getElementById('matrix-selection-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            
+            // Set defaults
+            const now = new Date();
+            const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const dayStr = now.toISOString().split('T')[0];
+            
+            const monthInput = document.getElementById('selection-month-input');
+            const dayInput = document.getElementById('selection-day-input');
+            if (monthInput) monthInput.value = monthStr;
+            if (dayInput) dayInput.value = dayStr;
+        }
+    };
+
+    window.closeReportSelection = function() {
+        const modal = document.getElementById('matrix-selection-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    };
+
+    window.toggleRangeType = function() {
+        const type = document.getElementById('matrix-range-type').value;
+        const monthGroup = document.getElementById('selection-month-group');
+        const dayGroup = document.getElementById('selection-day-group');
+        
+        if (type === 'day') {
+            monthGroup.style.display = 'none';
+            dayGroup.style.display = 'block';
+        } else {
+            monthGroup.style.display = 'block';
+            dayGroup.style.display = 'none';
+        }
+    };
+
+    window.generateMatrixFromSelection = function() {
+        const type = document.getElementById('matrix-range-type').value;
+        let queryParams = '';
+        
+        if (type === 'day') {
+            const val = document.getElementById('selection-day-input').value;
+            if (!val) return alert('Please select a date');
+            queryParams = `day=${val}`;
+        } else {
+            const val = document.getElementById('selection-month-input').value;
+            if (!val) return alert('Please select a month');
+            queryParams = `month=${val}`;
+        }
+
+        window.closeReportSelection();
+        window.openAttendanceMatrix(queryParams);
+    };
+
+    window.openAttendanceMatrix = function(queryParams) {
         const modal = document.getElementById('matrix-modal');
         if (modal) {
             modal.style.display = 'flex';
             modal.classList.add('show');
-            window.loadAttendanceGrid();
+            window.loadAttendanceGrid(queryParams);
         }
     };
 
@@ -652,21 +710,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.loadAttendanceGrid = async function() {
-        const picker = document.getElementById('grid-month-picker');
-        let selectedMonth = picker ? picker.value : '';
-        
-        if (!selectedMonth) {
+    window.loadAttendanceGrid = async function(queryParams) {
+        if (!queryParams) {
             const now = new Date();
-            selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            if (picker) picker.value = selectedMonth;
+            const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            queryParams = `month=${month}`;
         }
 
-        // Handle Subtitle
-        const [y, m] = selectedMonth.split('-');
-        const monthName = new Date(y, m - 1).toLocaleString('en-us', { month: 'long', year: 'numeric' });
+        // Handle Subtitle based on query
+        let displayTitle = 'Monthly Report';
+        if (queryParams.includes('day=')) {
+            const dateStr = queryParams.split('day=')[1];
+            displayTitle = `Daily Report: ${new Date(dateStr).toLocaleDateString('en-us', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+        } else {
+            const monthStr = queryParams.split('month=')[1];
+            const [y, m] = monthStr.split('-');
+            displayTitle = `Monthly Report: ${new Date(y, m - 1).toLocaleString('en-us', { month: 'long', year: 'numeric' })}`;
+        }
+        
         const subtitle = document.getElementById('matrix-modal-subtitle');
-        if (subtitle) subtitle.innerText = `Detailed Monthly Report: ${monthName}`;
+        if (subtitle) subtitle.innerText = displayTitle;
 
         const thead = document.getElementById('matrix-thead');
         const tbody = document.getElementById('matrix-tbody');
@@ -676,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '';
 
         try {
-            const res = await fetch(`/api/reports/attendance-grid?month=${selectedMonth}`);
+            const res = await fetch(`/api/reports/attendance-grid?${queryParams}`);
             const data = await res.json();
 
             if (!data.success) throw new Error(data.message);
