@@ -1980,38 +1980,44 @@ body {
 
 .reporting-studio-table th:first-child { z-index: 12; }
 
-.reporting-studio-table td {
-    padding: 10px 14px;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-    font-size: 13px;
+/* Excel-Style Matrix Architecture */
+.matrix-table {
+    border-collapse: collapse !important;
 }
 
-/* Matrix Cell Styles */
-.matrix-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-}
-
-.matrix-status {
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.matrix-variance {
-    font-size: 9px;
+.matrix-table th {
+    background: #BDD7EE !important; /* Excel Blue Header */
+    color: #000 !important;
+    border: 1px solid #94A3B8 !important;
     font-weight: 700;
-    padding: 1px 4px;
-    border-radius: 4px;
+    font-size: 11px;
+    padding: 6px !important;
 }
 
-.grid-variance-pos { background: transparent; color: #15803D !important; opacity: 1 !important; } /* Deep Green */
-.grid-variance-neg { background: transparent; color: #DC2626 !important; opacity: 1 !important; } /* Deep Red */
-.grid-variance-neutral { background: transparent; color: #0F172A !important; opacity: 0.6; } /* Black/Slate */
+.matrix-table td {
+    border: 1px solid #CBD5E1 !important;
+    padding: 2px !important; /* Low padding for Excel feel */
+    font-size: 12px;
+    text-align: center;
+    background: #FFF;
+}
+
+.excel-status-p { background: #70AD47 !important; color: #000 !important; font-weight: 800; }
+.excel-status-a { background: #FF0000 !important; color: #000 !important; font-weight: 800; }
+.excel-status-l { background: #ED7D31 !important; color: #000 !important; font-weight: 800; }
+.excel-status-wo { background: #404040 !important; color: #000 !important; font-weight: 800; }
+
+.grid-variance-pos { color: #15803D !important; font-weight: 700; }
+.grid-variance-neg { color: #DC2626 !important; font-weight: 700; }
+.grid-variance-neutral { color: #000 !important; opacity: 0.8; font-weight: 700; }
+
+.name-cell-excel {
+    background: #F8FAFC !important;
+    font-weight: 800;
+    vertical-align: middle !important;
+    border-right: 2px solid #94A3B8 !important;
+    padding: 4px 10px !important;
+}
 
 /* Status Badges */
 .status {

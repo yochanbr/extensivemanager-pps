@@ -883,81 +883,61 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/reports/attendance-grid?${queryParams}`);
             const data = await res.json();
 
-            if (!data.success) throw new Error(data.message);
-
-            // 1. Render Headers
-            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; width: 180px; min-width: 180px;">Employee Name</th>';
+            if (!data.success) throw new Error(data.message);            // 1. Render Headers
+            let headerHtml = '<tr><th rowspan="2" class="name-cell-excel" style="width: 180px; min-width: 180px;">Employee Name</th>';
             let dayHtml = '<tr>';
 
             data.headers.forEach(h => {
-                headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
-                dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
+                headerHtml += `<th style="width: 100px; min-width: 100px; border-bottom: none;">${h.label}</th>`;
+                // Image shows full weekday name: Wednesday, Thursday, etc.
+                const fullDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date(h.iso));
+                dayHtml += `<th style="background: #BDD7EE; border-top: none;">${fullDay}</th>`;
             });
             headerHtml += '</tr>';
             dayHtml += '</tr>';
             thead.innerHTML = headerHtml + dayHtml;
 
             // 2. Render Rows
-            tbody.innerHTML = ''; // Clear previous entries to prevent duplication
+            tbody.innerHTML = ''; 
             if (data.grid.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
                 return;
             }
 
             data.grid.forEach(emp => {
-                let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
+                let trStatusHtml = `<tr><td rowspan="2" class="name-cell-excel">${emp.name}</td>`;
+                let trVarHtml = `<tr>`;
 
                 data.headers.forEach(h => {
-                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
-                    let varDisplay = dayData.variance;
-                    let varColorClass = '';
-
+                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0 };
                     const numVar = parseFloat(dayData.variance);
-                    if (dayData.status === 'A') {
-                        varDisplay = '';
-                        varColorClass = '';
-                    } else if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'L') {
-                        if (numVar > 0) {
-                            varDisplay = `+${numVar}h`;
-                            varColorClass = 'grid-variance-pos';
-                        } else if (numVar < 0) {
-                            varDisplay = `${numVar}h`;
-                            varColorClass = 'grid-variance-neg';
-                        } else {
-                            varDisplay = '0.0h';
-                            varColorClass = 'grid-variance-neutral';
-                        }
-                    } else if (dayData.status === 'Pending') {
-                        varDisplay = '...';
-                        varColorClass = 'grid-variance-neutral';
-                    } else {
-                        varDisplay = '';
-                        varColorClass = '';
-                    }
-
-                    // Status Color Mapping: ONLY 'A' is highlighted RED
-                    const statusConfig = {
-                        'P': { bg: 'transparent', text: '#0F172A' },
-                        'A': { bg: '#DC2626', text: 'white' },
-                        'L': { bg: 'rgba(217, 119, 6, 0.05)', text: '#D97706' },
-                        'WO': { bg: 'rgba(51, 65, 85, 0.05)', text: '#334155' },
-                        'Pending': { bg: '#F8FAFC', text: '#94A3B8' }
+                    
+                    // Status Class Mapping
+                    const statusClassMap = {
+                        'P': 'excel-status-p',
+                        'A': 'excel-status-a',
+                        'L': 'excel-status-l',
+                        'WO': 'excel-status-wo'
                     };
+                    const sc = statusClassMap[dayData.status] || '';
+                    
+                    // Variance Display
+                    let varDisplay = (numVar === 0) ? '0' : (numVar > 0 ? `+${numVar}` : `${numVar}`);
+                    // If no data, keep it clean
+                    if (dayData.status === '-') varDisplay = '';
+                    
+                    let varColorClass = 'grid-variance-neutral';
+                    if (numVar > 0) varColorClass = 'grid-variance-pos';
+                    else if (numVar < 0) varColorClass = 'grid-variance-neg';
 
-                    const cfg = statusConfig[dayData.status] || { bg: 'transparent', text: '#1E293B' };
-                    const style = `background: ${cfg.bg}; color: ${cfg.text};`;
-
-                    rowHtml += `
-                        <td style="${style} transition: all 0.2s; border-right: 1px solid #F1F5F9;">
-                            <div class="matrix-cell">
-                                <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.8; font-size: 8px;">${varDisplay}</div>
-                            </div>
-                        </td>
-                    `;
+                    trStatusHtml += `<td class="${sc}">${dayData.status}</td>`;
+                    trVarHtml += `<td class="${varColorClass}" style="background: #FFF; font-size: 11px;">${varDisplay}</td>`;
                 });
-                rowHtml += '</tr>';
-                tbody.innerHTML += rowHtml;
+
+                trStatusHtml += `</tr>`;
+                trVarHtml += `</tr>`;
+                
+                tbody.innerHTML += (trStatusHtml + trVarHtml);
             });
 
         } catch (err) {
