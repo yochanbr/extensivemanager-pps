@@ -612,13 +612,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const masterReportsView = document.getElementById('master-reports-hub-v2');
 
     function switchSpaView(targetView, activeBtn) {
-        const views = [dashboardView, employeesView, reportsView, shiftSummaryView, attendanceView, settingsView, masterReportsView];
-        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterReportBtn];
+        // Fallback for Hub v2 if targetView is missing (Resiliency for Cache)
+        if (!targetView && activeBtn && activeBtn.classList.contains('master-report-btn')) {
+            targetView = document.getElementById('master-reports-hub-v2');
+        }
+
+        const views = [
+            document.getElementById('dashboard-view'),
+            document.getElementById('employees-view'),
+            document.getElementById('reports-view'),
+            document.getElementById('shift-summary-view'),
+            document.getElementById('attendance-view'),
+            document.getElementById('settings-view'),
+            document.getElementById('master-reports-hub-v2')
+        ];
+        
+        const masterBtn = document.querySelector('.master-report-btn');
+        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterBtn];
 
         views.forEach(v => { if (v) v.style.display = 'none'; });
         buttons.forEach(b => { if (b) b.classList.remove('active'); });
 
-        if (targetView) targetView.style.display = 'block';
+        if (targetView) {
+            targetView.style.display = 'block';
+        } else {
+            console.error("SPA ERROR: Target view not found in DOM");
+        }
+        
         if (activeBtn) activeBtn.classList.add('active');
 
         // Update Topbar Title
@@ -628,15 +648,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Refresh data based on view
-        if (targetView === dashboardView) loadDashboardData();
-        if (targetView === employeesView) fetchEmployeesForSPA();
-        if (targetView === shiftSummaryView) fetchEmployeesForShiftSummary();
-        if (targetView === reportsView) fetchEmployeesForReports();
+        if (targetView && targetView.id === 'dashboard-view') loadDashboardData();
+        if (targetView && targetView.id === 'employees-view') fetchEmployeesForSPA();
+        if (targetView && targetView.id === 'shift-summary-view') fetchEmployeesForShiftSummary();
+        if (targetView && targetView.id === 'reports-view') fetchEmployeesForReports();
 
-        if (targetView === attendanceView) {
+        if (targetView && targetView.id === 'attendance-view') {
             window.refreshAttendanceLogs();
         }
-        if (targetView === settingsView) {
+        if (targetView && targetView.id === 'settings-view') {
             if (typeof refreshSystemStatus === 'function') refreshSystemStatus();
             if (typeof fetchSettings === 'function') fetchSettings();
         }
