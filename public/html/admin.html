@@ -138,28 +138,10 @@
             </header>
 
             <div class="content-area">
-                <!-- Master Reports View v2 (MOVED TO TOP FOR VISIBILITY) -->
-                <div id="master-reports-hub-v2" style="display: none; padding: 20px; border: 4px solid #F95A2C; margin-bottom: 20px; border-radius: 20px; background: white;">
-                    <div style="background: #F95A2C; color: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 900; letter-spacing: 2px;">
-                        STUDIO HUB v6.0 - ACTIVATED
-                    </div>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <button class="attendance-report-card" style="width: 100%; padding: 25px; background: #F95A2C; color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(249, 90, 44, 0.3);">
-                            1) ATTENDANCE REPORT
-                        </button>
-                        <button class="billing-report-card" style="width: 100%; padding: 25px; background: #3B82F6; color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);">
-                            2) BILLING REPORTS
-                        </button>
-                        <button class="payslip-report-card" style="width: 100%; padding: 25px; background: #10B981; color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);">
-                            3) QUICK PAYSLIP
-                        </button>
-                    </div>
-                </div>
-
-                <!-- HIGH VISIBILITY BETA WARNING BANNER (Global) -->
+            <div class="content-area">
+                <!-- HIGH VISIBILITY BETA WARNING BANNER (Restored to Top) -->
                 <div class="beta-notice-banner"
-                    style="margin: 20px 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
+                    style="margin: 0 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
                     <div
                         style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
                         <i class="fas fa-flask"></i>
@@ -185,6 +167,55 @@
                                 style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
                                 <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
                             </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Studio Hub (Premium Styled) -->
+                <div id="master-reports-hub-v2" style="display: none;">
+                    <div style="margin-bottom: 32px;">
+                        <h2 style="font-size: 26px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">Reporting Studio</h2>
+                        <p style="color: #64748B; font-size: 14px; margin-top: 4px; font-weight: 500;">Select a specialized analytical module below.</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+                        <!-- Module 1: Attendance matrix -->
+                        <div class="attendance-report-card" 
+                             style="background: white; border: 1px solid #E2E8F0; border-radius: 24px; padding: 28px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <div style="width: 56px; height: 56px; background: rgba(249, 90, 44, 0.1); color: #F95A2C; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h3 style="font-size: 19px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">1) Attendance Report</h3>
+                            <p style="font-size: 14px; color: #64748B; line-height: 1.5; margin-bottom: 24px;">Generate detailed month-wise attendance grids and employee status matrices.</p>
+                            <div style="display: flex; align-items: center; color: #F95A2C; font-weight: 700; font-size: 14px;">
+                                Open Module <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Module 2: Billing reports -->
+                        <div class="billing-report-card" 
+                             style="background: white; border: 1px solid #E2E8F0; border-radius: 24px; padding: 28px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <div style="width: 56px; height: 56px; background: rgba(59, 130, 246, 0.1); color: #3B82F6; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <h3 style="font-size: 19px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">2) Billing Reports</h3>
+                            <p style="font-size: 14px; color: #64748B; line-height: 1.5; margin-bottom: 24px;">Analyze sales performance, inventory turnover, and billing cycles.</p>
+                            <div style="display: flex; align-items: center; color: #64748B; font-weight: 700; font-size: 13px; background: #F1F5F9; padding: 4px 12px; border-radius: 20px; width: fit-content;">
+                                <i class="fas fa-lock" style="margin-right: 6px; font-size: 11px;"></i> Coming Soon
+                            </div>
+                        </div>
+
+                        <!-- Module 3: Quick Payslip -->
+                        <div class="payslip-report-card" 
+                             style="background: white; border: 1px solid #E2E8F0; border-radius: 24px; padding: 28px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            <div style="width: 56px; height: 56px; background: rgba(16, 185, 129, 0.1); color: #10B981; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px;">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <h3 style="font-size: 19px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">3) Quick Payslip</h3>
+                            <p style="font-size: 14px; color: #64748B; line-height: 1.5; margin-bottom: 24px;">Instantly generate and download employee salary slips in professional PDF format.</p>
+                            <div style="display: flex; align-items: center; color: #64748B; font-weight: 700; font-size: 13px; background: #F1F5F9; padding: 4px 12px; border-radius: 20px; width: fit-content;">
+                                <i class="fas fa-lock" style="margin-right: 6px; font-size: 11px;"></i> Coming Soon
+                            </div>
                         </div>
                     </div>
                 </div>
