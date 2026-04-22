@@ -2009,8 +2009,9 @@ body {
     border-radius: 4px;
 }
 
-.grid-variance-pos { background: rgba(255, 255, 255, 0.2); color: #BEF264 !important; } /* Vibrant Lime */
-.grid-variance-neg { background: rgba(255, 255, 255, 0.2); color: #FCD34D !important; } /* Vibrant Amber */
+.grid-variance-pos { background: transparent; color: #15803D !important; opacity: 1 !important; } /* Deep Green */
+.grid-variance-neg { background: transparent; color: #DC2626 !important; opacity: 1 !important; } /* Deep Red */
+.grid-variance-neutral { background: transparent; color: #0F172A !important; opacity: 0.6; } /* Black/Slate */
 
 /* Status Badges */
 .status {

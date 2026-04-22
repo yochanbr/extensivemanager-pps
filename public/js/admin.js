@@ -912,20 +912,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     let varColorClass = '';
 
                     const numVar = parseFloat(dayData.variance);
-                    if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
+                    if (dayData.status === 'A') {
+                        varDisplay = '';
+                        varColorClass = '';
+                    } else if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'L') {
                         if (numVar > 0) {
-                            varDisplay = `Extra +${numVar}h`;
+                            varDisplay = `+${numVar}h`;
                             varColorClass = 'grid-variance-pos';
                         } else if (numVar < 0) {
                             varDisplay = `${numVar}h`;
                             varColorClass = 'grid-variance-neg';
                         } else {
                             varDisplay = '0.0h';
+                            varColorClass = 'grid-variance-neutral';
                         }
                     } else if (dayData.status === 'Pending') {
                         varDisplay = '...';
+                        varColorClass = 'grid-variance-neutral';
                     } else {
                         varDisplay = '';
+                        varColorClass = '';
                     }
 
                     // Status Color Mapping: ONLY 'A' is highlighted RED
