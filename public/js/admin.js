@@ -651,6 +651,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => window.switchAttendanceView && window.switchAttendanceView('sessions'), 100);
     });
     if (settingsBtn) settingsBtn.addEventListener('click', () => switchSpaView(settingsView, settingsBtn));
+    
+    // Master Report (Modal Trigger)
+    const masterReportBtn = document.querySelector('.master-report-btn');
+    if (masterReportBtn) {
+        masterReportBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.openReportSelection();
+        });
+    }
 
     // Dynamic greeting based on time of day
     const dynamicGreeting = document.getElementById('dynamic-greeting');
