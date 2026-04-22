@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const shiftSummaryView = document.getElementById('shift-summary-view');
     const attendanceView = document.getElementById('attendance-view');
     const settingsView = document.getElementById('settings-view');
-    const masterReportsView = document.getElementById('master-reports-view');
+    const masterReportsView = document.getElementById('master-reports-hub-v2');
 
     function switchSpaView(targetView, activeBtn) {
         const views = [dashboardView, employeesView, reportsView, shiftSummaryView, attendanceView, settingsView, masterReportsView];
@@ -2741,6 +2741,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.selectedLogIds.add(logId);
         window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
     };
+    console.log("Admin Dashboard v5.2.1 Hub Alpha Loaded");
 });
 
 window.addEventListener('error', function (e) {
