@@ -829,20 +829,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) throw new Error(data.message);
 
             // 1. Render Headers
-            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; width: 180px; min-width: 180px;">Employee Name</th>';
+            let headerHtml = '<tr><th rowspan="2">Employee Name</th>';
             let dayHtml = '<tr>';
             
             data.headers.forEach(h => {
-                headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
-                dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
+                headerHtml += `<th>${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
+                dayHtml += `<th style="font-size: 10px; font-weight: 500; opacity: 0.6;">${h.weekday.substring(0, 3)}</th>`;
             });
 
             // Add Summary Headers
-            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">P</th>';
-            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">A</th>';
-            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">L</th>';
-            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">WO</th>';
-            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 60px;">Var</th>';
+            headerHtml += '<th rowspan="2">P</th>';
+            headerHtml += '<th rowspan="2">A</th>';
+            headerHtml += '<th rowspan="2">L</th>';
+            headerHtml += '<th rowspan="2">WO</th>';
+            headerHtml += '<th rowspan="2">Var</th>';
 
             headerHtml += '</tr>';
             dayHtml += '</tr>';
@@ -850,13 +850,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Render Rows
             if (data.grid.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: var(--text-secondary);">No employee data available for this range.</td></tr>';
                 return;
             }
 
             let fullGridHtml = '';
             data.grid.forEach(emp => {
-                let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
+                let rowHtml = `<tr><td style="font-weight: 700; text-align: left; padding-left: 20px;">${emp.name}</td>`;
                 
                 let totalP = 0, totalA = 0, totalL = 0, totalWO = 0, totalVar = 0;
 
@@ -868,10 +868,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const numVar = parseFloat(dayData.variance) || 0;
                     totalVar += numVar;
 
-                    if (dayData.status === 'P') totalP++;
-                    else if (dayData.status === 'A') totalA++;
-                    else if (dayData.status === 'L') totalL++;
-                    else if (dayData.status === 'WO') totalWO++;
+                    let statusClass = 'status';
+                    if (dayData.status === 'P') { totalP++; statusClass += ' status-p'; }
+                    else if (dayData.status === 'A') { totalA++; statusClass += ' status-a'; }
+                    else if (dayData.status === 'L') { totalL++; statusClass += ' status-l'; }
+                    else if (dayData.status === 'WO') { totalWO++; statusClass += ' status-wo'; }
 
                     if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
                         if (numVar > 0) {
@@ -892,9 +893,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tooltip = `Date: ${h.label}\nIn: ${dayData.inTime}\nOut: ${dayData.outTime}\nWork: ${dayData.totalHrs}h`;
 
                     rowHtml += `
-                        <td class="${dayData.colorClass}" title="${tooltip}">
+                        <td title="${tooltip}">
                             <div class="matrix-cell">
-                                <div class="matrix-status">${dayData.status}</div>
+                                <span class="${statusClass}">${dayData.status}</span>
                                 <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
                             </div>
                         </td>
@@ -903,11 +904,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Add Summary Cells
                 rowHtml += `
-                    <td class="matrix-total-cell" style="color: #059669;">${totalP}</td>
-                    <td class="matrix-total-cell" style="color: #DC2626;">${totalA}</td>
-                    <td class="matrix-total-cell" style="color: #B45309;">${totalL}</td>
-                    <td class="matrix-total-cell">${totalWO}</td>
-                    <td class="matrix-total-cell ${totalVar < 0 ? 'grid-variance-neg' : 'grid-variance-pos'}">${totalVar.toFixed(1)}h</td>
+                    <td><span class="status status-p">${totalP}</span></td>
+                    <td><span class="status status-a">${totalA}</span></td>
+                    <td><span class="status status-l">${totalL}</span></td>
+                    <td><span class="status status-wo" style="background:transparent;">${totalWO}</span></td>
+                    <td style="font-weight: 700;" class="${totalVar < 0 ? 'grid-variance-neg' : 'grid-variance-pos'}">${totalVar.toFixed(1)}h</td>
                 `;
 
                 rowHtml += '</tr>';

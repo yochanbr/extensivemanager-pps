@@ -1854,50 +1854,177 @@ body {
     border-color: #F95A2C;
 }
 
-/* ATTENDANCE REPORTING STUDIO (UNIQUE NAMESPACE) */ 
+/* ==========================================================================
+   REPORTING STUDIO - SaaS DESIGN SYSTEM (Premium Overhaul)
+   ========================================================================== */
+
 .reporting-studio-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(15px) saturate(180%);
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(12px);
     display: none;
-    justify-content: center;
     align-items: center;
-    z-index: 1000000;
-    /* Ensure it stays above everything */
+    justify-content: center;
+    z-index: 99999;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
-.reporting-studio-overlay.active {
+.reporting-studio-overlay.active { opacity: 1; display: flex; }
+
+.reporting-studio-modal {
+    width: 95%; max-width: 1400px;
+    height: 90vh;
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--blur));
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
     display: flex;
-    opacity: 1;
-}
-
-.reporting-studio-window {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-    position: absolute;
-    border-radius: 32px;
+    flex-direction: column;
     overflow: hidden;
-    transform: scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.reporting-studio-overlay.active .reporting-studio-window {
-    transform: scale(1);
+    position: relative;
+    color: var(--text-primary);
 }
 
 .reporting-studio-header {
+    padding: 20px 24px;
+    background: rgba(15, 23, 42, 0.5);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     cursor: move;
-    background: #F8FAFC;
-    padding: 24px 32px;
-    border-bottom: 1px solid #E2E8F0;
+}
+
+.reporting-studio-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.reporting-studio-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Table Elements */
+.reporting-studio-table-wrapper {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    position: relative;
+}
+
+.reporting-studio-table-wrapper::-webkit-scrollbar { height: 8px; width: 8px; }
+.reporting-studio-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.reporting-studio-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max-content;
+    min-width: 100%;
+}
+
+.reporting-studio-table th {
+    position: sticky;
+    top: 0;
+    background: #0f172a !important;
+    z-index: 10;
+    padding: 12px 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reporting-studio-table td:first-child,
+.reporting-studio-table th:first-child {
+    position: sticky;
+    left: 0;
+    background: #020617 !important;
+    z-index: 11;
+    min-width: 180px;
+}
+
+.reporting-studio-table th:first-child { z-index: 12; }
+
+.reporting-studio-table td {
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.reporting-studio-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Status Badges */
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 28px;
+}
+
+.status-p { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+.status-a { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+.status-l { background: rgba(245, 158, 11, 0.15); color: var(--yellow); }
+.status-wo { background: rgba(107, 114, 128, 0.2); color: var(--gray); }
+
+/* Footer */
+.reporting-studio-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.btn-saas {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-saas-primary { background: var(--accent); color: white; }
+.btn-saas-primary:hover { background: #2563eb; }
+.btn-saas-secondary { background: #334155; color: white; }
+
+/* Watermark in SaaS Dark */
+.reporting-studio-watermark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 8rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.03);
+    pointer-events: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 12px;
+    z-index: 0;
+}
+
+@media (max-width: 768px) {
+    .reporting-studio-modal { width: 95%; height: 95vh; }
+    .reporting-studio-table th, .reporting-studio-table td { padding: 8px; font-size: 11px; }
+}
+
+/* Cleanup existing responsive blocks if needed... */
+
     user-select: none;
 }
 

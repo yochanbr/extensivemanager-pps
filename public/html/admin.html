@@ -1023,43 +1023,43 @@
 
     <!-- ATTENDANCE MATRIX RESULT MODAL -->
     <div id="matrix-modal-overlay" class="reporting-studio-overlay">
-        <div id="matrix-modal" class="reporting-studio-window" style="width: 95%; max-width: 1400px; height: 85vh; display: flex; flex-direction: column;">
-            <div class="reporting-studio-header" style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: start;">
+        <div id="matrix-modal" class="reporting-studio-modal">
+            <div class="reporting-studio-header">
                 <div>
-                    <h2 id="matrix-modal-title" style="margin: 0; font-size: 24px; font-weight: 800; color: #0F172A;">Attendance Matrix</h2>
-                    <p id="matrix-modal-subtitle" style="margin: 4px 0 0; font-size: 14px; color: #64748B;">Showing data for [Month]</p>
+                    <h2 id="matrix-modal-title" class="reporting-studio-title">Attendance Matrix</h2>
+                    <p id="matrix-modal-subtitle" class="reporting-studio-subtitle">Showing data for [Month]</p>
                 </div>
-                <button class="close-modal-btn" onclick="window.closeAttendanceMatrix()">&times;</button>
+                <button class="close-modal-btn" onclick="window.closeAttendanceMatrix()" style="background: rgba(255,255,255,0.1); color: white; border-radius: 50%; width: 32px; height: 32px;">&times;</button>
             </div>
-            <div class="modal-body" style="flex-grow: 1; overflow: hidden; padding: 24px; display: flex; flex-direction: column;">
-                <div class="grid-scroll-container" style="flex-grow: 1; position: relative; overflow: auto; border-radius: 16px; border: 1px solid #E2E8F0; background: white;">
-                    <!-- Branding Watermark -->
-                    <div class="reporting-studio-watermark">Pinpointstartups</div>
-                    
-                    <table id="attendance-matrix-table" class="matrix-table">
-                        <thead id="matrix-thead"></thead>
-                        <tbody id="matrix-tbody"></tbody>
-                    </table>
-                </div>
+            <div class="reporting-studio-table-wrapper">
+                <!-- Branding Watermark -->
+                <div class="reporting-studio-watermark">Pinpointstartups</div>
+                
+                <table id="attendance-matrix-table" class="reporting-studio-table">
+                    <thead id="matrix-thead"></thead>
+                    <tbody id="matrix-tbody"></tbody>
+                </table>
             </div>
-            <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
-                <div style="display: flex; gap: 16px; align-items: center; margin-right: auto; font-size: 12px;">
-                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #4D7C0F; border-radius: 3px;"></span> P: Present</div>
-                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #DC2626; border-radius: 3px;"></span> A: Absent</div>
-                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #D97706; border-radius: 3px;"></span> L: Leave</div>
-                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #334155; border-radius: 3px;"></span> WO: Week-off</div>
+            <div class="reporting-studio-footer">
+                <div style="display: flex; gap: 16px; align-items: center; margin-right: auto; font-size: 11px; color: var(--text-secondary);">
+                    <div style="display: flex; gap: 6px; align-items: center;"><span class="status status-p">P</span> Present</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span class="status status-a">A</span> Absent</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span class="status status-l">L</span> Leave</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span class="status status-wo">WO</span> Week-off</div>
                 </div>
-                <button class="action-btn secondary" onclick="window.closeAttendanceMatrix()">Close</button>
-                <button class="action-btn" onclick="window.exportToPDF()" style="background: #3B82F6;">
-                    <i class="fas fa-file-pdf"></i> EXPORT TO PDF
+                <button class="btn-saas btn-saas-secondary" onclick="window.closeAttendanceMatrix()">Close</button>
+                <button class="btn-saas btn-saas-primary" onclick="window.exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> EXPORT AS PDF
                 </button>
-                <button class="action-btn" onclick="window.loadAttendanceGrid()" style="background: #000;">Refresh Data</button>
+                <button class="btn-saas btn-saas-primary" onclick="window.loadAttendanceGrid()" style="background: #111827;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
         </div>
     </div>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260422_reporting_studio_v2"></script>
+    <script src="../js/admin.js?v=20260422_saas_ui_overhaul"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
