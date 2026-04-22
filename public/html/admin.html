@@ -16,6 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/admin.css">
@@ -215,6 +216,9 @@
                                     </select>
                                     <input type="date" id="mainDateFilter" class="input-dark"
                                         style="background: white; color: black; border: 1px solid #E2E8F0;">
+                                    <button onclick="window.openReportSelection()" class="action-btn" style="background: #000; border-radius: 10px; font-size: 11px; padding: 0 16px; height: 38px; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-calendar-alt"></i> CHOOSE PERIOD
+                                    </button>
                                 </div>
                             </div>
                             <div class="table-wrapper">
@@ -1028,7 +1032,10 @@
                 <button class="close-modal-btn" onclick="window.closeAttendanceMatrix()">&times;</button>
             </div>
             <div class="modal-body" style="flex-grow: 1; overflow: hidden; padding: 24px; display: flex; flex-direction: column;">
-                <div class="grid-scroll-container" style="flex-grow: 1; overflow: auto; border-radius: 16px; border: 1px solid #E2E8F0; background: white;">
+                <div class="grid-scroll-container" style="flex-grow: 1; position: relative; overflow: auto; border-radius: 16px; border: 1px solid #E2E8F0; background: white;">
+                    <!-- Branding Watermark -->
+                    <div class="reporting-studio-watermark">Pinpointstartups</div>
+                    
                     <table id="attendance-matrix-table" class="matrix-table">
                         <thead id="matrix-thead"></thead>
                         <tbody id="matrix-tbody"></tbody>
@@ -1043,13 +1050,16 @@
                     <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #334155; border-radius: 3px;"></span> WO: Week-off</div>
                 </div>
                 <button class="action-btn secondary" onclick="window.closeAttendanceMatrix()">Close</button>
+                <button class="action-btn" onclick="window.exportToPDF()" style="background: #3B82F6;">
+                    <i class="fas fa-file-pdf"></i> EXPORT TO PDF
+                </button>
                 <button class="action-btn" onclick="window.loadAttendanceGrid()" style="background: #000;">Refresh Data</button>
             </div>
         </div>
     </div>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260422_unlocked_final"></script>
+    <script src="../js/admin.js?v=20260422_reporting_studio_v2"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 

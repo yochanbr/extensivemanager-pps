@@ -40,8 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateContainer = document.querySelector('.sidebar') || document.body; // Use sidebar as container for update-available class
 
     // MOBILE SIDEBAR TOGGLE LOGIC
-    const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const mainLayout = document.getElementById('main-layout');
+    
+    // Trigger Mobile Experience Pop-up on Page Load
+    if (window.innerWidth <= 1024) {
+        // Delay slightly to ensure smooth loading transition
+        setTimeout(() => {
+            nammaModalSystem.alert("For the best analysis and reporting experience, we recommend using the Desktop Version of this dashboard.", {
+                confirmText: "Understood",
+                theme: "default"
+            });
+        }, 1500);
+    }
+    
     const mainLayout = document.getElementById('main-layout');
 
     if (mobileMenuBtn && sidebarOverlay && mainLayout) {
@@ -825,6 +836,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
                 dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
             });
+
+            // Add Summary Headers
+            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">P</th>';
+            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">A</th>';
+            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">L</th>';
+            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 50px;">WO</th>';
+            headerHtml += '<th rowspan="2" style="background: #F1F5F9; width: 60px;">Var</th>';
+
             headerHtml += '</tr>';
             dayHtml += '</tr>';
             thead.innerHTML = headerHtml + dayHtml;
@@ -835,15 +854,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            let fullGridHtml = '';
             data.grid.forEach(emp => {
                 let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
                 
+                let totalP = 0, totalA = 0, totalL = 0, totalWO = 0, totalVar = 0;
+
                 data.headers.forEach(h => {
-                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
+                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty', inTime: '-', outTime: '-', totalHrs: 0 };
                     let varDisplay = dayData.variance;
                     let varColorClass = '';
                     
-                    const numVar = parseFloat(dayData.variance);
+                    const numVar = parseFloat(dayData.variance) || 0;
+                    totalVar += numVar;
+
+                    if (dayData.status === 'P') totalP++;
+                    else if (dayData.status === 'A') totalA++;
+                    else if (dayData.status === 'L') totalL++;
+                    else if (dayData.status === 'WO') totalWO++;
+
                     if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
                         if (numVar > 0) {
                             varDisplay = `+${numVar}`;
@@ -857,11 +886,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (dayData.status === 'Pending') {
                         varDisplay = '...';
                     } else {
-                        varDisplay = ''; // Future
+                        varDisplay = '';
                     }
 
+                    const tooltip = `Date: ${h.label}\nIn: ${dayData.inTime}\nOut: ${dayData.outTime}\nWork: ${dayData.totalHrs}h`;
+
                     rowHtml += `
-                        <td class="${dayData.colorClass}">
+                        <td class="${dayData.colorClass}" title="${tooltip}">
                             <div class="matrix-cell">
                                 <div class="matrix-status">${dayData.status}</div>
                                 <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
@@ -869,9 +900,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         </td>
                     `;
                 });
+
+                // Add Summary Cells
+                rowHtml += `
+                    <td class="matrix-total-cell" style="color: #059669;">${totalP}</td>
+                    <td class="matrix-total-cell" style="color: #DC2626;">${totalA}</td>
+                    <td class="matrix-total-cell" style="color: #B45309;">${totalL}</td>
+                    <td class="matrix-total-cell">${totalWO}</td>
+                    <td class="matrix-total-cell ${totalVar < 0 ? 'grid-variance-neg' : 'grid-variance-pos'}">${totalVar.toFixed(1)}h</td>
+                `;
+
                 rowHtml += '</tr>';
-                tbody.innerHTML += rowHtml;
+                fullGridHtml += rowHtml;
             });
+            tbody.innerHTML = fullGridHtml;
 
         } catch (err) {
             console.error('Matrix Error:', err);
@@ -2701,3 +2743,43 @@ window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
 });
+
+/**
+ * REPORTING STUDIO - EXPORT ENGINE
+ * Generates a non-editable PDF with integrated Pinpointstartups watermark.
+ */
+window.exportToPDF = async function() {
+    const element = document.getElementById('matrix-modal');
+    if (!element) return;
+
+    // Show loading state on button
+    const btn = event.currentTarget;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERATING PDF...';
+    btn.disabled = true;
+
+    // Configuration for html2pdf
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: 'Attendance_Report_Pinpointstartups_' + new Date().getTime() + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            letterRendering: true
+        },
+        jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' }
+    };
+
+    try {
+        // html2pdf captures the DOM exactly as it is (including the watermark)
+        await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+        console.error('PDF Export Error:', err);
+        alert('Failed to generate PDF. Please try again.');
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+};

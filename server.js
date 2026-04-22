@@ -1909,6 +1909,10 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                 let variance = 0;
                 let colorClass = 'grid-a';
 
+                let inTime = '-';
+                let outTime = '-';
+                let totalHrs = 0;
+
                 const dayLower = header.weekday.toLowerCase();
                 const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
                 
@@ -1920,7 +1924,11 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     colorClass = 'grid-l';
                 } else if (sessions.length > 0) {
                     const s = sessions[0];
-                    if (dateKey === todayStr && !s.checkOut) {
+                    inTime = s.checkInTime ? new Date(s.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+                    outTime = s.checkOutTime ? new Date(s.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+                    totalHrs = ((s.totalWorkDuration || 0) / 3600000).toFixed(2);
+
+                    if (dateKey === todayStr && !s.checkOutTime) {
                         status = 'Pending';
                         colorClass = 'grid-pending';
                     } else {
@@ -1934,7 +1942,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     colorClass = 'grid-empty';
                 }
 
-                empData.daily[dateKey] = { status, variance, colorClass };
+                empData.daily[dateKey] = { status, variance, colorClass, inTime, outTime, totalHrs };
             }
             grid.push(empData);
         }
