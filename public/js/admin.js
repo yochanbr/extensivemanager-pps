@@ -634,12 +634,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.staffData = [];
 
-    // DRAGGABLE UTILITY (PRODUCTION GRADE)
+    // DRAGGABLE UTILITY (PRODUCTION GRADE - NAMESPACED)
     window.initDraggable = function(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
-        const content = modal.querySelector('.modern-modal-content');
-        const header = content.querySelector('.modal-header');
+        const content = modal; // The window itself is the draggable target
+        // Find header within our new unique namespace
+        const header = modal.querySelector('.reporting-studio-header');
         if (!content || !header) return;
 
         // Reset positions to center initially
@@ -654,7 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
         header.onmousedown = function(e) {
             isDragging = true;
             
-            // On first click, convert transform percentage to absolute pixels to allow dragging
             const bounds = content.getBoundingClientRect();
             content.style.transform = 'none';
             content.style.left = bounds.left + 'px';
@@ -683,15 +683,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.openReportSelection = function() {
+        const overlay = document.getElementById('matrix-selection-modal-overlay');
         const modal = document.getElementById('matrix-selection-modal');
-        if (modal) {
-            modal.style.display = 'flex';
+        if (overlay && modal) {
+            overlay.style.display = 'flex';
             setTimeout(() => {
-                modal.classList.add('show');
+                overlay.classList.add('active');
                 window.initDraggable('matrix-selection-modal');
             }, 10);
             
-            // Set defaults
             const now = new Date();
             const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const dayStr = now.toISOString().split('T')[0];
@@ -704,10 +704,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.closeReportSelection = function() {
-        const modal = document.getElementById('matrix-selection-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.remove('show');
+        const overlay = document.getElementById('matrix-selection-modal-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.style.display = 'none', 300);
         }
     };
 
@@ -744,11 +744,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.openAttendanceMatrix = function(queryParams) {
+        const overlay = document.getElementById('matrix-modal-overlay');
         const modal = document.getElementById('matrix-modal');
-        if (modal) {
-            modal.style.display = 'flex';
+        if (overlay && modal) {
+            overlay.style.display = 'flex';
             setTimeout(() => {
-                modal.classList.add('show');
+                overlay.classList.add('active');
                 window.initDraggable('matrix-modal');
             }, 10);
             window.loadAttendanceGrid(queryParams);
@@ -756,10 +757,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.closeAttendanceMatrix = function() {
-        const modal = document.getElementById('matrix-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.remove('show');
+        const overlay = document.getElementById('matrix-modal-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.style.display = 'none', 300);
         }
     };
 
