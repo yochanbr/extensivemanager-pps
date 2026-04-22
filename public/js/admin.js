@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // MOBILE SIDEBAR TOGGLE LOGIC
     const mainLayout = document.getElementById('main-layout');
+    const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
     
     // Trigger Mobile Experience Pop-up on Page Load
     if (window.innerWidth <= 1024) {
