@@ -2233,3 +2233,107 @@ body {
 
 
 
+/* ==========================================================================
+   MASTER REPORT MODULE CARDS
+   ========================================================================== */
+
+.master-reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 32px;
+}
+
+.report-module-card {
+    background: #FFFFFF;
+    border-radius: 28px;
+    padding: 32px;
+    border: 1px solid #E2E8F0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.report-module-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    border-color: #F95A2C;
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.module-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.module-icon.attendance { background: rgba(249, 90, 44, 0.1); color: #F95A2C; }
+.module-icon.billing { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+.module-icon.payslip { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+
+.module-badge {
+    background: #FFEDD5;
+    color: #9A3412;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.module-content h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 12px;
+}
+
+.module-content p {
+    font-size: 14px;
+    color: #64748B;
+    line-height: 1.6;
+}
+
+.module-footer {
+    margin-top: auto;
+}
+
+.module-action-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: #F8FAFC;
+    color: #0F172A;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.report-module-card:hover .module-action-btn:not(.secondary) {
+    background: linear-gradient(135deg, #F95A2C, #FF8C42);
+    color: white;
+}
+
+.module-action-btn.secondary {
+    background: #F1F5F9;
+    color: #94A3B8;
+    cursor: not-allowed;
+}

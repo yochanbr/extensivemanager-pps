@@ -662,6 +662,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Master Report Module Handlers
+    const attendanceCard = document.querySelector('.attendance-report-card');
+    const billingCard = document.querySelector('.billing-report-card');
+    const payslipCard = document.querySelector('.payslip-report-card');
+
+    if (attendanceCard) {
+        attendanceCard.addEventListener('click', () => {
+            window.openReportSelection();
+        });
+    }
+
+    if (billingCard) {
+        billingCard.addEventListener('click', () => {
+            nammaModalSystem.alert("Billing Analytics is a premium module and is currently being configured for your store.", {
+                title: "Coming Soon",
+                theme: "default"
+            });
+        });
+    }
+
+    if (payslipCard) {
+        payslipCard.addEventListener('click', () => {
+            nammaModalSystem.alert("The Payslip Engine is under active development. Payroll integration will be live soon.", {
+                title: "Under Construction",
+                theme: "default"
+            });
+        });
+    }
+
     // Dynamic greeting based on time of day
     const dynamicGreeting = document.getElementById('dynamic-greeting');
     if (dynamicGreeting) {
