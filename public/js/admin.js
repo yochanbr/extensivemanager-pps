@@ -898,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
             thead.innerHTML = headerHtml + dayHtml;
 
             // 2. Render Rows
+            tbody.innerHTML = ''; // Clear previous entries to prevent duplication
             if (data.grid.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
                 return;
