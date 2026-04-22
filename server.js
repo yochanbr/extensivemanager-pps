@@ -1829,6 +1829,7 @@ app.put('/api/:type/:id', async (req, res) => {
     await doc.ref.update({ [type]: dataArray, history: employee.history || [] });
 
     res.json({ success: true, message: 'Data updated successfully.' });
+});
 
 /**
  * Experimental: Attendance Grid Report Data
