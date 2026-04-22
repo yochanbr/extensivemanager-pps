@@ -79,8 +79,9 @@
                     </button>
                 </div>
 
-                <div style="margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <span style="font-size: 9px; color: #3F3F46; text-transform: uppercase; letter-spacing: 1px;">Build v6.5 Analytical Edition</span>
+                <div
+                    style="margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <span style="font-size: 9px; color: #3F3F46; text-transform: uppercase; letter-spacing: 1px;">Build v6.6 Focus Edition</span>
                 </div>
             </nav>
 
@@ -222,481 +223,504 @@
             </style>
 
             <div class="content-area">
-            <div class="content-area">
-                <!-- HIGH VISIBILITY BETA WARNING BANNER (Restored to Top) -->
-                <div class="beta-notice-banner"
-                    style="margin: 0 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
-                    <div
-                        style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
-                        <i class="fas fa-flask"></i>
-                    </div>
-                    <div style="flex: 1;">
+                <div class="content-area">
+                    <!-- HIGH VISIBILITY BETA WARNING BANNER (Restored to Top) -->
+                    <div class="beta-notice-banner"
+                        style="margin: 0 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
                         <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                            <span
-                                style="font-weight: 800; font-size: 15px; color: #1E293B; letter-spacing: -0.01em;">BETA
-                                Version - Testing & Development</span>
-                            <span
-                                style="background: #3B82F6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase;">Active
-                                Review</span>
+                            style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
+                            <i class="fas fa-flask"></i>
                         </div>
-                        <div style="font-size: 13.5px; color: #475569; line-height: 1.6; font-weight: 500;">
-                            This is a beta version under testing development. The application service may show errors or
-                            even serious mismatching bugs. Reporting lets the developer know the bug quicker for
-                            resolving.
-                        </div>
-                        <div style="margin-top: 15px; display: flex; gap: 12px;">
-                            <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]"
-                                target="_blank"
-                                style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
-                                <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Studio Hub (Employee-Portal Style Bento) -->
-                <div id="master-reports-hub-v2" style="display: none;">
-                    <div style="margin-bottom: 5px;">
-                        <h2 style="font-size: 26px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">Reporting Studio</h2>
-                        <p style="color: #64748B; font-size: 14px; margin-top: 4px; font-weight: 500;">Select a specialized analytical module below.</p>
-                    </div>
-
-                    <div class="studio-bento-grid">
-                        <!-- Module 1: Attendance matrix -->
-                        <div class="studio-bento-card attendance-report-card accent">
-                            <div class="studio-bento-icon"><i class="fas fa-calendar-check"></i></div>
-                            <div>
-                                <div class="studio-bento-title">Attendance Report</div>
-                                <div class="studio-bento-desc">Generate detailed month-wise attendance grids and employee status matrices.</div>
+                        <div style="flex: 1;">
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span
+                                    style="font-weight: 800; font-size: 15px; color: #1E293B; letter-spacing: -0.01em;">BETA
+                                    Version - Testing & Development</span>
+                                <span
+                                    style="background: #3B82F6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase;">Active
+                                    Review</span>
                             </div>
-                        </div>
-
-                        <!-- Module 2: Billing reports -->
-                        <div class="studio-bento-card billing-report-card">
-                            <div class="studio-bento-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div>
-                                <div class="studio-bento-title">Billing Reports</div>
-                                <div class="studio-bento-desc">Analyze sales performance, inventory turnover, and billing cycles.</div>
-                                <div style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase;"><i class="fas fa-lock"></i> Coming Soon</div>
+                            <div style="font-size: 13.5px; color: #475569; line-height: 1.6; font-weight: 500;">
+                                This is a beta version under testing development. The application service may show
+                                errors or
+                                even serious mismatching bugs. Reporting lets the developer know the bug quicker for
+                                resolving.
                             </div>
-                        </div>
-
-                        <!-- Module 3: Quick Payslip -->
-                        <div class="studio-bento-card payslip-report-card">
-                            <div class="studio-bento-icon"><i class="fas fa-receipt"></i></div>
-                            <div>
-                                <div class="studio-bento-title">Quick Payslip</div>
-                                <div class="studio-bento-desc">Instantly generate and download employee salary slips in professional PDF format.</div>
-                                <div style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase;"><i class="fas fa-lock"></i> Coming Soon</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dashboard View -->
-                <div id="dashboard-view">
-                    <!-- Alert Hub: Quick Analysis -->
-                    <div id="alert-hub-section" style="margin-bottom: 32px; display: none;">
-                        <div class="live-status-section"
-                            style="border-radius: 24px; background: rgba(254, 242, 242, 0.4); border: 1px solid #FCA5A5;">
-                            <div class="section-header"
-                                style="padding: 16px 24px; border-bottom: 1px solid rgba(252, 165, 165, 0.3);">
-                                <h3
-                                    style="color: #991B1B; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-exclamation-triangle"></i> Attention Required
-                                </h3>
-                                <span id="alert-count-badge"
-                                    style="background: #EF4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">0
-                                    Issues</span>
-                            </div>
-                            <div id="alert-list-container"
-                                style="padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
-                                <!-- Alerts will be injected here -->
+                            <div style="margin-top: 15px; display: flex; gap: 12px;">
+                                <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]"
+                                    target="_blank"
+                                    style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
+                                    <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
+                                </a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="summary-grid">
-                        <div class="summary-card active">
-                            <div class="stat-details"><span class="label">Working Now</span><span class="value"
-                                    id="dash-working">0</span></div>
-                            <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                    <!-- Studio Hub (Employee-Portal Style Bento) -->
+                    <div id="master-reports-hub-v2" style="display: none;">
+                        <div style="margin-bottom: 5px;">
+                            <h2 style="font-size: 26px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">
+                                Reporting Studio</h2>
+                            <p style="color: #64748B; font-size: 14px; margin-top: 4px; font-weight: 500;">Select a
+                                specialized analytical module below.</p>
                         </div>
-                        <div class="summary-card break">
-                            <div class="stat-details"><span class="label">On Break</span><span class="value"
-                                    id="dash-break">0</span></div>
-                            <div class="stat-icon"><i class="fas fa-coffee"></i></div>
-                        </div>
-                        <div class="summary-card checkins">
-                            <div class="stat-details"><span class="label">Total Check-ins</span><span class="value"
-                                    id="dash-checkins">0</span></div>
-                            <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
-                        </div>
-                    </div>
 
-                    <div class="dashboard-grid">
-                        <div class="live-status-section" style="grid-column: span 2;">
-                            <div class="section-header">
-                                <h3>Live Attendance Monitor</h3>
-                                <div style="display: flex; gap: 10px;">
-                                    <select id="live-status-filter" class="filter-dropdown">
-                                        <option value="all">All Staff</option>
-                                        <option value="working">Working Only</option>
-                                        <option value="break">On Break</option>
-                                        <option value="absent">Absent</option>
-                                    </select>
-                                    <input type="date" id="mainDateFilter" class="input-dark"
-                                        style="background: white; color: black; border: 1px solid #E2E8F0;">
+                        <div class="studio-bento-grid">
+                            <!-- Module 1: Attendance matrix -->
+                            <div class="studio-bento-card attendance-report-card accent">
+                                <div class="studio-bento-icon"><i class="fas fa-calendar-check"></i></div>
+                                <div>
+                                    <div class="studio-bento-title">Attendance Report</div>
+                                    <div class="studio-bento-desc">Generate detailed month-wise attendance grids and
+                                        employee status matrices.</div>
                                 </div>
                             </div>
-                            <div class="table-wrapper">
-                                <table class="status-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Employee</th>
-                                            <th>Type</th>
-                                            <th>In Time</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="live-status-tbody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Employees View -->
-                <div id="employees-view" style="display: none;">
-                    <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
-                        <div class="section-header" style="margin-bottom: 32px;">
-                            <h3 style="font-size: 22px; font-weight: 700;">Staff Management</h3>
-                            <button id="spa-add-employee-btn" class="action-btn"
-                                style="background: #F95A2C; border-radius: 12px; padding: 10px 20px; display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-plus"></i> Add New Employee
-                            </button>
-                        </div>
-                        <div id="spa-employee-list"></div>
-                    </div>
-                </div>
-
-                <!-- Reports View -->
-                <div id="reports-view" style="display: none;">
-                    <div class="live-status-section">
-                        <div class="section-header">
-                            <h3>Daily Activity Reports</h3>
-                        </div>
-                        <div id="reports-employee-list"></div>
-                    </div>
-                </div>
-
-                <!-- Shift Summary View -->
-                <div id="shift-summary-view" style="display: none;">
-                    <div class="live-status-section"
-                        style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
-                        <div
-                            style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                        <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature
-                            Coming Soon</h2>
-                        <p
-                            style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
-                            We are currently refining the Shift Summary snapshot engine to provide more detailed visual
-                            reports and biometric verification history.
-                        </p>
-                        <div
-                            style="display: inline-flex; align-items: center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
-                            <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings View -->
-                <div id="settings-view" style="display: none;">
-                    <div class="live-status-section">
-                        <div class="section-header">
-                            <h3>Advanced Settings Command Center</h3>
-                        </div>
-                        <div class="summary-grid">
-                            <div class="summary-card"
-                                style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
-                                <div style="display: flex; gap: 12px; align-items: center;">
-                                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </div><strong>Security Hub</strong>
-                                </div>
-                                <form id="security-hub-form" style="width: 100%;">
-                                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
-                                        Administrative access is restricted to the standardized master account. Use this
-                                        section to update recovery contact details.
-                                    </p>
-                                    <div class="modern-form-group"><label>Admin Contact Email</label><input type="email"
-                                            id="admin-contact-email" class="modern-input"
-                                            placeholder="e.g. admin@nammamart.com">
-                                    </div>
-                                    <div class="modern-form-group"><label>Admin Phone Number</label><input type="tel"
-                                            id="admin-contact-phone" class="modern-input"
-                                            placeholder="e.g. +91 98765 43210">
-                                    </div>
-                                    <div class="modern-form-group"><label>Current Master Password</label><input
-                                            type="password" id="current-admin-password" class="modern-input"
-                                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
-                                    </div>
-                                    <button type="submit" class="modern-btn accent" style="width: 100%;">Update Recovery
-                                        Info</button>
-                                </form>
-
-                                <!-- DANGER ZONE (PRO POLISH) -->
-                                <div
-                                    style="margin-top: 40px; padding: 24px; background: rgba(239, 68, 68, 0.03); border: 1.5px dashed rgba(239, 68, 68, 0.3); border-radius: 20px; width: 100%;">
+                            <!-- Module 2: Billing reports -->
+                            <div class="studio-bento-card billing-report-card">
+                                <div class="studio-bento-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                                <div>
+                                    <div class="studio-bento-title">Billing Reports</div>
+                                    <div class="studio-bento-desc">Analyze .</div>
                                     <div
-                                        style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
-                                        <div
-                                            style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
-                                            <i class="fas fa-radiation"></i>
-                                        </div>
-                                        <div
-                                            style="color: #ef4444; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
-                                            Selective System Reset
-                                        </div>
-                                        <p
-                                            style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 16px 0;">
-                                            Selectively clear specific activity categories while preserving critical
-                                            business reports.
+                                        style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase;">
+                                        <i class="fas fa-lock"></i> Coming Soon</div>
+                                </div>
+                            </div>
+
+                            <!-- Module 3: Quick Payslip -->
+                            <div class="studio-bento-card payslip-report-card">
+                                <div class="studio-bento-icon"><i class="fas fa-receipt"></i></div>
+                                <div>
+                                    <div class="studio-bento-title">Quick Payslip</div>
+                                    <div class="studio-bento-desc">Instantly generate and download employee salary slips
+                                        in professional PDF format.</div>
+                                    <div
+                                        style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase;">
+                                        <i class="fas fa-lock"></i> Coming Soon</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard View -->
+                    <div id="dashboard-view">
+                        <!-- Alert Hub: Quick Analysis -->
+                        <div id="alert-hub-section" style="margin-bottom: 32px; display: none;">
+                            <div class="live-status-section"
+                                style="border-radius: 24px; background: rgba(254, 242, 242, 0.4); border: 1px solid #FCA5A5;">
+                                <div class="section-header"
+                                    style="padding: 16px 24px; border-bottom: 1px solid rgba(252, 165, 165, 0.3);">
+                                    <h3
+                                        style="color: #991B1B; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-exclamation-triangle"></i> Attention Required
+                                    </h3>
+                                    <span id="alert-count-badge"
+                                        style="background: #EF4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">0
+                                        Issues</span>
+                                </div>
+                                <div id="alert-list-container"
+                                    style="padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+                                    <!-- Alerts will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-grid">
+                            <div class="summary-card active">
+                                <div class="stat-details"><span class="label">Working Now</span><span class="value"
+                                        id="dash-working">0</span></div>
+                                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                            </div>
+                            <div class="summary-card break">
+                                <div class="stat-details"><span class="label">On Break</span><span class="value"
+                                        id="dash-break">0</span></div>
+                                <div class="stat-icon"><i class="fas fa-coffee"></i></div>
+                            </div>
+                            <div class="summary-card checkins">
+                                <div class="stat-details"><span class="label">Total Check-ins</span><span class="value"
+                                        id="dash-checkins">0</span></div>
+                                <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-grid">
+                            <div class="live-status-section" style="grid-column: span 2;">
+                                <div class="section-header">
+                                    <h3>Live Attendance Monitor</h3>
+                                    <div style="display: flex; gap: 10px;">
+                                        <select id="live-status-filter" class="filter-dropdown">
+                                            <option value="all">All Staff</option>
+                                            <option value="working">Working Only</option>
+                                            <option value="break">On Break</option>
+                                            <option value="absent">Absent</option>
+                                        </select>
+                                        <input type="date" id="mainDateFilter" class="input-dark"
+                                            style="background: white; color: black; border: 1px solid #E2E8F0;">
+                                    </div>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table class="status-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee</th>
+                                                <th>Type</th>
+                                                <th>In Time</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="live-status-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employees View -->
+                    <div id="employees-view" style="display: none;">
+                        <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
+                            <div class="section-header" style="margin-bottom: 32px;">
+                                <h3 style="font-size: 22px; font-weight: 700;">Staff Management</h3>
+                                <button id="spa-add-employee-btn" class="action-btn"
+                                    style="background: #F95A2C; border-radius: 12px; padding: 10px 20px; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-plus"></i> Add New Employee
+                                </button>
+                            </div>
+                            <div id="spa-employee-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Reports View -->
+                    <div id="reports-view" style="display: none;">
+                        <div class="live-status-section">
+                            <div class="section-header">
+                                <h3>Daily Activity Reports</h3>
+                            </div>
+                            <div id="reports-employee-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Shift Summary View -->
+                    <div id="shift-summary-view" style="display: none;">
+                        <div class="live-status-section"
+                            style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
+                            <div
+                                style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature
+                                Coming Soon</h2>
+                            <p
+                                style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
+                                We are currently refining the Shift Summary snapshot engine to provide more detailed
+                                visual
+                                reports and biometric verification history.
+                            </p>
+                            <div
+                                style="display: inline-flex; align-items: center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
+                                <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings View -->
+                    <div id="settings-view" style="display: none;">
+                        <div class="live-status-section">
+                            <div class="section-header">
+                                <h3>Advanced Settings Command Center</h3>
+                            </div>
+                            <div class="summary-grid">
+                                <div class="summary-card"
+                                    style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div class="stat-icon"
+                                            style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div><strong>Security Hub</strong>
+                                    </div>
+                                    <form id="security-hub-form" style="width: 100%;">
+                                        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                                            Administrative access is restricted to the standardized master account. Use
+                                            this
+                                            section to update recovery contact details.
                                         </p>
+                                        <div class="modern-form-group"><label>Admin Contact Email</label><input
+                                                type="email" id="admin-contact-email" class="modern-input"
+                                                placeholder="e.g. admin@nammamart.com">
+                                        </div>
+                                        <div class="modern-form-group"><label>Admin Phone Number</label><input
+                                                type="tel" id="admin-contact-phone" class="modern-input"
+                                                placeholder="e.g. +91 98765 43210">
+                                        </div>
+                                        <div class="modern-form-group"><label>Current Master Password</label><input
+                                                type="password" id="current-admin-password" class="modern-input"
+                                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+                                        </div>
+                                        <button type="submit" class="modern-btn accent" style="width: 100%;">Update
+                                            Recovery
+                                            Info</button>
+                                    </form>
 
-                                        <!-- Granular Selection UI -->
+                                    <!-- DANGER ZONE (PRO POLISH) -->
+                                    <div
+                                        style="margin-top: 40px; padding: 24px; background: rgba(239, 68, 68, 0.03); border: 1.5px dashed rgba(239, 68, 68, 0.3); border-radius: 20px; width: 100%;">
                                         <div
-                                            style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left;">
+                                            style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
                                             <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="attendance" checked>
-                                                Attendance
+                                                style="width: 44px; height: 44px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
+                                                <i class="fas fa-radiation"></i>
                                             </div>
                                             <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="extra"> Extra Work
+                                                style="color: #ef4444; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+                                                Selective System Reset
                                             </div>
+                                            <p
+                                                style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 16px 0;">
+                                                Selectively clear specific activity categories while preserving critical
+                                                business reports.
+                                            </p>
+
+                                            <!-- Granular Selection UI -->
                                             <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="delivery"> Deliveries
+                                                style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left;">
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="attendance"
+                                                        checked>
+                                                    Attendance
+                                                </div>
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="extra"> Extra
+                                                    Work
+                                                </div>
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="delivery">
+                                                    Deliveries
+                                                </div>
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="bill_paid"> Bill
+                                                    Paid
+                                                </div>
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="issue"> Issues
+                                                </div>
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                    <input type="checkbox" class="reset-target" value="retail_credit">
+                                                    Credits
+                                                </div>
                                             </div>
-                                            <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="bill_paid"> Bill Paid
-                                            </div>
-                                            <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="issue"> Issues
-                                            </div>
-                                            <div
-                                                style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                                <input type="checkbox" class="reset-target" value="retail_credit">
-                                                Credits
+
+                                            <button id="master-reset-attendance-btn" class="modern-btn"
+                                                style="width: 100%; background: #ef4444; color: #FFFFFF; border: none; font-weight: 700; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
+                                                EXECUTE SELECTIVE RESET
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="summary-card"
+                                    style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div class="stat-icon"
+                                            style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                                            <i class="fas fa-heartbeat"></i>
+                                        </div><strong>Cloud Health</strong>
+                                    </div>
+                                    <div style="width: 100%; display: grid; grid-template-columns: 1fr; gap: 10px;">
+                                        <div
+                                            style="background: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
+                                            <div style="font-weight: 700; font-size: 13px; color: #3B82F6;">
+                                                <i class="fas fa-cloud"></i> Firebase Operational
                                             </div>
                                         </div>
+                                        <div
+                                            style="background: #F0F9FF; padding: 12px; border-radius: 12px; text-align: center;">
+                                            <div style="font-weight: 700; font-size: 11px; color: #0EA5E9;">
+                                                <i class="fab fa-github"></i> GitHub Backup Linked
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button id="sync-cloud-btn" class="action-btn"
+                                        style="width: 100%; background: #24292e; color: white;">
+                                        <i class="fab fa-github"></i> Sync to GitHub Cloud
+                                    </button>
+                                    <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;">
+                                        <i class="fas fa-undo"></i> Reset Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                        <button id="master-reset-attendance-btn" class="modern-btn"
-                                            style="width: 100%; background: #ef4444; color: #FFFFFF; border: none; font-weight: 700; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
-                                            EXECUTE SELECTIVE RESET
+                    <!-- Attendance Timeline -->
+                    <!-- Attendance Timeline Command Center -->
+                    <div id="attendance-view" style="display: none;">
+                        <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
+                            <div class="section-header" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 22px; font-weight: 700;">Attendance Command Center</h3>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <input type="text" id="log-search-input" class="modern-input"
+                                        placeholder="Search employee..." style="width: 200px;">
+                                    <select id="log-date-filter" class="modern-input">
+                                        <option value="today">Today</option>
+                                        <option value="week">This Week</option>
+                                        <option value="month">This Month</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                    <button class="action-btn secondary" onclick="window.refreshAttendanceLogs()">
+                                        <i class="fas fa-sync"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Admin Summary Panel -->
+                            <div class="summary-grid"
+                                style="margin-bottom: 32px; grid-template-columns: repeat(6, 1fr);">
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Emps</span>
+                                        <span class="stat-value" id="kpi-total-emps">0</span>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">Working</span>
+                                        <span class="stat-value" id="kpi-working" style="color: #10B981;">0</span>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">On Break</span>
+                                        <span class="stat-value" id="kpi-break" style="color: #F59E0B;">0</span>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Hrs</span>
+                                        <span class="stat-value" id="kpi-total-hrs">0h</span>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">Overtime</span>
+                                        <span class="stat-value" id="kpi-total-ot">0h</span>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="stat-info">
+                                        <span class="stat-label">Less Time</span>
+                                        <span class="stat-value" id="kpi-total-lt" style="color: #EF4444;">0h</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- View Toggle Segment -->
+                            <div class="view-toggle-container"
+                                style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px;">
+                                <button id="toggle-sessions-btn"
+                                    style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #6366F1; color: white; border: none; cursor: pointer; transition: 0.2s;"
+                                    onclick="window.switchAttendanceView('sessions')"><i
+                                        class="fas fa-calendar-day"></i>
+                                    Daily Sessions</button>
+                                <button id="toggle-raw-btn"
+                                    style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; cursor: pointer; transition: 0.2s;"
+                                    onclick="window.switchAttendanceView('raw')"><i class="fas fa-list-ul"></i> Raw
+                                    Action
+                                    Logs</button>
+                            </div>
+
+                            <!-- SESSIONS VIEW (Default) -->
+                            <div id="sessions-view-wrapper">
+                                <div class="table-wrapper">
+                                    <table class="status-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Name</th>
+                                                <th>Check In</th>
+                                                <th>Break Used</th>
+                                                <th>Work Hr</th>
+                                                <th>Extra Work</th>
+                                                <th>Late Time</th>
+                                                <th>Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="attendance-sessions-tbody">
+                                            <tr id="sessions-loading-row">
+                                                <td colspan="8"
+                                                    style="text-align: center; padding: 60px; color: #64748B;">
+                                                    <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                                                    <div style="margin-top: 12px; font-weight: 600;">Calibrating Daily
+                                                        Sessions...</div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- RAW LOGS VIEW (Hidden) -->
+                            <div id="raw-logs-view-wrapper" style="display: none;">
+                                <!-- Bulk Action Toolbar -->
+                                <div id="bulk-action-toolbar"
+                                    style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
+                                    <div style="font-weight: 600; color: #1E293B;"><span id="bulk-count">0</span> logs
+                                        selected</div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button class="action-btn"
+                                            style="background: rgba(16, 185, 129, 0.1); color: #10B981; font-size: 12px;"
+                                            onclick="window.bulkChangeAction()">
+                                            <i class="fas fa-exchange-alt"></i> Change Type
+                                        </button>
+                                        <button class="action-btn"
+                                            style="background: rgba(239, 68, 68, 0.1); color: #EF4444; font-size: 12px;"
+                                            onclick="window.bulkDeleteLogs()">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                        <button class="action-btn secondary" style="font-size: 12px;"
+                                            onclick="window.exportToExcel()">
+                                            <i class="fas fa-file-excel"></i> Export Selected
+                                        </button>
+                                        <button class="action-btn accent" style="font-size: 12px;"
+                                            onclick="window.rebuildSessions()">
+                                            <i class="fas fa-cogs"></i> Recalculate Sessions
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="summary-card"
-                                style="flex-direction: column; align-items: flex-start; gap: 20px; height: auto;">
-                                <div style="display: flex; gap: 12px; align-items: center;">
-                                    <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
-                                        <i class="fas fa-heartbeat"></i>
-                                    </div><strong>Cloud Health</strong>
+
+                                <div class="table-wrapper">
+                                    <table class="status-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px; text-align: center;"><input type="checkbox"
+                                                        id="selectAllLogs" onclick="window.toggleAllLogs(this)"></th>
+                                                <th>Timestamp</th>
+                                                <th>Employee</th>
+                                                <th>Event Type</th>
+                                                <th>Status</th>
+                                                <th style="text-align: right;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="attendance-logs-tbody">
+                                            <tr id="logs-loading-row">
+                                                <td colspan="6"
+                                                    style="text-align: center; padding: 60px; color: #64748B;">
+                                                    <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+                                                    <div style="margin-top: 12px; font-weight: 600;">Streaming real-time
+                                                        logs...</div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div style="width: 100%; display: grid; grid-template-columns: 1fr; gap: 10px;">
-                                    <div
-                                        style="background: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
-                                        <div style="font-weight: 700; font-size: 13px; color: #3B82F6;">
-                                            <i class="fas fa-cloud"></i> Firebase Operational
-                                        </div>
-                                    </div>
-                                    <div
-                                        style="background: #F0F9FF; padding: 12px; border-radius: 12px; text-align: center;">
-                                        <div style="font-weight: 700; font-size: 11px; color: #0EA5E9;">
-                                            <i class="fab fa-github"></i> GitHub Backup Linked
-                                        </div>
-                                    </div>
-                                </div>
-                                <button id="sync-cloud-btn" class="action-btn"
-                                    style="width: 100%; background: #24292e; color: white;">
-                                    <i class="fab fa-github"></i> Sync to GitHub Cloud
-                                </button>
-                                <button id="reset-settings-btn" class="action-btn danger" style="width: 100%;">
-                                    <i class="fas fa-undo"></i> Reset Settings
-                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Attendance Timeline -->
-                <!-- Attendance Timeline Command Center -->
-                <div id="attendance-view" style="display: none;">
-                    <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
-                        <div class="section-header" style="margin-bottom: 24px;">
-                            <h3 style="font-size: 22px; font-weight: 700;">Attendance Command Center</h3>
-                            <div style="display: flex; gap: 12px; align-items: center;">
-                                <input type="text" id="log-search-input" class="modern-input"
-                                    placeholder="Search employee..." style="width: 200px;">
-                                <select id="log-date-filter" class="modern-input">
-                                    <option value="today">Today</option>
-                                    <option value="week">This Week</option>
-                                    <option value="month">This Month</option>
-                                    <option value="all">All</option>
-                                </select>
-                                <button class="action-btn secondary" onclick="window.refreshAttendanceLogs()">
-                                    <i class="fas fa-sync"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Admin Summary Panel -->
-                        <div class="summary-grid" style="margin-bottom: 32px; grid-template-columns: repeat(6, 1fr);">
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Total Emps</span>
-                                    <span class="stat-value" id="kpi-total-emps">0</span>
-                                </div>
-                            </div>
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Working</span>
-                                    <span class="stat-value" id="kpi-working" style="color: #10B981;">0</span>
-                                </div>
-                            </div>
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">On Break</span>
-                                    <span class="stat-value" id="kpi-break" style="color: #F59E0B;">0</span>
-                                </div>
-                            </div>
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Total Hrs</span>
-                                    <span class="stat-value" id="kpi-total-hrs">0h</span>
-                                </div>
-                            </div>
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Overtime</span>
-                                    <span class="stat-value" id="kpi-total-ot">0h</span>
-                                </div>
-                            </div>
-                            <div class="summary-card">
-                                <div class="stat-info">
-                                    <span class="stat-label">Less Time</span>
-                                    <span class="stat-value" id="kpi-total-lt" style="color: #EF4444;">0h</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- View Toggle Segment -->
-                        <div class="view-toggle-container"
-                            style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px;">
-                            <button id="toggle-sessions-btn"
-                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #6366F1; color: white; border: none; cursor: pointer; transition: 0.2s;"
-                                onclick="window.switchAttendanceView('sessions')"><i class="fas fa-calendar-day"></i>
-                                Daily Sessions</button>
-                            <button id="toggle-raw-btn"
-                                style="padding: 10px 20px; border-radius: 8px; font-weight: 600; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; cursor: pointer; transition: 0.2s;"
-                                onclick="window.switchAttendanceView('raw')"><i class="fas fa-list-ul"></i> Raw Action
-                                Logs</button>
-                        </div>
-
-                        <!-- SESSIONS VIEW (Default) -->
-                        <div id="sessions-view-wrapper">
-                            <div class="table-wrapper">
-                                <table class="status-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Name</th>
-                                            <th>Check In</th>
-                                            <th>Break Used</th>
-                                            <th>Work Hr</th>
-                                            <th>Extra Work</th>
-                                            <th>Late Time</th>
-                                            <th>Remarks</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="attendance-sessions-tbody">
-                                        <tr id="sessions-loading-row">
-                                            <td colspan="8" style="text-align: center; padding: 60px; color: #64748B;">
-                                                <i class="fas fa-circle-notch fa-spin fa-2x"></i>
-                                                <div style="margin-top: 12px; font-weight: 600;">Calibrating Daily
-                                                    Sessions...</div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- RAW LOGS VIEW (Hidden) -->
-                        <div id="raw-logs-view-wrapper" style="display: none;">
-                            <!-- Bulk Action Toolbar -->
-                            <div id="bulk-action-toolbar"
-                                style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
-                                <div style="font-weight: 600; color: #1E293B;"><span id="bulk-count">0</span> logs
-                                    selected</div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button class="action-btn"
-                                        style="background: rgba(16, 185, 129, 0.1); color: #10B981; font-size: 12px;"
-                                        onclick="window.bulkChangeAction()">
-                                        <i class="fas fa-exchange-alt"></i> Change Type
-                                    </button>
-                                    <button class="action-btn"
-                                        style="background: rgba(239, 68, 68, 0.1); color: #EF4444; font-size: 12px;"
-                                        onclick="window.bulkDeleteLogs()">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                    <button class="action-btn secondary" style="font-size: 12px;"
-                                        onclick="window.exportToExcel()">
-                                        <i class="fas fa-file-excel"></i> Export Selected
-                                    </button>
-                                    <button class="action-btn accent" style="font-size: 12px;"
-                                        onclick="window.rebuildSessions()">
-                                        <i class="fas fa-cogs"></i> Recalculate Sessions
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="table-wrapper">
-                                <table class="status-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px; text-align: center;"><input type="checkbox"
-                                                    id="selectAllLogs" onclick="window.toggleAllLogs(this)"></th>
-                                            <th>Timestamp</th>
-                                            <th>Employee</th>
-                                            <th>Event Type</th>
-                                            <th>Status</th>
-                                            <th style="text-align: right;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="attendance-logs-tbody">
-                                        <tr id="logs-loading-row">
-                                            <td colspan="6" style="text-align: center; padding: 60px; color: #64748B;">
-                                                <i class="fas fa-circle-notch fa-spin fa-2x"></i>
-                                                <div style="margin-top: 12px; font-weight: 600;">Streaming real-time
-                                                    logs...</div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-            </div>
         </main>
     </div>
 
@@ -1121,16 +1145,20 @@
 
 
     <!-- REPORT SELECTION MODAL (Premium Pro Design v6.3) -->
-    <div id="matrix-selection-modal-overlay" class="reporting-studio-overlay" style="background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(12px);">
-        <div id="matrix-selection-modal" class="reporting-studio-window" 
-             style="width: 520px; max-width: 90vw; background: #FFFFFF; border-radius: 32px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E2E8F0; padding: 48px; border-bottom: 6px solid #F95A2C; position: relative;">
-            
-            <div class="reporting-studio-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; position: relative; z-index: 1; padding: 0; background: transparent; cursor: default;">
+    <div id="matrix-selection-modal-overlay" class="reporting-studio-overlay"
+        style="background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(12px);">
+        <div id="matrix-selection-modal" class="reporting-studio-window"
+            style="width: 520px; max-width: 90vw; background: #FFFFFF; border-radius: 32px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25); border: 1px solid #E2E8F0; padding: 48px; border-bottom: 6px solid #F95A2C; position: relative;">
+
+            <div class="reporting-studio-header"
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; position: relative; z-index: 1; padding: 0; background: transparent; cursor: default;">
                 <div style="flex: 1;">
-                    <h2 style="font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">Select Report Period</h2>
-                    <p style="font-size: 14px; color: #64748B; margin-top: 6px; font-weight: 500;">Configure your analytical range for processing</p>
+                    <h2 style="font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+                        Select Report Period</h2>
+                    <p style="font-size: 14px; color: #64748B; margin-top: 6px; font-weight: 500;">Configure your
+                        analytical range for processing</p>
                 </div>
-                <button class="close-modal-btn" onclick="window.closeReportSelection()" 
+                <button class="close-modal-btn" onclick="window.closeReportSelection()"
                     style="width: 40px; height: 40px; border-radius: 50%; background: #F1F5F9; border: none; color: #64748B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 18px; flex-shrink: 0; margin-left: 15px;">
                     <i class="fas fa-times"></i>
                 </button>
@@ -1139,41 +1167,51 @@
             <div style="display: flex; flex-direction: column; gap: 28px; position: relative; z-index: 1;">
                 <!-- Range Selection -->
                 <div style="width: 100%;">
-                    <label style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Analytical Range</label>
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Analytical
+                        Range</label>
                     <div style="position: relative; width: 100%;">
-                        <i class="fas fa-layer-group" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
-                        <select id="matrix-range-type" class="modern-input" 
+                        <i class="fas fa-layer-group"
+                            style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
+                        <select id="matrix-range-type" class="modern-input"
                             style="width: 100%; height: 60px; padding: 0 45px 0 50px; border-radius: 18px; font-size: 15px; font-weight: 600; border: 2px solid #F1F5F9; background: #F8FAFC; outline: none; appearance: none; box-sizing: border-box;"
                             onchange="window.toggleRangeType()">
                             <option value="month">Full Month Matrix</option>
                             <option value="day">Single Shift Day</option>
                         </select>
-                        <i class="fas fa-chevron-down" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 12px; pointer-events: none;"></i>
+                        <i class="fas fa-chevron-down"
+                            style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 12px; pointer-events: none;"></i>
                     </div>
                 </div>
 
                 <!-- Month Picker Group -->
                 <div id="selection-month-group" style="width: 100%;">
-                    <label style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Active Month</label>
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Active
+                        Month</label>
                     <div style="position: relative; width: 100%;">
-                        <i class="fas fa-calendar-alt" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #F95A2C;"></i>
-                        <input type="month" id="selection-month-input" class="modern-input" 
+                        <i class="fas fa-calendar-alt"
+                            style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #F95A2C;"></i>
+                        <input type="month" id="selection-month-input" class="modern-input"
                             style="width: 100%; height: 60px; padding: 0 18px 0 50px; border-radius: 18px; font-size: 15px; font-weight: 600; border: 2px solid #F1F5F9; background: #F8FAFC; outline: none; box-sizing: border-box;">
                     </div>
                 </div>
 
                 <!-- Day Picker Group -->
                 <div id="selection-day-group" style="display: none; width: 100%;">
-                    <label style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Active Date</label>
+                    <label
+                        style="display: block; font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Active
+                        Date</label>
                     <div style="position: relative; width: 100%;">
-                        <i class="fas fa-calendar-day" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #F95A2C;"></i>
-                        <input type="date" id="selection-day-input" class="modern-input" 
+                        <i class="fas fa-calendar-day"
+                            style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #F95A2C;"></i>
+                        <input type="date" id="selection-day-input" class="modern-input"
                             style="width: 100%; height: 60px; padding: 0 18px 0 50px; border-radius: 18px; font-size: 15px; font-weight: 600; border: 2px solid #F1F5F9; background: #F8FAFC; outline: none; box-sizing: border-box;">
                     </div>
                 </div>
 
                 <!-- Generate Button -->
-                <button onclick="window.generateMatrixFromSelection()" class="modern-btn accent generate-btn" 
+                <button onclick="window.generateMatrixFromSelection()" class="modern-btn accent generate-btn"
                     style="width: 100%; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #F95A2C 0%, #FF8C42 100%); color: white; border: none; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; box-shadow: 0 12px 24px rgba(249, 90, 44, 0.25); transition: 0.3s; box-sizing: border-box;">
                     <i class="fas fa-bolt"></i> Generate Comprehensive Report
                 </button>
@@ -1209,16 +1247,16 @@
                 style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
                 <div style="display: flex; gap: 16px; align-items: center; margin-right: auto; font-size: 12px;">
                     <div style="display: flex; gap: 6px; align-items: center;"><span
-                            style="width: 12px; height: 12px; background: #4D7C0F; border-radius: 3px;"></span> P:
+                            style="width: 12px; height: 12px; background: transparent; border: 1.5px solid #4D7C0F; border-radius: 3px;"></span> P:
                         Present</div>
                     <div style="display: flex; gap: 6px; align-items: center;"><span
                             style="width: 12px; height: 12px; background: #DC2626; border-radius: 3px;"></span> A:
                         Absent</div>
                     <div style="display: flex; gap: 6px; align-items: center;"><span
-                            style="width: 12px; height: 12px; background: #D97706; border-radius: 3px;"></span> L: Leave
+                            style="width: 12px; height: 12px; background: rgba(217, 119, 6, 0.1); border: 1px solid #D97706; border-radius: 3px;"></span> L: Leave
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;"><span
-                            style="width: 12px; height: 12px; background: #334155; border-radius: 3px;"></span> WO:
+                            style="width: 12px; height: 12px; background: rgba(51, 65, 85, 0.1); border: 1px solid #334155; border-radius: 3px;"></span> WO:
                         Week-off</div>
                 </div>
                 <button class="action-btn secondary" onclick="window.closeAttendanceMatrix()">Close</button>
@@ -1229,7 +1267,7 @@
     </div>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260422_variance_v6.5"></script>
+    <script src="../js/admin.js?v=20260422_clean_v6.6"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 

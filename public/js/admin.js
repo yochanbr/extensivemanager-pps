@@ -928,24 +928,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         varDisplay = '';
                     }
 
-                    // Status Color Mapping from Legend
+                    // Status Color Mapping: ONLY 'A' is highlighted RED
                     const statusConfig = {
-                        'P': { bg: '#4D7C0F', text: 'white' },
+                        'P': { bg: 'transparent', text: '#0F172A' },
                         'A': { bg: '#DC2626', text: 'white' },
-                        'L': { bg: '#D97706', text: 'white' },
-                        'WO': { bg: '#334155', text: 'white' },
-                        'Pending': { bg: '#F1F5F9', text: '#64748B' }
+                        'L': { bg: 'rgba(217, 119, 6, 0.05)', text: '#D97706' },
+                        'WO': { bg: 'rgba(51, 65, 85, 0.05)', text: '#334155' },
+                        'Pending': { bg: '#F8FAFC', text: '#94A3B8' }
                     };
 
-                    const style = statusConfig[dayData.status] 
-                        ? `background: ${statusConfig[dayData.status].bg}; color: ${statusConfig[dayData.status].text};`
-                        : '';
+                    const cfg = statusConfig[dayData.status] || { bg: 'transparent', text: '#1E293B' };
+                    const style = `background: ${cfg.bg}; color: ${cfg.text};`;
 
                     rowHtml += `
-                        <td style="${style} transition: all 0.2s;">
+                        <td style="${style} transition: all 0.2s; border-right: 1px solid #F1F5F9;">
                             <div class="matrix-cell">
                                 <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.9; font-size: 8px;">${varDisplay}</div>
+                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.8; font-size: 8px;">${varDisplay}</div>
                             </div>
                         </td>
                     `;
