@@ -778,7 +778,6 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.style.display = 'flex';
             setTimeout(() => {
                 overlay.classList.add('active');
-                window.initDraggable('matrix-selection-modal');
             }, 10);
 
             const now = new Date();
@@ -839,7 +838,6 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.style.display = 'flex';
             setTimeout(() => {
                 overlay.classList.add('active');
-                window.initDraggable('matrix-modal');
             }, 10);
             window.loadAttendanceGrid(queryParams);
         }
