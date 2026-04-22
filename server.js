@@ -74,7 +74,7 @@ const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'nammamart_secret_key
 const FIREBASE_KEY_PATH = './extensivemanager-pps-firebase-adminsdk-fbsvc-70b482e9c3.json';
 
 // Backup Configuration
-const BACKUP_PAT = process.env.BACKUP_PAT; 
+const BACKUP_PAT = process.env.BACKUP_PAT;
 const BACKUP_OWNER = 'yochanbr';
 const BACKUP_REPO = 'backup-extensivemanager';
 const BACKUP_FILE_PATH = 'latest_system_backup.json';
@@ -321,7 +321,7 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     // 1. Check Admin Credentials (Enforced: nammamart / admin12nammamart)
     const settingsDoc = await db.settings().doc('config').get();
     const adminSettings = settingsDoc.exists ? settingsDoc.data() : {};
-    
+
     // User requested to keep these specific credentials
     const targetUser = 'nammamart';
     const targetPass = 'admin12nammamart';
@@ -1056,7 +1056,7 @@ app.post('/api/end-shift', async (req, res) => {
  */
 app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     const { password, targets } = req.body;
-    
+
     if (password !== 'admin12nammamart') {
         return res.status(401).json({ success: false, message: 'Invalid master password verification.' });
     }
@@ -1831,111 +1831,6 @@ app.put('/api/:type/:id', async (req, res) => {
     res.json({ success: true, message: 'Data updated successfully.' });
 });
 
-/**
- * Experimental: Attendance Grid Report Data
- * Aggregates monthly data into a 2D structure (Employees x Dates)
- */
-app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
-    try {
-        const monthStr = req.query.month; // Expected YYYY-MM
-        const dayStr = req.query.day; // Expected YYYY-MM-DD
-        
-        let startDate, endDate;
-        if (dayStr) {
-            startDate = new Date(dayStr);
-            endDate = new Date(dayStr);
-        } else if (monthStr) {
-            const [year, month] = monthStr.split('-').map(Number);
-            startDate = new Date(year, month - 1, 1);
-            endDate = new Date(year, month, 0); // Last day of month
-        } else {
-            return res.status(400).json({ success: false, message: 'Month or Day parameter is required.' });
-        }
-        
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        // 1. Get all employees
-        const empSnap = await db.employees().get();
-        const employees = empSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // 2. Get all daily_sessions for the month
-        const sessionSnap = await db.daily_sessions().get();
-        const rawSessions = sessionSnap.docs.map(doc => doc.data());
-
-        // 3. Get all leave_swaps for the month
-        const leaveSnap = await db.leave_swaps().get();
-        const rawLeaves = leaveSnap.docs.map(doc => doc.data());
-
-        // Prepare Grid Headers
-        const dateHeaders = [];
-        for (let d = 1; d <= endDate.getDate(); d++) {
-            const dateObj = new Date(year, month - 1, d);
-            const dateIso = dateObj.toISOString().split('T')[0];
-            const dayName = dateObj.toLocaleString('en-us', { weekday: 'long' });
-            dateHeaders.push({ day: d, label: `${d}-${dateObj.toLocaleString('en-us', { month: 'short' })}-${year}`, weekday: dayName, iso: dateIso });
-        }
-
-        const grid = [];
-        for (const emp of employees) {
-            const empData = { name: emp.name, id: emp.id, daily: {} };
-            
-            // Standard Shift Duration from Profile
-            let expectedMins = 480; // Default 8 hours
-            if (emp.startTime && emp.endTime) {
-                const [h1, m1] = emp.startTime.split(':').map(Number);
-                const [h2, m2] = emp.endTime.split(':').map(Number);
-                expectedMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-                if (expectedMins < 0) expectedMins += 1440; // Over midnight
-            }
-
-            for (const header of dateHeaders) {
-                const dateKey = header.iso;
-                const sessions = rawSessions.filter(s => s.employeeId == emp.id && s.date === dateKey);
-                const leaves = rawLeaves.filter(l => l.employeeId == emp.id && l.date === dateKey && l.status === 'approved');
-
-                let status = 'A'; // Default Absent
-                let variance = 0;
-                let colorClass = 'grid-a';
-
-                // Week Off check
-                const dayLower = header.weekday.toLowerCase();
-                const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
-                
-                if (dayLower === empWeekOff) {
-                    status = 'WO';
-                    colorClass = 'grid-wo';
-                } else if (leaves.length > 0) {
-                    status = 'L';
-                    colorClass = 'grid-l';
-                    variance = 0;
-                } else if (sessions.length > 0) {
-                    const s = sessions[0];
-                    if (dateKey === todayStr && !s.checkOut) {
-                        status = 'Pending';
-                        colorClass = 'grid-pending';
-                    } else {
-                        status = 'P';
-                        colorClass = 'grid-p';
-                        const actualMins = (s.totalWorkDuration || 0) / 60000;
-                        variance = ((actualMins - expectedMins) / 60).toFixed(1);
-                    }
-                } else if (dateKey >= todayStr) {
-                    status = '-'; // Future or Today not started
-                    colorClass = 'grid-empty';
-                }
-
-                empData.daily[dateKey] = { status, variance, colorClass };
-            }
-            grid.push(empData);
-        }
-
-        res.json({ success: true, headers: dateHeaders, grid });
-    } catch (err) {
-        console.error('Grid Report Error:', err);
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
 // --- DIAGNOSTICS & SUMMARY APIS (Migrated) ---
 
 /**
@@ -1996,7 +1891,7 @@ app.get('/api/data-activity-summary', async (req, res) => {
         const emp = doc.data();
 
         let stats = { edited: 0, deleted: 0, inputed: 0 };
-        
+
         // Helper to check if a timestamp falls within the requested range
         const isInRange = (ts) => {
             if (!ts) return false;
@@ -2061,7 +1956,7 @@ app.post('/api/settings', verifyAdmin, async (req, res) => {
 app.post('/api/settings/change-password', verifyAdmin, async (req, res) => {
     const { currentPassword, newEmail, newPhone } = req.body;
     const doc = await db.settings().doc('config').get();
-    
+
     // Check current password (must be the enforced one)
     if (currentPassword !== 'admin12nammamart') {
         return res.status(401).json({ success: false, message: 'Verification failed. Incorrect current password.' });
@@ -2086,14 +1981,14 @@ app.post('/api/request-reset-otp', async (req, res) => {
     const adminEmail = settings.adminEmail;
 
     if (!adminEmail) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Admin recovery email is not configured. Please contact the developer directly for a secure reset.' 
+        return res.status(400).json({
+            success: false,
+            message: 'Admin recovery email is not configured. Please contact the developer directly for a secure reset.'
         });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // STORE OTP IN FIRESTORE (Persists across Vercel instances)
     await db.settings().doc('reset_otp_store').set({
         otp,
@@ -2151,7 +2046,7 @@ app.post('/api/reset-admin-password', async (req, res) => {
     try {
         // Update Firestore
         await db.settings().doc('config').update({ adminPassword: newPassword });
-        
+
         // Clear OTP from Firestore
         await db.settings().doc('reset_otp_store').delete();
 
@@ -2187,7 +2082,7 @@ app.get('/api/system/backup', apiLimiter, verifyAdmin, async (req, res) => {
     }
 
     if (isCron) console.log('⏰ Triggering automated Cloud Backup...');
-    
+
     const result = await syncToBackupRepo();
     res.json(result);
 });
@@ -2293,31 +2188,31 @@ app.post('/api/attendance/scan', async (req, res) => {
 
             if (action === 'in') {
                 if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
-                
+
                 // Discrepancy Detection: Late Arrival (Threshold: 10:10 AM)
                 const lateThreshold = new Date(now);
                 lateThreshold.setHours(10, 10, 0, 0);
-                
+
                 const isLate = now > lateThreshold;
-                
+
                 const newSession = {
-                    employeeId: empId, 
-                    employeeName: empName, 
-                    date: dateStr, 
+                    employeeId: empId,
+                    employeeName: empName,
+                    date: dateStr,
                     checkIn: timestamp,
-                    checkOut: null, 
-                    onBreak: false, 
-                    breakHistory: [], 
-                    totalBreakMinutes: 0, 
+                    checkOut: null,
+                    onBreak: false,
+                    breakHistory: [],
+                    totalBreakMinutes: 0,
                     status: 'active',
                     approvalStatus: isLate ? 'pending_approval' : 'approved',
                     requiresApproval: isLate ? 'LATE_ARRIVAL' : null
                 };
                 await db.daily_sessions().add(newSession);
                 await logAttendance(empId, empName, isLate ? 'CLOCK_IN_PENDING' : 'CLOCK_IN', timestamp);
-                return { 
-                    success: true, 
-                    message: isLate ? `Welcome ${empName}. Tagged as Late Arrival (Pending Approval).` : `Welcome ${empName}!`, 
+                return {
+                    success: true,
+                    message: isLate ? `Welcome ${empName}. Tagged as Late Arrival (Pending Approval).` : `Welcome ${empName}!`,
                     action: 'IN',
                     pending: isLate
                 };
@@ -2349,7 +2244,7 @@ app.post('/api/attendance/scan', async (req, res) => {
                 // Discrepancy Detection: Early Exit or Overtime
                 const earlyThreshold = new Date(now);
                 earlyThreshold.setHours(19, 0, 0, 0); // 7:00 PM
-                
+
                 const overtimeThreshold = new Date(now);
                 overtimeThreshold.setHours(19, 15, 0, 0); // 7:15 PM (Grace period)
 
@@ -2364,18 +2259,18 @@ app.post('/api/attendance/scan', async (req, res) => {
                     requiresApproval = 'OVERTIME';
                 }
 
-                await session.ref.update({ 
-                    checkOut: timestamp, 
-                    status: 'completed', 
+                await session.ref.update({
+                    checkOut: timestamp,
+                    status: 'completed',
                     onBreak: false,
                     approvalStatus,
                     requiresApproval
                 });
-                
+
                 await logAttendance(empId, empName, requiresApproval ? `CLOCK_OUT_${requiresApproval}` : 'CLOCK_OUT', timestamp);
-                return { 
-                    success: true, 
-                    message: requiresApproval ? `Goodbye! Punch tagged as ${requiresApproval} (Pending Approval).` : 'Goodbye!', 
+                return {
+                    success: true,
+                    message: requiresApproval ? `Goodbye! Punch tagged as ${requiresApproval} (Pending Approval).` : 'Goodbye!',
                     action: 'OUT',
                     pending: !!requiresApproval
                 };
@@ -2430,14 +2325,14 @@ app.get('/api/attendance/logs/raw', verifyAdmin, async (req, res) => {
 app.get('/api/dashboard/summary', verifyAdmin, async (req, res) => {
     try {
         const dateStr = req.query.date || new Date().toISOString().split('T')[0];
-        
+
         // Fetch all sessions for specifically chosen date
         const sessionsSnapshot = await db.daily_sessions().where('date', '==', dateStr).get();
         const sessions = sessionsSnapshot.docs.map(doc => doc.data());
-        
+
         // Count statuses
         const active = sessions.filter(s => s.status === 'active' || !s.checkOut);
-        
+
         const summary = {
             working: active.filter(s => !s.onBreak).length,
             onBreak: active.filter(s => s.onBreak).length,
@@ -2449,7 +2344,7 @@ app.get('/api/dashboard/summary', verifyAdmin, async (req, res) => {
                 checkInTime: s.checkIn ? s.checkIn.split('T')[1].substr(0, 5) : '00:00'
             }))
         };
-        
+
         res.json({ success: true, summary });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -2493,9 +2388,9 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
 
         const sessionRef = db.daily_sessions().doc(sessionId);
         const doc = await sessionRef.get();
-        
+
         if (!doc.exists) return res.status(404).json({ success: false, message: 'Session not found.' });
-        
+
         const session = doc.data();
         const update = {
             approvalStatus: action.toLowerCase() === 'approve' ? 'approved' : 'declined',
@@ -2504,7 +2399,7 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
         };
 
         await sessionRef.update(update);
-        
+
         // Audit Log
         await logAttendance(session.employeeId, session.employeeName, `DISCREPANCY_${action.toUpperCase()}`, new Date().toISOString());
 
@@ -2710,6 +2605,16 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
         console.log(`Server is running on http://localhost:${port}`);
         console.log('To access from other devices on your network, use your local IP address.');
         console.log(`Example: http://192.168.1.100:${port}`);
+
+    });
+}
+
+// Export for Vercel (Cleanup)
+if (isVercel) {
+    console.log('📦 Vercel Module Exported');
+}
+console.log('To access from other devices on your network, use your local IP address.');
+console.log(`Example: http://192.168.1.100:${port}`);
 
     });
 }

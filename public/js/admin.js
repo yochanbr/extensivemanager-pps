@@ -631,244 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     window.staffData = [];
-
-    // DRAGGABLE UTILITY (PRODUCTION GRADE - NAMESPACED)
-    window.initDraggable = function(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        const content = modal; // The window itself is the draggable target
-        // Find header within our new unique namespace
-        const header = modal.querySelector('.reporting-studio-header');
-        if (!content || !header) return;
-
-        // Reset positions to center initially
-        content.style.left = '50%';
-        content.style.top = '50%';
-        content.style.transform = 'translate(-50%, -50%)';
-        content.style.margin = '0';
-
-        let isDragging = false;
-        let startX, startY, initialX, initialY;
-
-        header.onmousedown = function(e) {
-            isDragging = true;
-            
-            const bounds = content.getBoundingClientRect();
-            content.style.transform = 'none';
-            content.style.left = bounds.left + 'px';
-            content.style.top = bounds.top + 'px';
-            
-            startX = e.clientX;
-            startY = e.clientY;
-            initialX = bounds.left;
-            initialY = bounds.top;
-
-            document.onmousemove = function(e) {
-                if (!isDragging) return;
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-                
-                content.style.left = (initialX + dx) + 'px';
-                content.style.top = (initialY + dy) + 'px';
-            };
-
-            document.onmouseup = function() {
-                isDragging = false;
-                document.onmousemove = null;
-                document.onmouseup = null;
-            };
-        };
-    };
-
-    window.openReportSelection = function() {
-        const overlay = document.getElementById('matrix-selection-modal-overlay');
-        const modal = document.getElementById('matrix-selection-modal');
-        if (overlay && modal) {
-            overlay.style.display = 'flex';
-            setTimeout(() => {
-                overlay.classList.add('active');
-                window.initDraggable('matrix-selection-modal');
-            }, 10);
-            
-            const now = new Date();
-            const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const dayStr = now.toISOString().split('T')[0];
-            
-            const monthInput = document.getElementById('selection-month-input');
-            const dayInput = document.getElementById('selection-day-input');
-            if (monthInput) monthInput.value = monthStr;
-            if (dayInput) dayInput.value = dayStr;
-        }
-    };
-
-    window.closeReportSelection = function() {
-        const overlay = document.getElementById('matrix-selection-modal-overlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-            setTimeout(() => overlay.style.display = 'none', 300);
-        }
-    };
-
-    window.toggleRangeType = function() {
-        const type = document.getElementById('matrix-range-type').value;
-        const monthGroup = document.getElementById('selection-month-group');
-        const dayGroup = document.getElementById('selection-day-group');
-        
-        if (type === 'day') {
-            monthGroup.style.display = 'none';
-            dayGroup.style.display = 'block';
-        } else {
-            monthGroup.style.display = 'block';
-            dayGroup.style.display = 'none';
-        }
-    };
-
-    window.generateMatrixFromSelection = function() {
-        const type = document.getElementById('matrix-range-type').value;
-        let queryParams = '';
-        
-        if (type === 'day') {
-            const val = document.getElementById('selection-day-input').value;
-            if (!val) return alert('Please select a date');
-            queryParams = `day=${val}`;
-        } else {
-            const val = document.getElementById('selection-month-input').value;
-            if (!val) return alert('Please select a month');
-            queryParams = `month=${val}`;
-        }
-
-        window.closeReportSelection();
-        window.openAttendanceMatrix(queryParams);
-    };
-
-    window.openAttendanceMatrix = function(queryParams) {
-        const overlay = document.getElementById('matrix-modal-overlay');
-        const modal = document.getElementById('matrix-modal');
-        if (overlay && modal) {
-            overlay.style.display = 'flex';
-            setTimeout(() => {
-                overlay.classList.add('active');
-                window.initDraggable('matrix-modal');
-            }, 10);
-            window.loadAttendanceGrid(queryParams);
-        }
-    };
-
-    window.closeAttendanceMatrix = function() {
-        const overlay = document.getElementById('matrix-modal-overlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-            setTimeout(() => overlay.style.display = 'none', 300);
-        }
-    };
-
-    window.loadAttendanceGrid = async function(queryParams) {
-        if (!queryParams) {
-            const now = new Date();
-            const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            queryParams = `month=${month}`;
-        }
-
-        // Handle Subtitle based on query
-        let displayTitle = 'Monthly Report';
-        if (queryParams.includes('day=')) {
-            const dateStr = queryParams.split('day=')[1];
-            displayTitle = `Daily Report: ${new Date(dateStr).toLocaleDateString('en-us', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-        } else {
-            const monthStr = queryParams.split('month=')[1];
-            const [y, m] = monthStr.split('-');
-            displayTitle = `Monthly Report: ${new Date(y, m - 1).toLocaleString('en-us', { month: 'long', year: 'numeric' })}`;
-        }
-        
-        const subtitle = document.getElementById('matrix-modal-subtitle');
-        if (subtitle) subtitle.innerText = displayTitle;
-
-        const thead = document.getElementById('matrix-thead');
-        const tbody = document.getElementById('matrix-tbody');
-        if (!thead || !tbody) return;
-
-        thead.innerHTML = '<tr><th style="padding: 40px; text-align: center;" colspan="100">Generating Matrix...</th></tr>';
-        tbody.innerHTML = '';
-
-        try {
-            const res = await fetch(`/api/reports/attendance-grid?${queryParams}`);
-            const data = await res.json();
-
-            if (!data.success) throw new Error(data.message);
-
-            // 1. Render Headers
-            let headerHtml = '<tr><th rowspan="2" style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0; width: 180px; min-width: 180px;">Employee Name</th>';
-            let dayHtml = '<tr>';
-            
-            data.headers.forEach(h => {
-                headerHtml += `<th style="width: 80px; min-width: 80px;">${h.label.split('-')[0]} ${h.label.split('-')[1]}</th>`;
-                dayHtml += `<th style="font-size: 10px; font-weight: 700; background: #F1F5F9; color: #475569;">${h.weekday.substring(0, 3)}</th>`;
-            });
-            headerHtml += '</tr>';
-            dayHtml += '</tr>';
-            thead.innerHTML = headerHtml + dayHtml;
-
-            // 2. Render Rows
-            if (data.grid.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
-                return;
-            }
-
-            data.grid.forEach(emp => {
-                let rowHtml = `<tr><td style="font-weight: 800; background: #F8FAFC; border-right: 2px solid #E2E8F0;">${emp.name}</td>`;
-                
-                data.headers.forEach(h => {
-                    const dayData = emp.daily[h.iso] || { status: '-', variance: 0, colorClass: 'grid-empty' };
-                    let varDisplay = dayData.variance;
-                    let varColorClass = '';
-                    
-                    const numVar = parseFloat(dayData.variance);
-                    if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
-                        if (numVar > 0) {
-                            varDisplay = `+${numVar}`;
-                            varColorClass = 'grid-variance-pos';
-                        } else if (numVar < 0) {
-                            varDisplay = `${numVar}`;
-                            varColorClass = 'grid-variance-neg';
-                        } else {
-                            varDisplay = '0';
-                        }
-                    } else if (dayData.status === 'Pending') {
-                        varDisplay = '...';
-                    } else {
-                        varDisplay = ''; // Future
-                    }
-
-                    rowHtml += `
-                        <td class="${dayData.colorClass}">
-                            <div class="matrix-cell">
-                                <div class="matrix-status">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}">${varDisplay}</div>
-                            </div>
-                        </td>
-                    `;
-                });
-                
-                rowHtml += '</tr>';
-                tbody.innerHTML += rowHtml;
-            });
-
-        } catch (err) {
-            console.error('Grid Matrix Load Error:', err);
-            thead.innerHTML = `<tr><th colspan="100" style="color: #ef4444; padding: 20px;">Failed to load attendance matrix: ${err.message}</th></tr>`;
-        }
-    };
-
-    // Initialize the grid on load if in attendance view
-    const originalLoadAttendanceLogs = window.loadAttendanceLogs;
-    window.loadAttendanceLogs = function() {
-        if (originalLoadAttendanceLogs) originalLoadAttendanceLogs();
-        window.loadAttendanceGrid();
-    };
-
-
     window.loadDashboardData = async function () {
         try {
             const dateInput = document.getElementById('mainDateFilter');
@@ -910,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusText = isDeclined ? 'Declined' : 'Checked Out';
                         statusColor = isDeclined ? '#94A3B8' : '#64748b';
                         bg = isDeclined ? '#F1F5F9' : '#f1f5f9';
-                        
+
                         if (!isDeclined) {
                             checkouts++;
                             totalWorkMs += (new Date(session.checkOutTime) - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
@@ -920,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusText = isDeclined ? 'Declined (Break)' : 'On Break';
                         statusColor = isDeclined ? '#94A3B8' : '#f59e0b';
                         bg = isDeclined ? '#F1F5F9' : 'rgba(245, 158, 11, 0.1)';
-                        
+
                         if (!isDeclined) {
                             breakCount++;
                             totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
@@ -930,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusText = isDeclined ? 'Declined (Working)' : 'Working';
                         statusColor = isDeclined ? '#94A3B8' : '#10b981';
                         bg = isDeclined ? '#F1F5F9' : 'rgba(16, 185, 129, 0.1)';
-                        
+
                         if (!isDeclined) {
                             active++;
                             totalWorkMs += (new Date() - new Date(session.checkInTime)) - (session.totalBreakDuration || 0);
@@ -1504,7 +1267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dobEl = document.getElementById('spa-edit-dob');
                 if (dobEl) {
                     try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
-                    catch(e) { dobEl.value = emp.dob || ''; }
+                    catch (e) { dobEl.value = emp.dob || ''; }
                 }
 
                 setVal('spa-edit-gender', emp.gender);
@@ -1702,7 +1465,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const s = data.data;
                 // Apply accent color to document if present in database
                 if (s.accentColor) document.documentElement.style.setProperty('--accent-primary', s.accentColor);
-                
+
                 // Populate contact info if present
                 const emailInput = document.getElementById('admin-contact-email');
                 const phoneInput = document.getElementById('admin-contact-phone');
@@ -1714,11 +1477,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const setupModal = document.getElementById('admin-setup-modal');
                     if (setupModal) {
                         setupModal.style.display = 'flex';
-                        
+
                         document.getElementById('save-setup-btn').onclick = async () => {
                             const setupEmail = document.getElementById('setup-admin-email').value;
                             if (!setupEmail) return nammaModalSystem.alert('Please enter a valid email to secure your account.');
-                            
+
                             try {
                                 const res = await fetch('/api/settings/change-password', {
                                     method: 'POST',
@@ -1757,8 +1520,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('/api/settings/change-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        currentPassword: current, 
+                    body: JSON.stringify({
+                        currentPassword: current,
                         newEmail: nextEmail || null,
                         newPhone: nextPhone || null
                     })
@@ -1768,13 +1531,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     await nammaModalSystem.alert('Credentials updated successfully! Kicking off session for security...');
                     // FORCE LOGOUT
                     localStorage.removeItem('adminLoggedIn');
-                    window.location.href = '/'; 
+                    window.location.href = '/';
                 } else {
                     await nammaModalSystem.alert(result.message || 'Verification failed');
                 }
-            } catch (err) { 
+            } catch (err) {
                 console.error('Security Update Error:', err);
-                await nammaModalSystem.alert('Server error during credential change'); 
+                await nammaModalSystem.alert('Server error during credential change');
             }
         });
     }
@@ -1784,15 +1547,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncCloudBtn) {
         syncCloudBtn.addEventListener('click', async () => {
             if (!(await nammaModalSystem.confirm('This will export your data and push it to your private GitHub Cloud backup repository. Proceed?'))) return;
-            
+
             const originalContent = syncCloudBtn.innerHTML;
             syncCloudBtn.disabled = true;
             syncCloudBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-            
+
             try {
                 const res = await fetch('/api/system/backup');
                 const result = await res.json();
-                
+
                 if (result.success) {
                     await nammaModalSystem.alert(`✅ Cloud Sync Complete!\n${result.message}\nTimestamp: ${result.timestamp || 'Just now'}`);
                 } else {
@@ -1814,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         masterResetBtn.addEventListener('click', async () => {
             // Collect selected targets
             const selectedTargets = Array.from(document.querySelectorAll('.reset-target:checked'))
-                                         .map(cb => cb.value);
+                .map(cb => cb.value);
 
             if (selectedTargets.length === 0) {
                 return await nammaModalSystem.alert('⚠️ Please select at least one category to reset.');
@@ -1832,34 +1595,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const originalBtnText = masterResetBtn.innerHTML;
                 masterResetBtn.disabled = true;
-                
+
                 let totalCleaned = 0;
                 let active = true;
 
                 const runPass = async () => {
                     try {
                         masterResetBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> CLEANING: ${totalCleaned}...`;
-                        
+
                         const res = await fetch('/api/attendance/reset', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ password, targets: selectedTargets })
                         });
                         const data = await res.json();
-                        
+
                         if (data.success) {
                             // Calculate how many were deleted in this pass
                             const passTotal = Object.values(data.stats).reduce((a, b) => a + b, 0);
                             totalCleaned += passTotal;
-                            
+
                             // If any category still reports 500, we need another pass
                             const needsMore = Object.values(data.stats).some(v => v === 500);
-                            
+
                             if (needsMore && active) {
                                 return await runPass();
                             } else {
                                 await nammaModalSystem.alert(`✅ Reset Complete!\nTotal records purged: ${totalCleaned}\nCategories: ${selectedTargets.join(', ')}`);
-                                window.location.reload(); 
+                                window.location.reload();
                             }
                         } else {
                             await nammaModalSystem.alert('❌ Reset Stopped: ' + (data.message || 'Server Error'));
@@ -2675,11 +2438,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-window.editSingleLog = async function (logId) {
-    window.selectedLogIds.clear();
-    window.selectedLogIds.add(logId);
-    window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
-};
+    window.editSingleLog = async function (logId) {
+        window.selectedLogIds.clear();
+        window.selectedLogIds.add(logId);
+        window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
+    };
 });
 
 window.addEventListener('error', function (e) {
@@ -2689,4 +2452,5 @@ window.addEventListener('error', function (e) {
 window.addEventListener('unhandledrejection', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
+});
 });
