@@ -1924,12 +1924,12 @@ body {
 
 .reporting-studio-header {
     padding: 20px 24px;
-    background: rgba(15, 23, 42, 0.5);
-    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    border-bottom: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: move;
+    cursor: default;
 }
 
 .reporting-studio-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
