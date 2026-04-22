@@ -1831,7 +1831,122 @@ app.put('/api/:type/:id', async (req, res) => {
     res.json({ success: true, message: 'Data updated successfully.' });
 });
 
-// --- DIAGNOSTICS & SUMMARY APIS (Migrated) ---
+// --- RE-RESTORED REPORTING APIS ---
+
+/**
+ * Attendance Grid Report Data (Restored)
+ * Aggregates monthly or daily data into a matrix structure.
+ */
+app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
+    try {
+        const monthStr = req.query.month; // Expected YYYY-MM
+        const dayStr = req.query.day; // Expected YYYY-MM-DD
+        
+        let startDate, endDate;
+        if (dayStr) {
+            startDate = new Date(dayStr);
+            endDate = new Date(dayStr);
+        } else if (monthStr) {
+            const [year, month] = monthStr.split('-').map(Number);
+            startDate = new Date(year, month - 1, 1);
+            endDate = new Date(year, month, 0); // Last day of month
+        } else {
+            return res.status(400).json({ success: false, message: 'Month or Day parameter is required.' });
+        }
+        
+        const year = startDate.getFullYear();
+        const month = startDate.getMonth() + 1;
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // 1. Get all employees
+        const empSnap = await db.employees().get();
+        const employees = empSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Get all daily_sessions
+        const sessionSnap = await db.daily_sessions().get();
+        const rawSessions = sessionSnap.docs.map(doc => doc.data());
+
+        // 3. Get all leaves
+        const leaveSnap = await db.leave_swaps().get();
+        const rawLeaves = leaveSnap.docs.map(doc => doc.data());
+
+        // Prepare Headers
+        const dateHeaders = [];
+        const numDays = dayStr ? 1 : endDate.getDate();
+        const startDay = dayStr ? startDate.getDate() : 1;
+
+        for (let d = startDay; d <= startDay + numDays - 1; d++) {
+            const dateObj = new Date(year, month - 1, d);
+            const dateIso = dateObj.toISOString().split('T')[0];
+            const dayName = dateObj.toLocaleString('en-us', { weekday: 'long' });
+            dateHeaders.push({ 
+                day: d, 
+                label: `${d}-${dateObj.toLocaleString('en-us', { month: 'short' })}-${year}`, 
+                weekday: dayName, 
+                iso: dateIso 
+            });
+        }
+
+        const grid = [];
+        for (const emp of employees) {
+            const empData = { name: emp.name, id: emp.id, daily: {} };
+            
+            // Expected Minutes Logic
+            let expectedMins = 480; 
+            if (emp.startTime && emp.endTime) {
+                const [h1, m1] = emp.startTime.split(':').map(Number);
+                const [h2, m2] = emp.endTime.split(':').map(Number);
+                expectedMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                if (expectedMins < 0) expectedMins += 1440;
+            }
+
+            for (const header of dateHeaders) {
+                const dateKey = header.iso;
+                const sessions = rawSessions.filter(s => s.employeeId == emp.id && s.date === dateKey);
+                const leaves = rawLeaves.filter(l => l.employeeId == emp.id && l.date === dateKey && l.status === 'approved');
+
+                let status = 'A';
+                let variance = 0;
+                let colorClass = 'grid-a';
+
+                const dayLower = header.weekday.toLowerCase();
+                const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
+                
+                if (dayLower === empWeekOff) {
+                    status = 'WO';
+                    colorClass = 'grid-wo';
+                } else if (leaves.length > 0) {
+                    status = 'L';
+                    colorClass = 'grid-l';
+                } else if (sessions.length > 0) {
+                    const s = sessions[0];
+                    if (dateKey === todayStr && !s.checkOut) {
+                        status = 'Pending';
+                        colorClass = 'grid-pending';
+                    } else {
+                        status = 'P';
+                        colorClass = 'grid-p';
+                        const actualMins = (s.totalWorkDuration || 0) / 60000;
+                        variance = ((actualMins - expectedMins) / 60).toFixed(1);
+                    }
+                } else if (dateKey > todayStr) {
+                    status = '-';
+                    colorClass = 'grid-empty';
+                }
+
+                empData.daily[dateKey] = { status, variance, colorClass };
+            }
+            grid.push(empData);
+        }
+
+        res.json({ success: true, headers: dateHeaders, grid });
+    } catch (err) {
+        console.error('Grid Report Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// --- DIAGNOSTICS & SUMMARY APIS ---
 
 /**
  * Endpoint: Get Today's Report Summary (Aggregate Sales/Collection)
@@ -2613,13 +2728,4 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
 if (isVercel) {
     console.log('📦 Vercel Module Exported');
 }
-console.log('To access from other devices on your network, use your local IP address.');
-console.log(`Example: http://192.168.1.100:${port}`);
-
-    });
-}
-
-// Export for Vercel (Cleanup)
-if (isVercel) {
-    console.log('📦 Vercel Module Exported');
-}
+module.exports = app;
