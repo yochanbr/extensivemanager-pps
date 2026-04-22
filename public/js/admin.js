@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('settings-view'),
             document.getElementById('master-reports-hub-v2')
         ];
-        
+
         const masterBtn = document.querySelector('.master-report-btn');
         const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterBtn];
 
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.error("SPA ERROR: Target view not found in DOM");
         }
-        
+
         if (activeBtn) activeBtn.classList.add('active');
 
         // Update Topbar Title
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => window.switchAttendanceView && window.switchAttendanceView('sessions'), 100);
     });
     if (settingsBtn) settingsBtn.addEventListener('click', () => switchSpaView(settingsView, settingsBtn));
-    
+
     // Master Report (Now as SPA Section)
     const masterReportBtn = document.querySelector('.master-report-btn');
     if (masterReportBtn) {
@@ -950,8 +950,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     rowHtml += `
                         <td style="${style} transition: all 0.2s; border-right: 1px solid #F1F5F9;">
                             <div class="matrix-cell">
-                                <div class="matrix-status" style="font-weight: 800; font-size: 12px;">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.8; font-size: 10px;">${varDisplay}</div>
+                                <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
+                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.8; font-size: 8px;">${varDisplay}</div>
                             </div>
                         </td>
                     `;
