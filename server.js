@@ -1438,59 +1438,18 @@ app.post('/api/verify-employee-otp', async (req, res) => {
 
     const employeeName = employee.name || 'Employee';
     const date = endShiftTime.split('T')[0];
-    let reportText = '';
+    const shift = employee.counter_selections[lastShiftIndex];
+    const shiftStartTime = shift.shiftStartTime;
+    const shiftId = shift.shiftId;
 
-    try {
-        const shift = employee.counter_selections[lastShiftIndex];
-        const shiftStartTime = shift.shiftStartTime;
-        const shiftId = shift.shiftId;
-
-        // Use helper functions or logic instead of internal fetch if possible
-        // For now, I'll keep the internal fetch to avoid massive refactoring of summary logic
-        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
-        const reportSummary = await reportSummaryResponse.json();
-        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
-        const activitySummary = await activitySummaryResponse.json();
-
-        reportText = `End Shift Report for ${employeeName}\n\nShift Details:\n- Start: ${new Date(shiftStartTime).toLocaleString()}\n- End: ${new Date(endShiftTime).toLocaleString()}\n- ID: ${shiftId}\n\nSummary:\n- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}\n- Cash: ₹${reportSummary.cash || 0}\n- Retail Credit: ₹${reportSummary.retailCredit || 0}\n\nActivity:\n- Added: ${activitySummary.inputed || 0}, Edited: ${activitySummary.edited || 0}, Deleted: ${activitySummary.deleted || 0}`;
-
-        // Save Text Report to Firestore (Encrypted)
-        await db.esr_reports().doc(`${employeeId}_${date}_${shiftId}`).set({
-            employee_id: employeeId,
-            date,
-            shift_id: shiftId,
-            report_data: encrypt(reportText.trim()),
-            created_at: new Date().toISOString()
-        });
-
-        // Generate and save ESR JPG to Firestore
-        try {
-            if (!puppeteer) {
-                try { puppeteer = require('puppeteer'); } catch (e) { console.warn('Puppeteer load failed'); }
-            }
-            if (puppeteer) {
-                const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
-                const page = await browser.newPage();
-                await page.goto(`http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`, { waitUntil: 'networkidle2' });
-                const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 90 });
-                await browser.close();
-
-                await db.esr_jpgs().doc(`${employeeId}_${date}_${shiftId}`).set({
-                    employee_id: employeeId,
-                    date,
-                    shift_id: shiftId,
-                    jpg_data_encrypted: encrypt(screenshotBuffer.toString('base64')),
-                    created_at: new Date().toISOString()
-                });
-            }
-        } catch (jpgError) { console.error('ESR JPG error:', jpgError); }
-    } catch (error) { console.error('ESR Report error:', error); }
+    // Generate and save report using consolidated helper
+    await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
 
     const mailOptions = {
         from: emailConfig.from,
         to: decrypt(employee.email),
         subject: 'Extensive Manager - Shift End Report',
-        text: `Hello ${employeeName},\n\nYour shift has ended.\n\n${reportText}\n\nRegards,\nPinpoint Startups`
+        text: `Hello ${employeeName},\n\nYour shift has ended and your report has been generated in the cloud.\n\nRegards,\nPinpoint Startups`
     };
     try { await emailConfig.transporter.sendMail(mailOptions); } catch (e) { console.error('Mail error:', e); }
 
@@ -1544,113 +1503,26 @@ app.post('/api/end-employee-shift', async (req, res) => {
     // Use the employee name fetched earlier for report
     const employeeName = employeeRecord.name || 'Employee';
 
-    // Generate and save ESR Text Report
-    const date = endShiftTime.split('T')[0];
-    let reportText = '';
-    try {
-        // Get shift details
-        const shiftStartTime = counter_selections[lastShiftIndex].shiftStartTime;
-        const shiftEndTimeFormatted = endShiftTime;
-        const shiftId = counter_selections[lastShiftIndex].shiftId;
-
-        // Fetch today's report summary
-        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${shiftEndTimeFormatted}`);
-        const reportSummary = await reportSummaryResponse.json();
-
-        // Fetch data activity summary
-        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${shiftEndTimeFormatted}`);
-        const activitySummary = await activitySummaryResponse.json();
-
-        // Generate text report
-        reportText = `
-End Shift Report for ${employeeName}
-
-Shift Details:
-- Shift Start Time: ${new Date(shiftStartTime).toLocaleString()}
-- Shift End Time: ${new Date(shiftEndTimeFormatted).toLocaleString()}
-- Shift ID: ${shiftId}
-
-Today's Report Summary:
-- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}
-- Card Pinelab: ₹${reportSummary.cardPinelab || 0}
-- UPI Paytm: ₹${reportSummary.upiPaytm || 0}
-- Card Paytm: ₹${reportSummary.cardPaytm || 0}
-- Cash: ₹${reportSummary.cash || 0}
-- Retail Credit: ₹${reportSummary.retailCredit || 0}
-
-Data Activity Summary:
-- Entries Added: ${activitySummary.inputed || 0}
-- Entries Edited: ${activitySummary.edited || 0}
-- Entries Deleted: ${activitySummary.deleted || 0}
-
-Thank you for your work today.
-Regards,
-Pinpoint Startups
-        `;
-
-        // Save the text report
-        const stmt = esrDb.prepare('INSERT OR REPLACE INTO esr_reports (employee_id, date, shift_id, report_data) VALUES (?, ?, ?, ?)');
-        stmt.run(employeeId, date, shiftId, reportText.trim());
-        console.log(`ESR Text Report generated and saved for employee ${employeeId} on ${date} with shift ID ${shiftId}`);
-
-        // Generate and save ESR JPG
-        try {
-            if (!puppeteer) {
-                try { puppeteer = require('puppeteer'); } catch (e) { console.warn('Puppeteer load failed'); }
-            }
-            const browser = await puppeteer.launch({ headless: true });
-            const page = await browser.newPage();
-            await page.setViewport({ width: 1200, height: 800 });
-            const reportUrl = `http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`;
-            await page.goto(reportUrl, { waitUntil: 'networkidle2' });
-            const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 90 });
-            await browser.close();
-
-            // Save the JPG to database
-            const jpgStmt = esrDb.prepare('INSERT OR REPLACE INTO esr_jpgs (employee_id, date, shift_id, jpg_data) VALUES (?, ?, ?, ?)');
-            jpgStmt.run(employeeId, date, shiftId, screenshotBuffer);
-            console.log(`ESR JPG generated and saved for employee ${employeeId} on ${date} with shift ID ${shiftId}`);
-        } catch (jpgError) {
-            console.error('Error generating ESR JPG:', jpgError);
-        }
-    } catch (error) {
-        console.error('Error generating ESR Text Report:', error);
-    }
+    // Generate and save report using consolidated helper (Firestore)
+    const shiftStartTime = counter_selections[lastShiftIndex].shiftStartTime;
+    const shiftId = counter_selections[lastShiftIndex].shiftId;
+    await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
 
     // Compose email content for shift end report
-    const startShiftTime = employeeRecord.startShiftTime || 'N/A';
-
-    const emailText = `
-Hello ${employeeName},
-
-Your shift has ended successfully.
-
-Shift Start Time: ${startShiftTime}
-Shift End Time: ${endShiftTime}
-
-${reportText}
-
-Regards,
-Pinpoint Startups
-    `;
+    const emailText = `Hello ${employeeName},\n\nYour shift has ended successfully. Your report has been generated in the cloud.\n\nRegards,\nPinpoint Startups`;
 
     // Send email with nodemailer
     const mailOptions = {
         from: emailConfig.from,
-        to: employeeRecord.email,
+        to: decrypt(employeeRecord.email),
         subject: 'Pinpoint Startups - Shift End Report',
         text: emailText
     };
 
-    try {
-        await emailConfig.transporter.sendMail(mailOptions);
-        console.log(`Shift end report email with attachment sent to ${employeeRecord.email}`);
-    } catch (err) {
-        console.error('Error sending shift end report email:', err);
-        // Not failing the API call, just logging
-    }
+    try { await emailConfig.transporter.sendMail(mailOptions); } catch (err) { console.error('Mail error:', err); }
 
-    return res.json({ success: true, message: 'Shift ended and email sent.' });
+    return res.json({ success: true, message: 'Shift ended and cloud report generated.' });
+});
 });
 
 /**
@@ -2549,15 +2421,34 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
             query = query.where('date', '==', date);
         }
         const snapshot = await query.orderBy('date', 'desc').limit(50).get();
-        const reports = snapshot.docs.map(doc => ({
-            id: doc.id,
-            employeeId: doc.data().employeeId,
-            date: doc.data().date,
-            // We don't send the full base64 here if it's too large, 
-            // but for simple display we can or use another endpoint
-            hasImage: !!doc.data().jpgData
-        }));
+        const reports = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                employeeId: data.employee_id,
+                employeeName: data.employeeName || 'Unknown',
+                date: data.date,
+                hasImage: !!(data.jpg_data_encrypted || data.jpgData)
+            };
+        });
         res.json({ success: true, reports });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * Endpoint: Get Shift Text Report (Decrypted)
+ */
+app.get('/api/esr-reports/:id', verifyAdmin, async (req, res) => {
+    try {
+        const doc = await db.esr_reports().doc(req.params.id).get();
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Report not found' });
+        
+        const data = doc.data();
+        const decryptedReport = decrypt(data.report_data);
+        
+        res.json({ success: true, report: decryptedReport, metadata: data });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -2569,11 +2460,20 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
 app.get('/api/shift-summary/:id/image', verifyAdmin, async (req, res) => {
     try {
         const doc = await db.esr_jpgs().doc(req.params.id).get();
-        if (!doc.exists || !doc.data().jpgData) {
-            return res.status(404).json({ success: false, message: 'Image not found' });
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Image not found' });
+        
+        const data = doc.data();
+        let base64Data = data.jpg_data_encrypted || data.jpgData;
+        if (!base64Data) return res.status(404).json({ success: false, message: 'Image data missing' });
+
+        // Decrypt if it's the newer format
+        if (data.jpg_data_encrypted) {
+            const decrypted = decrypt(base64Data);
+            base64Data = decrypted.split(',')[1] || decrypted;
+        } else {
+            base64Data = base64Data.split(',')[1] || base64Data;
         }
-        // Send as raw base64 or buffer
-        const base64Data = doc.data().jpgData.split(',')[1] || doc.data().jpgData;
+
         const img = Buffer.from(base64Data, 'base64');
         res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': img.length });
         res.end(img);
@@ -2669,6 +2569,75 @@ async function logAttendance(employeeId, employeeName, type, timestamp) {
     await db.attendance_logs().add({
         employeeId, employeeName, action: type, type, statusAfter, timestamp
     });
+}
+
+/**
+ * Consolidated Helper: Generate and Save End Shift Report (ESR) to Firestore
+ */
+async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId) {
+    const date = endShiftTime.split('T')[0];
+    try {
+        // Fetch summaries using internal loopback (keeping existing logic flow)
+        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
+        const reportSummary = await reportSummaryResponse.json();
+        
+        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
+        const activitySummary = await activitySummaryResponse.json();
+
+        const reportText = `End Shift Report for ${employeeName}\n\n` +
+            `Shift Details:\n` +
+            `- Start: ${new Date(shiftStartTime).toLocaleString()}\n` +
+            `- End: ${new Date(endShiftTime).toLocaleString()}\n` +
+            `- ID: ${shiftId}\n\n` +
+            `Summary:\n` +
+            `- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}\n` +
+            `- Card Pinelab: ₹${reportSummary.cardPinelab || 0}\n` +
+            `- UPI Paytm: ₹${reportSummary.upiPaytm || 0}\n` +
+            `- Card Paytm: ₹${reportSummary.cardPaytm || 0}\n` +
+            `- Cash: ₹${reportSummary.cash || 0}\n` +
+            `- Retail Credit: ₹${reportSummary.retailCredit || 0}\n\n` +
+            `Activity:\n` +
+            `- Added: ${activitySummary.inputed || 0}, Edited: ${activitySummary.edited || 0}, Deleted: ${activitySummary.deleted || 0}\n\n` +
+            `Regards, Pinpoint Startups`;
+
+        // 1. Save Text Report to Firestore (Compact & Encrypted)
+        await db.esr_reports().doc(`${employeeId}_${date}_${shiftId}`).set({
+            employee_id: employeeId,
+            employeeName,
+            date,
+            shift_id: shiftId,
+            report_data: encrypt(reportText.trim()),
+            created_at: new Date().toISOString()
+        });
+
+        // 2. Generate and save Snapshot (JPG) to Firestore
+        try {
+            if (!puppeteer) {
+                try { puppeteer = require('puppeteer'); } catch (e) { }
+            }
+            if (puppeteer) {
+                const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+                const page = await browser.newPage();
+                await page.setViewport({ width: 1200, height: 800 });
+                await page.goto(`http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`, { waitUntil: 'networkidle2' });
+                const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 85 });
+                await browser.close();
+
+                await db.esr_jpgs().doc(`${employeeId}_${date}_${shiftId}`).set({
+                    employee_id: employeeId,
+                    employeeName,
+                    date,
+                    shift_id: shiftId,
+                    jpg_data_encrypted: encrypt(screenshotBuffer.toString('base64')),
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (jpgError) { console.error('ESR JPG error:', jpgError); }
+
+        console.log(`✅ Cloud ESR generated for ${employeeName} [${shiftId}]`);
+    } catch (error) {
+        console.error('❌ ESR Generation failed:', error);
+    }
 }
 
 // Support for Leave/Swap logic remains distinct

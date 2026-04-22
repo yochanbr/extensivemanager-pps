@@ -1456,30 +1456,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">Loading snapshots...</p>';
 
-        fetch(`/api/esr-jpgs?employeeId=${employeeId}`)
+        // Use the correct shift-summary API
+        fetch(`/api/shift-summary`)
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.jpgs && data.jpgs.length > 0) {
+                if (data.success && data.reports && data.reports.length > 0) {
+                    // Filter for this specific employee if provided
+                    const filteredReports = employeeId ? data.reports.filter(r => r.employeeId === employeeId) : data.reports;
+                    
+                    if (filteredReports.length === 0) {
+                        grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found.</p>';
+                        return;
+                    }
+
                     grid.innerHTML = '';
-                    data.jpgs.forEach(jpg => {
-                        const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
+                    filteredReports.forEach(report => {
+                        const imageUrl = `/api/shift-summary/${report.id}/image`;
                         const item = document.createElement('div');
                         item.className = 'jpg-item';
                         item.innerHTML = `
                             <img src="${imageUrl}" alt="ESR" onclick="window.showEsrFullscreen('${imageUrl}')">
                             <div class="jpg-info">
-                                <span>${jpg.date}</span>
-                                <span>Shift: ${jpg.shift_id}</span>
+                                <span>${report.date}</span>
+                                <span>ID: ${report.id.split('_').pop()}</span>
                             </div>
                         `;
                         grid.appendChild(item);
                     });
                 } else {
-                    grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found for this employee.</p>';
+                    grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found.</p>';
                 }
             })
             .catch(err => {
-                console.error('Error fetching ESR JPGs:', err);
+                console.error('Error fetching ESR snapshots:', err);
                 grid.innerHTML = '<p style="color:red; text-align: center;">Error loading snapshots.</p>';
             });
     }
@@ -3021,7 +3030,177 @@ window.addEventListener('error', function (e) {
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
 });
 
-window.addEventListener('unhandledrejection', function (e) {
-    const tbody = document.getElementById('attendance-logs-tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
 });
+
+// --- SHIFT SUMMARY DASHBOARD LOGIC ---
+window.loadShiftSummaries = async function (date = null) {
+    const grid = document.getElementById('shift-summary-grid');
+    if (!grid) return;
+
+    grid.innerHTML = `
+        <div class="loading-placeholder" style="grid-column: 1/-1; text-align: center; padding: 100px;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary-accent); margin-bottom: 16px;"></i>
+            <p style="color: #64748b;">Fetching cloud reports...</p>
+        </div>
+    `;
+
+    try {
+        const url = date ? `/api/shift-summary?date=${date}` : '/api/shift-summary';
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success && data.reports && data.reports.length > 0) {
+            grid.innerHTML = '';
+            data.reports.forEach(report => {
+                const card = document.createElement('div');
+                card.className = 'shift-summary-card';
+                card.onclick = () => window.showShiftReportDetails(report.id);
+                
+                const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
+                
+                card.innerHTML = `
+                    <div class="shift-card-header">
+                        <div class="shift-card-user">
+                            <div class="shift-user-avatar">${avatarInitials}</div>
+                            <div class="shift-user-info">
+                                <h4>${report.employeeName || 'Unknown Employee'}</h4>
+                                <span>${report.date}</span>
+                            </div>
+                        </div>
+                        <span class="shift-badge shift-badge-id">#${report.id.split('_').pop()}</span>
+                    </div>
+                    <div class="shift-card-metrics">
+                        <div class="shift-metric">
+                            <span>Employee ID</span>
+                            <strong>${report.employeeId}</strong>
+                        </div>
+                        <div class="shift-metric">
+                            <span>Snapshot</span>
+                            <strong>${report.hasImage ? 'CAPTURED' : 'NONE'}</strong>
+                        </div>
+                        <div class="shift-metric">
+                            <span>Status</span>
+                            <strong style="color: #10b981;">VERIFIED</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <span style="font-size: 11px; color: #94a3b8;"><i class="fas fa-cloud"></i> Cloud Storage</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--primary-accent);">View Details <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        } else {
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 100px; background: rgba(255,255,255,0.5); border-radius: 20px; border: 1px dashed #cbd5e1;">
+                    <i class="fas fa-folder-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 16px;"></i>
+                    <p style="color: #64748b;">No shift reports found for this period.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading summaries:', error);
+        grid.innerHTML = '<p style="color:red; text-align:center; grid-column:1/-1;">Error loading reports from cloud.</p>';
+    }
+};
+
+window.showShiftReportDetails = async function (reportId) {
+    const modal = document.getElementById('esr-detail-modal');
+    const textArea = document.getElementById('esr-detail-text');
+    const imageArea = document.getElementById('esr-detail-image');
+    const subtitle = document.getElementById('esr-detail-subtitle');
+
+    if (!modal) return;
+
+    // Reset and Show Modal
+    textArea.innerHTML = 'Decrypting report data...';
+    imageArea.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+
+    try {
+        // 1. Fetch Text Report
+        const textResponse = await fetch(`/api/esr-reports/${reportId}`);
+        const textData = await textResponse.json();
+
+        if (textData.success) {
+            textArea.textContent = textData.report;
+            subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
+        } else {
+            textArea.textContent = 'Error loading text report.';
+        }
+
+        // 2. Load Snapshot
+        const img = new Image();
+        img.src = `/api/shift-summary/${reportId}/image`;
+        img.onload = () => {
+            imageArea.innerHTML = '';
+            imageArea.appendChild(img);
+        };
+        img.onerror = () => {
+            imageArea.innerHTML = '<span style="color: #64748b;">No snapshot image available.</span>';
+        };
+
+    } catch (error) {
+        console.error('Error showing report details:', error);
+        textArea.textContent = 'Critical error during decryption.';
+    }
+};
+
+window.closeEsrDetailModal = function () {
+    const modal = document.getElementById('esr-detail-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+window.printCurrentEsr = function () {
+    const reportText = document.getElementById('esr-detail-text').textContent;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head><title>Shift Report - ${new Date().toLocaleDateString()}</title></head>
+            <body style="font-family: monospace; white-space: pre-wrap; padding: 40px; font-size: 14px; line-height: 1.6;">
+                ${reportText}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+};
+
+// Auto-load summaries when switching to the view
+const originalSwitchSpaView = window.switchSpaView;
+window.switchSpaView = function(targetView, activeBtn) {
+    if (targetView && targetView.id === 'shift-summary-view') {
+        window.loadShiftSummaries();
+    }
+    
+    // Check if we need to call original
+    const buttons = [
+        document.getElementById('dashboard-btn'),
+        document.getElementById('manage-employees-btn'),
+        document.getElementById('view-report-btn'),
+        document.getElementById('view-esr-jpgs-btn'),
+        document.getElementById('attendance-btn'),
+        document.getElementById('settings-btn'),
+        document.querySelector('.master-report-btn')
+    ];
+    
+    const views = [
+        document.getElementById('dashboard-view'),
+        document.getElementById('employees-view'),
+        document.getElementById('reports-view'),
+        document.getElementById('shift-summary-view'),
+        document.getElementById('attendance-view'),
+        document.getElementById('settings-view'),
+        document.getElementById('master-reports-hub-v2')
+    ];
+
+    views.forEach(v => { if (v) v.style.display = 'none'; });
+    buttons.forEach(b => { if (b) b.classList.remove('active'); });
+
+    if (targetView) targetView.style.display = 'block';
+    if (activeBtn) activeBtn.classList.add('active');
+};

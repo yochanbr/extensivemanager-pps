@@ -402,25 +402,65 @@
                         </div>
                     </div>
 
+                    <!-- ESR Detail Modal -->
+    <div id="esr-detail-modal" class="modal-overlay" style="display: none;">
+        <div class="modern-modal" style="max-width: 1200px; width: 95%;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="esr-detail-title">Shift Report Details</h2>
+                    <span id="esr-detail-subtitle" style="font-size: 13px; color: var(--secondary-text);">Loading shift metadata...</span>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeEsrDetailModal()">&times;</button>
+            </div>
+            
+            <div id="esr-detail-content">
+                <div class="esr-detail-layout">
+                    <div>
+                        <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 12px;">Decrypted Text Report</h4>
+                        <div id="esr-detail-text" class="esr-text-report">
+                            <!-- Text content injected here -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 12px;">Captured Snapshot</h4>
+                        <div id="esr-detail-image" class="esr-image-snapshot">
+                            <!-- Image injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="secondary-btn" onclick="window.closeEsrDetailModal()">Close View</button>
+                <button class="primary-btn" onclick="window.printCurrentEsr()">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
+        </div>
+    </div>
+
                     <!-- Shift Summary View -->
                     <div id="shift-summary-view" style="display: none;">
-                        <div class="live-status-section"
-                            style="border-radius: 28px; padding: 60px; text-align: center; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px dashed #CBD5E1;">
-                            <div
-                                style="width: 80px; height: 80px; background: white; border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; color: #64748B; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                                <i class="fas fa-tools"></i>
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 4px;">Shift Reports Dashboard</h3>
+                                <p style="color: #64748b; font-size: 14px;">Browse and verify daily shift closure summaries</p>
                             </div>
-                            <h2 style="font-size: 24px; font-weight: 800; color: #1E293B; margin-bottom: 12px;">Feature
-                                Coming Soon</h2>
-                            <p
-                                style="color: #64748B; max-width: 400px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6;">
-                                We are currently refining the Shift Summary snapshot engine to provide more detailed
-                                visual
-                                reports and biometric verification history.
-                            </p>
-                            <div
-                                style="display: inline-flex; align-items: center; gap: 8px; background: #E2E8F0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
-                                <i class="fas fa-code-branch"></i> DEVELOPMENT PHASE: v2.4.0
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="modern-form-group" style="margin: 0;">
+                                    <input type="date" id="shift-summary-date-filter" class="modern-input" style="padding: 8px 16px;">
+                                </div>
+                                <button class="primary-btn" onclick="loadShiftSummaries(document.getElementById('shift-summary-date-filter').value)" style="padding: 10px 20px;">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="shift-summary-grid" class="shift-summary-grid">
+                            <!-- Cards will be injected here -->
+                            <div class="loading-placeholder" style="grid-column: 1/-1; text-align: center; padding: 100px;">
+                                <i class="fas fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary-accent); margin-bottom: 16px;"></i>
+                                <p style="color: #64748b;">Loading recent reports...</p>
                             </div>
                         </div>
                     </div>
