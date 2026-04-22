@@ -396,71 +396,8 @@
                         </button>
                     </div>
 
-                    <!-- REPORT SELECTION MODAL (Image 2 Style) -->
-                    <div id="matrix-selection-modal" class="modern-modal" style="display: none;">
-                        <div class="modern-modal-content" style="width: 480px; padding: 40px; border-radius: 32px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-                                <div>
-                                    <h2 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0;">Select Report Period</h2>
-                                    <p style="font-size: 13px; color: #64748B; margin-top: 4px;">Choose the time range for analysis</p>
-                                </div>
-                                <button class="close-modal-btn" onclick="window.closeReportSelection()" style="background: #F1F5F9; color: #64748B;">&times;</button>
-                            </div>
-
-                            <div style="margin-bottom: 24px;">
-                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Range Type</label>
-                                <select id="matrix-range-type" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;" onchange="window.toggleRangeType()">
-                                    <option value="month">Full Month</option>
-                                    <option value="day">Single Day</option>
-                                </select>
-                            </div>
-
-                            <div id="selection-month-group" style="margin-bottom: 40px;">
-                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Month</label>
-                                <input type="month" id="selection-month-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
-                            </div>
-
-                            <div id="selection-day-group" style="margin-bottom: 40px; display: none;">
-                                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Date</label>
-                                <input type="date" id="selection-day-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
-                            </div>
-
-                            <button onclick="window.generateMatrixFromSelection()" style="width: 100%; height: 60px; background: #FF5B22; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(255, 91, 34, 0.2);">
-                                Generate Activity Report
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- MATRIX MODAL -->
-                    <div id="matrix-modal" class="modern-modal" style="display: none;">
-                        <div class="modern-modal-content" style="width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column;">
-                            <div class="modal-header" style="flex-shrink: 0; padding: 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: start;">
-                                <div>
-                                    <h2 id="matrix-modal-title" style="margin: 0; font-size: 24px; font-weight: 800; color: #0F172A;">Attendance Matrix</h2>
-                                    <p id="matrix-modal-subtitle" style="margin: 4px 0 0; font-size: 14px; color: #64748B;">Showing data for [Month]</p>
-                                </div>
-                                <button class="close-modal-btn" onclick="window.closeAttendanceMatrix()">&times;</button>
-                            </div>
-                            <div class="modal-body" style="flex-grow: 1; overflow: hidden; padding: 24px; display: flex; flex-direction: column;">
-                                <div class="grid-scroll-container" style="flex-grow: 1; overflow: auto; border-radius: 16px; border: 1px solid #E2E8F0; background: white;">
-                                    <table id="attendance-matrix-table" class="matrix-table">
-                                        <thead id="matrix-thead"></thead>
-                                        <tbody id="matrix-tbody"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
-                                <div style="display: flex; gap: 16px; align-items: center; margin-right: auto; font-size: 12px;">
-                                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #4D7C0F; border-radius: 3px;"></span> P: Present</div>
-                                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #DC2626; border-radius: 3px;"></span> A: Absent</div>
-                                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #D97706; border-radius: 3px;"></span> L: Leave</div>
-                                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #334155; border-radius: 3px;"></span> WO: Week-off</div>
-                                </div>
-                                <button class="action-btn secondary" onclick="window.closeAttendanceMatrix()">Close</button>
-                                <button class="action-btn" onclick="window.loadAttendanceGrid()" style="background: #000;">Refresh Data</button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- MODALS MOVED TO ROOT -->
 
                     <div class="live-status-section" style="border-radius: 28px; padding: 32px;">
                         <div class="section-header" style="margin-bottom: 24px;">
@@ -835,10 +772,166 @@
                     <i class="fas fa-camera"></i> Capture & Register
                 </button>
             </div>
+    <!-- SHIFT SNAPSHOT PICKER MODAL -->
+    <div class="modal-overlay" id="employee-selection-modal">
+        <div class="modern-modal" style="max-width: 450px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Shift Summary Picker</h2>
+                    <p>Select date to view snapshots</p>
+                </div>
+                <button class="close-modal-btn"
+                    onclick="document.getElementById('employee-selection-modal').classList.remove('show'); setTimeout(()=>document.getElementById('employee-selection-modal').style.display='none', 300)">&times;</button>
+            </div>
+            <div class="modern-modal-body">
+                <form id="employee-selection-form">
+                    <input type="hidden" id="employee-select">
+                    <div class="modern-form-group"><label>Select Shift Date</label><input type="date"
+                            id="shift-summary-date" class="modern-input"></div>
+                    <button type="submit" class="modern-btn accent" style="width: 100%; margin-top: 20px;">Load
+                        Snapshots</button>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- FULLSCREEN SNAPSHOT MODAL -->
+    <div class="modal-overlay" id="esr-fullscreen-modal">
+        <div class="modern-modal" style="max-width: 90vw; background: rgba(0,0,0,0.9); border: none;">
+            <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">
+                <button class="close-modal-btn" style="background: white; color: black;"
+                    onclick="document.getElementById('esr-fullscreen-modal').classList.remove('show'); setTimeout(()=>document.getElementById('esr-fullscreen-modal').style.display='none', 300)">&times;</button>
+            </div>
+            <div class="modern-modal-body"
+                style="padding: 0; display: flex; justify-content: center; align-items: center; height: 90vh;">
+                <img id="esr-fullscreen-img" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                <div style="position: absolute; bottom: 30px; display: flex; gap: 20px;">
+                    <button id="esr-download-btn" class="modern-btn accent"><i class="fas fa-download"></i>
+                        Download</button>
+                    <button id="esr-share-btn" class="modern-btn secondary"><i class="fas fa-share-alt"></i>
+                        Share</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- SHIFT REPORT DISPLAY MODAL -->
+    <div class="modal-overlay" id="shift-summary-report-modal">
+        <div class="modern-modal large-modal" style="width: 90%; max-width: 1200px;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Shift Snapshots</h2>
+                    <p id="shift-report-modal-subtitle">Report results</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeShiftReportModal()">&times;</button>
+            </div>
+            <div class="modern-modal-body">
+                <div id="shift-report-images-container" class="jpg-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FACE REGISTRATION MODAL -->
+    <div class="modal-overlay" id="face-register-modal">
+        <div class="modern-modal" style="max-width: 500px;">
+            <div class="modern-modal-header">
+                <div class="modern-modal-header">
+                    <div class="modal-title-area">
+                        <h2>Face Registration</h2>
+                        <p id="face-reg-subtitle">Register biometric data for Staff</p>
+                    </div>
+                    <button class="close-modal-btn" onclick="window.closeFaceRegistration()">&times;</button>
+                </div>
+                <div class="modern-modal-body"
+                    style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <div id="face-reg-container"
+                        style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <video id="face-reg-video" autoplay muted playsinline
+                            style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        <canvas id="face-reg-overlay"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                        <div id="face-reg-scanner-line"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #F95A2C, transparent); animation: scan 2s linear infinite; display: none;">
+                        </div>
+                    </div>
+                    <div id="face-reg-status"
+                        style="width: 100%; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #64748B; font-size: 13px; font-weight: 500; text-align: center;">
+                        Waiting for camera...
+                    </div>
+                    <button id="capture-face-btn" class="modern-btn accent" style="width: 100%;" disabled>
+                        <i class="fas fa-camera"></i> Capture & Register
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPORT SELECTION MODAL (Production Logic) -->
+    <div id="matrix-selection-modal" class="modern-modal" style="display: none;">
+        <div class="modern-modal-content" style="width: 480px; padding: 40px; border-radius: 32px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+                <div>
+                    <h2 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0;">Select Report Period</h2>
+                    <p style="font-size: 13px; color: #64748B; margin-top: 4px;">Choose the time range for analysis</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeReportSelection()" style="background: #F1F5F9; color: #64748B;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Range Type</label>
+                <select id="matrix-range-type" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;" onchange="window.toggleRangeType()">
+                    <option value="month">Full Month</option>
+                    <option value="day">Single Day</option>
+                </select>
+            </div>
+
+            <div id="selection-month-group" style="margin-bottom: 40px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Month</label>
+                <input type="month" id="selection-month-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
+            </div>
+
+            <div id="selection-day-group" style="margin-bottom: 40px; display: none;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Select Date</label>
+                <input type="date" id="selection-day-input" class="modern-input" style="width: 100%; height: 56px; border-radius: 16px; font-size: 14px;">
+            </div>
+
+            <button onclick="window.generateMatrixFromSelection()" style="width: 100%; height: 60px; background: #FF5B22; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(255, 91, 34, 0.2);">
+                Generate Activity Report
+            </button>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE MATRIX RESULT MODAL -->
+    <div id="matrix-modal" class="modern-modal" style="display: none;">
+        <div class="modern-modal-content" style="width: 95%; max-width: 1400px; height: 85vh; display: flex; flex-direction: column; border-radius: 28px;">
+            <div class="modal-header" style="flex-shrink: 0; padding: 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h2 id="matrix-modal-title" style="margin: 0; font-size: 24px; font-weight: 800; color: #0F172A;">Attendance Matrix</h2>
+                    <p id="matrix-modal-subtitle" style="margin: 4px 0 0; font-size: 14px; color: #64748B;">Showing data for [Month]</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closeAttendanceMatrix()">&times;</button>
+            </div>
+            <div class="modal-body" style="flex-grow: 1; overflow: hidden; padding: 24px; display: flex; flex-direction: column;">
+                <div class="grid-scroll-container" style="flex-grow: 1; overflow: auto; border-radius: 16px; border: 1px solid #E2E8F0; background: white;">
+                    <table id="attendance-matrix-table" class="matrix-table">
+                        <thead id="matrix-thead"></thead>
+                        <tbody id="matrix-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC;">
+                <div style="display: flex; gap: 16px; align-items: center; margin-right: auto; font-size: 12px;">
+                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #4D7C0F; border-radius: 3px;"></span> P: Present</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #DC2626; border-radius: 3px;"></span> A: Absent</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #D97706; border-radius: 3px;"></span> L: Leave</div>
+                    <div style="display: flex; gap: 6px; align-items: center;"><span style="width: 12px; height: 12px; background: #334155; border-radius: 3px;"></span> WO: Week-off</div>
+                </div>
+                <button class="action-btn secondary" onclick="window.closeAttendanceMatrix()">Close</button>
+                <button class="action-btn" onclick="window.loadAttendanceGrid()" style="background: #000;">Refresh Data</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/script.js"></script>
     <script src="../js/admin.js?v=20260416c"></script>

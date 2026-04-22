@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.staffData = [];
 
-    // DRAGGABLE UTILITY (EXPERIMENTAL)
+    // DRAGGABLE UTILITY (PRODUCTION GRADE)
     window.initDraggable = function(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -642,22 +642,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const header = content.querySelector('.modal-header');
         if (!content || !header) return;
 
+        // Reset positions to center initially
+        content.style.left = '50%';
+        content.style.top = '50%';
+        content.style.transform = 'translate(-50%, -50%)';
+        content.style.margin = '0';
+
         let isDragging = false;
         let startX, startY, initialX, initialY;
 
         header.onmousedown = function(e) {
             isDragging = true;
+            
+            // On first click, convert transform percentage to absolute pixels to allow dragging
+            const bounds = content.getBoundingClientRect();
+            content.style.transform = 'none';
+            content.style.left = bounds.left + 'px';
+            content.style.top = bounds.top + 'px';
+            
             startX = e.clientX;
             startY = e.clientY;
-            
-            // Get current positions
-            const bounds = content.getBoundingClientRect();
             initialX = bounds.left;
             initialY = bounds.top;
-
-            content.style.margin = '0'; // Prevent offset jumping
-            content.style.left = initialX + 'px';
-            content.style.top = initialY + 'px';
 
             document.onmousemove = function(e) {
                 if (!isDragging) return;
@@ -676,13 +682,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    // EXPERIMENTAL: ATTENDANCE GRID GENERATOR
     window.openReportSelection = function() {
         const modal = document.getElementById('matrix-selection-modal');
         if (modal) {
             modal.style.display = 'flex';
-            modal.classList.add('show');
-            window.initDraggable('matrix-selection-modal'); // Initialize Dragging
+            setTimeout(() => {
+                modal.classList.add('show');
+                window.initDraggable('matrix-selection-modal');
+            }, 10);
             
             // Set defaults
             const now = new Date();
@@ -740,8 +747,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('matrix-modal');
         if (modal) {
             modal.style.display = 'flex';
-            modal.classList.add('show');
-            window.initDraggable('matrix-modal'); // Initialize Dragging
+            setTimeout(() => {
+                modal.classList.add('show');
+                window.initDraggable('matrix-modal');
+            }, 10);
             window.loadAttendanceGrid(queryParams);
         }
     };
