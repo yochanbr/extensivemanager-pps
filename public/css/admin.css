@@ -2364,3 +2364,124 @@ body {
     color: #94A3B8;
     cursor: not-allowed;
 }
+
+/* PAYSLIP STYLES */
+.payslip-container {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm;
+    margin: 0 auto;
+    font-family: 'Arial', sans-serif;
+    color: #000;
+    font-size: 11px;
+    box-sizing: border-box;
+}
+
+.payslip-header {
+    border: 2px solid #000;
+    text-align: center;
+    padding: 5px;
+    font-weight: bold;
+    margin-bottom: -2px;
+}
+
+.payslip-main-box {
+    border: 2px solid #000;
+    padding: 0;
+}
+
+.payslip-logo-section {
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.payslip-address-section {
+    text-align: right;
+    padding-right: 10px;
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.payslip-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+}
+
+.payslip-table td {
+    border: 1px solid #000;
+    padding: 4px 8px;
+}
+
+.payslip-label {
+    width: 20%;
+    font-weight: normal;
+}
+
+.payslip-value {
+    width: 30%;
+    font-weight: normal;
+}
+
+.payslip-section-title {
+    font-weight: bold;
+    background: #f2f2f2;
+}
+
+.payslip-total-row {
+    font-weight: bold;
+}
+
+.payslip-net-salary {
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    background: #f2f2f2;
+    border-top: 2px solid #000;
+    border-bottom: 2px solid #000;
+}
+
+.payslip-signature-area {
+    height: 120px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+.payslip-signature-line {
+    border-top: 2px solid #000;
+    width: 150px;
+    text-align: center;
+    padding-top: 5px;
+    font-weight: bold;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #payslip-rendering-area, #payslip-rendering-area * {
+        visibility: visible;
+    }
+    #payslip-rendering-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .modal-overlay {
+        background: none !important;
+        backdrop-filter: none !important;
+    }
+    .modern-modal {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
