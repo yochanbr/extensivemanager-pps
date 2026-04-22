@@ -1915,14 +1915,17 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                 if (dayLower === empWeekOff) {
                     status = 'WO';
                     colorClass = 'grid-wo';
+                    variance = 0;
                 } else if (leaves.length > 0) {
                     status = 'L';
                     colorClass = 'grid-l';
+                    variance = 0;
                 } else if (sessions.length > 0) {
                     const s = sessions[0];
                     if (dateKey === todayStr && !s.checkOut) {
                         status = 'Pending';
                         colorClass = 'grid-pending';
+                        variance = 0;
                     } else {
                         status = 'P';
                         colorClass = 'grid-p';
@@ -1932,6 +1935,12 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                 } else if (dateKey > todayStr) {
                     status = '-';
                     colorClass = 'grid-empty';
+                    variance = 0;
+                } else {
+                    // Past date, no session, no leave, no week-off => ABSENT
+                    status = 'A';
+                    colorClass = 'grid-a';
+                    variance = (-expectedMins / 60).toFixed(1);
                 }
 
                 empData.daily[dateKey] = { status, variance, colorClass };

@@ -914,18 +914,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const numVar = parseFloat(dayData.variance);
                     if (dayData.status === 'P' || dayData.status === 'WO' || dayData.status === 'A' || dayData.status === 'L') {
                         if (numVar > 0) {
-                            varDisplay = `+${numVar}`;
+                            varDisplay = `Extra +${numVar}h`;
                             varColorClass = 'grid-variance-pos';
                         } else if (numVar < 0) {
-                            varDisplay = `${numVar}`;
+                            varDisplay = `${numVar}h`;
                             varColorClass = 'grid-variance-neg';
                         } else {
-                            varDisplay = '0';
+                            varDisplay = '0.0h';
                         }
                     } else if (dayData.status === 'Pending') {
                         varDisplay = '...';
                     } else {
-                        varDisplay = ''; // Future
+                        varDisplay = '';
                     }
 
                     // Status Color Mapping from Legend
@@ -945,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td style="${style} transition: all 0.2s;">
                             <div class="matrix-cell">
                                 <div class="matrix-status" style="font-weight: 800;">${dayData.status}</div>
-                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.9; font-size: 9px;">${varDisplay}</div>
+                                <div class="matrix-variance ${varColorClass}" style="opacity: 0.9; font-size: 8px;">${varDisplay}</div>
                             </div>
                         </td>
                     `;

@@ -1988,9 +1988,29 @@ body {
     font-size: 13px;
 }
 
-.reporting-studio-table tr:hover td {
-    background: rgba(255, 255, 255, 0.03);
+/* Matrix Cell Styles */
+.matrix-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
+
+.matrix-status {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.matrix-variance {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+.grid-variance-pos { background: rgba(255, 255, 255, 0.2); color: #BEF264 !important; } /* Vibrant Lime */
+.grid-variance-neg { background: rgba(255, 255, 255, 0.2); color: #FCD34D !important; } /* Vibrant Amber */
 
 /* Status Badges */
 .status {
