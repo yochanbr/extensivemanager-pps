@@ -332,17 +332,6 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
         return res.json({ success: true, redirectUrl: '/admin' });
     }
 
-    // 2. Check Store State
-    const stateDoc = await db.broadcast().get();
-    const storeClosed = stateDoc.exists ? stateDoc.data().store_closed : false;
-
-    if (storeClosed) {
-        return res.status(403).json({
-            success: false,
-            message: 'Store is temporarily CLOSED. Contact admin to open the store.',
-            code: 'STORE_CLOSED'
-        });
-    }
 
     // 3. Find Employee (Username is primary key or we query by field)
     // In our migration, we used employee.id as document ID, but we should search by username
@@ -496,14 +485,6 @@ app.get('/api/broadcast', async (req, res) => {
     }
 });
 
-// Get store status (Cloud Native)
-app.get('/api/store-status', async (req, res) => {
-    try {
-        const doc = await db.broadcast().get();
-        const storeClosed = doc.exists ? doc.data().store_closed : false;
-        res.json({ success: true, closed: !!storeClosed });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
 
 
 // Get a single employee by ID
@@ -1730,7 +1711,7 @@ app.post('/api/confirm-endshift-otp', async (req, res) => {
 
     endShiftOtp.otp = null;
     endShiftOtp.expiresAt = 0;
-    await db.broadcast().update({ store_closed: true });
+
     return res.json({ success: true, message: 'Shift ended, store closed.' });
 });
 
@@ -1747,7 +1728,7 @@ app.post('/api/confirm-endshift-password', async (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid password.' });
     }
 
-    await db.broadcast().update({ store_closed: true });
+
     return res.json({ success: true, message: 'Shift ended, store closed.' });
 });
 
@@ -1777,7 +1758,6 @@ app.post('/api/start-shift', async (req, res) => {
     if (password === adminPassword) {
         const startShiftTime = new Date().toISOString();
         await db.broadcast().update({
-            store_closed: false,
             startShiftTime: startShiftTime
         });
         res.json({ success: true, startShiftTime });
@@ -1792,28 +1772,7 @@ app.get('/api/today-date', (req, res) => {
     res.json({ date: today });
 });
 
-// Get store status
-app.get('/api/store-status', async (req, res) => {
-    const doc = await db.broadcast().get();
-    const storeClosed = doc.exists ? doc.data().store_closed : false;
-    res.json({ storeClosed });
-});
 
-// Toggle store status (open/close) - requires admin password
-// Toggle store status (open/close) - requires admin password
-app.post('/api/toggle-store', async (req, res) => {
-    const { password, action } = req.body;
-    const settingsDoc = await db.settings().doc('config').get();
-    const adminPassword = settingsDoc.exists ? settingsDoc.data().adminPassword : 'admin12nammamart';
-
-    if (password !== adminPassword) {
-        return res.status(401).json({ success: false, message: 'Invalid admin password.' });
-    }
-
-    const isClosed = (action === 'close');
-    await db.broadcast().update({ store_closed: isClosed });
-    return res.json({ success: true, message: `Store is now ${isClosed ? 'CLOSED' : 'OPEN'}.`, storeClosed: isClosed });
-});
 
 
 
@@ -2622,16 +2581,6 @@ app.put('/api/leave-swaps/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// Scheduled auto open/close functionality
-async function checkScheduledOpenClose() {
-    const now = new Date();
-    const h = now.getHours(), m = now.getMinutes();
-    if (h === 23 && m >= 30) await db.broadcast().update({ store_closed: true });
-    else if (h === 5 && m >= 30) await db.broadcast().update({ store_closed: false });
-}
-
-// Run scheduled check every minute
-setInterval(checkScheduledOpenClose, 60 * 1000);
 
 // Stub Update Endpoints to prevent frontend 404s on Vercel
 app.get('/api/check-update', (req, res) => res.json({ updateAvailable: false }));
@@ -2649,14 +2598,14 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
         console.log(`SECURE Server is running on https://localhost:${port}`);
         console.log('To access from other devices on your network securely, use your local IP address.');
         console.log(`Example: https://192.168.1.100:${port}`);
-        checkScheduledOpenClose();
+
     });
 } else if (!isVercel) {
     app.listen(port, "0.0.0.0", () => {
         console.log(`Server is running on http://localhost:${port}`);
         console.log('To access from other devices on your network, use your local IP address.');
         console.log(`Example: http://192.168.1.100:${port}`);
-        checkScheduledOpenClose();
+
     });
 }
 

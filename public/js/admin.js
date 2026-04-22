@@ -134,21 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // Check store status on page load
-    fetch('/api/store-status')
-        .then(response => response.json())
-        .then(data => {
-            const statusBadge = document.getElementById('store-status-badge');
-            if (data.closed) {
-                if (statusBadge) statusBadge.style.display = 'none';
-            } else {
-                if (statusBadge) statusBadge.style.display = 'flex';
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching store status:', error);
-        });
-
     /* viewReportBtn is now SPA routed */
 
     /* viewEsrJpgsBtn is now SPA routed */
@@ -645,16 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else dynamicGreeting.textContent = 'Good Evening !';
     }
 
-    // Emergency Master Switch
-    const estToggle = document.getElementById('emergency-store-toggle');
-    const estIndicator = document.getElementById('est-indicator');
-    const estText = document.getElementById('est-text');
-    if (estToggle) {
-        estToggle.addEventListener('click', async () => {
-            // Toggle logic can fall back on startShift/endShift buttons
-            await nammaModalSystem.alert('Use Start Shift / End Shift buttons to officially open/close the store.');
-        });
-    }
 
     window.staffData = [];
     window.loadDashboardData = async function () {
