@@ -9,7 +9,11 @@
 body {
     background-color: #EBE5DF;
     color: #1A1A1A;
-    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent body scroll, only main-content should scroll */
+    height: 100vh;
+    width: 100vw;
 }
 
 /* LAYOUT */
@@ -23,6 +27,7 @@ body {
 .sidebar {
     width: 280px;
     min-width: 280px;
+    height: 100vh; /* Lock to viewport height */
     background: linear-gradient(180deg, #09090B 0%, #020617 100%);
     display: flex;
     flex-direction: column;
@@ -32,6 +37,7 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
     z-index: 100;
+    overflow-y: auto; /* Allow sidebar itself to scroll if items overflow */
 }
 
 .sidebar-header {
