@@ -2109,8 +2109,8 @@ body {
     .reporting-studio-table th, .reporting-studio-table td { padding: 8px; font-size: 11px; }
 }
 
-/* Cleanup existing responsive blocks if needed... */
-
+.reporting-studio-header {
+    cursor: grab;
     user-select: none;
 }
 
