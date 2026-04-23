@@ -2371,51 +2371,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- NEW GLOBAL ALERT STATE ---
+    window.dashboardAlerts = {
+        attendance: [],
+        integrity: []
+    };
+
     window.calculateAdminSummary = function (logs) {
         if (!logs) return;
         const empSet = new Set();
         let currentlyWorking = new Set();
         let onBreak = new Set();
-
-        // This simulates reconstructing the daily sessions to find accurate total hours
         const sessionsMap = {};
 
         logs.forEach(log => {
             empSet.add(log.employeeId);
             const empId = log.employeeId;
+            if (log.statusAfter === 'WORKING') { currentlyWorking.add(empId); onBreak.delete(empId); }
+            else if (log.statusAfter === 'ON_BREAK') { onBreak.add(empId); currentlyWorking.delete(empId); }
+            else if (log.statusAfter === 'IDLE') { currentlyWorking.delete(empId); onBreak.delete(empId); }
 
-            // Latest status tracking
-            if (log.statusAfter === 'WORKING') {
-                currentlyWorking.add(empId);
-                onBreak.delete(empId);
-            } else if (log.statusAfter === 'ON_BREAK') {
-                onBreak.add(empId);
-                currentlyWorking.delete(empId);
-            } else if (log.statusAfter === 'IDLE') {
-                currentlyWorking.delete(empId);
-                onBreak.delete(empId);
-            }
-
-            // Session reconstruction engine (Local simulation of server rebuilding)
             if (!sessionsMap[empId]) sessionsMap[empId] = { totalWorkMs: 0, currentCheckIn: null, currentBreakStart: null, totalBreakMs: 0 };
             const m = sessionsMap[empId];
             const t = new Date(log.timestamp).getTime();
-
             if (log.action === 'CLOCK_IN') m.currentCheckIn = t;
             else if (log.action === 'BREAK_START') m.currentBreakStart = t;
-            else if (log.action === 'BREAK_END' && m.currentBreakStart) {
-                m.totalBreakMs += (t - m.currentBreakStart);
-                m.currentBreakStart = null;
-            }
-            else if (log.action === 'CLOCK_OUT' && m.currentCheckIn) {
-                let sessionWork = (t - m.currentCheckIn);
-                // Assume breaks inside this session are captured globally for simplicity here
-                m.totalWorkMs += sessionWork;
-                m.currentCheckIn = null;
-            }
+            else if (log.action === 'BREAK_END' && m.currentBreakStart) { m.totalBreakMs += (t - m.currentBreakStart); m.currentBreakStart = null; }
+            else if (log.action === 'CLOCK_OUT' && m.currentCheckIn) { m.totalWorkMs += (t - m.currentCheckIn); m.currentCheckIn = null; }
         });
 
-        // Add currently active incomplete sessions
         const nowMs = Date.now();
         Object.values(sessionsMap).forEach(m => {
             if (m.currentBreakStart) m.totalBreakMs += (nowMs - m.currentBreakStart);
@@ -2425,7 +2409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalWorkMsGlobal = 0;
         let totalOvertimeMsGlobal = 0;
         let totalLessTimeMsGlobal = 0;
-        const requiredMs = 8 * 60 * 60 * 1000; // 8 hours
+        const requiredMs = 8 * 60 * 60 * 1000;
 
         Object.values(sessionsMap).forEach(m => {
             const actualWork = Math.max(0, m.totalWorkMs - m.totalBreakMs);
@@ -2435,39 +2419,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const fmtHrs = (ms) => Math.floor(ms / 3600000) + 'h ' + Math.floor((ms % 3600000) / 60000) + 'm';
-
-        // --- DASHboard KPI Sync ---
         const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-
+        
         setTxt('kpi-total-emps', empSet.size);
         setTxt('kpi-working', currentlyWorking.size);
         setTxt('kpi-break', onBreak.size);
         setTxt('kpi-total-hrs', fmtHrs(totalWorkMsGlobal));
         setTxt('kpi-total-ot', fmtHrs(totalOvertimeMsGlobal));
         setTxt('kpi-total-lt', fmtHrs(totalLessTimeMsGlobal));
-
-        // Dashboard specific cards
         setTxt('dash-working', currentlyWorking.size);
         setTxt('dash-break', onBreak.size);
-        setTxt('dash-checkins', logs.filter(l => (l.action || l.type || '').toUpperCase().includes('IN')).length);
 
-        // --- ALERT HUB LOGIC ---
-        const alerts = [];
+        // Attendance Alerts logic
+        const attAlerts = [];
         const SHIFT_START_HOUR = 9;
-        const now = new Date();
-        const isToday = logs.length > 0 && new Date(logs[0].timestamp).toDateString() === now.toDateString();
-
-        // 1. Missing Check-outs (Only if it's "Today" or we're looking at live data)
-        if (isToday) {
-            Object.keys(sessionsMap).forEach(empId => {
-                const s = sessionsMap[empId];
-                if (s.currentCheckIn && !currentlyWorking.has(empId) && !onBreak.has(empId)) {
-                    // This case shouldn't really happen with current logic, but a safety check
-                }
-            });
-        }
-
-        // 2. Late Arrivals (>10 mins)
         Object.keys(sessionsMap).forEach(empId => {
             const s = sessionsMap[empId];
             if (s.currentCheckIn) {
@@ -2476,64 +2441,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
                 const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
                 if (lateMin > 10) {
-                    alerts.push({
-                        type: 'late',
-                        title: 'Late Arrival',
+                    attAlerts.push({
                         user: logs.find(l => l.employeeId === empId)?.employeeName || 'Staff',
-                        desc: `Checked in ${lateMin}m late`,
-                        color: '#EF4444'
+                        desc: `Late Arrival: ${lateMin}m late`,
+                        color: '#EF4444', icon: 'clock'
                     });
                 }
             }
         });
 
-        // 3. System Alerts (e.g. No activity yet today)
-        if (isToday && logs.length === 0) {
-            alerts.push({ type: 'info', title: 'Zero Activity', user: 'System', desc: 'No check-ins recorded today yet.', color: '#3B82F6' });
-        }
-
-        renderAlertHub(alerts);
+        window.dashboardAlerts.attendance = attAlerts;
+        window.renderAlertHub();
     };
 
-    window.renderAlertHub = function (alerts) {
+    window.renderAlertHub = function () {
         const section = document.getElementById('alert-hub-section');
         const container = document.getElementById('alert-list-container');
         const badge = document.getElementById('alert-count-badge');
         if (!section || !container) return;
 
-        if (alerts.length === 0) {
+        const allAlerts = [...window.dashboardAlerts.attendance, ...window.dashboardAlerts.integrity];
+
+        if (allAlerts.length === 0) {
             section.style.display = 'none';
             return;
         }
 
         section.style.display = 'block';
-        badge.textContent = `${alerts.length} Issue${alerts.length > 1 ? 's' : ''}`;
+        badge.textContent = `${allAlerts.length} Issue${allAlerts.length > 1 ? 's' : ''}`;
 
-        container.innerHTML = alerts.map(a => `
-            <div style="background: white; border: 1px solid ${a.color}33; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 8px;">
-                <div style="width: 40px; height: 40px; border-radius: 12px; background: ${a.color}15; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+        container.innerHTML = allAlerts.map(a => `
+            <div style="background: white; border: 1px solid ${a.color}22; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                     <i class="fas fa-${a.icon || 'info-circle'}"></i>
                 </div>
                 <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="font-weight: 700; font-size: 14px; color: #1E293B;">${a.user}</div>
-                            <div style="font-size: 11px; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${a.desc}</div>
-                        </div>
-                        ${a.isActionable ? `
-                            <div style="display: flex; gap: 6px;">
-                                <button onclick="window.reviewAttendance('${a.id}', 'approve')" 
-                                    style="padding: 4px 10px; border-radius: 8px; background: #10B981; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                <button onclick="window.reviewAttendance('${a.id}', 'decline')" 
-                                    style="padding: 4px 10px; border-radius: 8px; background: #EF4444; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-times"></i> Decline
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
+                    <div style="font-weight: 700; font-size: 13px; color: #1E293B;">${a.user}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">${a.desc}</div>
                 </div>
+                ${a.action ? `<button onclick="${a.action}" style="background: none; border: none; color: ${a.color}; cursor: pointer; padding: 8px;"><i class="fas fa-chevron-right"></i></button>` : ''}
             </div>
         `).join('');
     };
@@ -3244,30 +3190,26 @@ window.switchSpaView = function(targetView, activeBtn) {
 };
     // --- DATA INTEGRITY AUDIT ---
     window.auditEmployeeData = function(employees) {
-        const warningBanner = document.getElementById('data-integrity-warning');
-        const listContainer = document.getElementById('incomplete-staff-list');
-        if (!warningBanner || !listContainer) return;
+        const intAlerts = [];
+        employees.forEach(emp => {
+            const missing = [];
+            if (!emp.basicSalary) missing.push('Salary');
+            if (!emp.bankName || !emp.accountNumber) missing.push('Bank Info');
+            if (!emp.aadharNumber || !emp.panNumber) missing.push('Govt IDs');
 
-        const incomplete = employees.filter(emp => {
-            // Critical fields for payslip and legal
-            const criticalFields = ['basicSalary', 'panNumber', 'aadharNumber', 'bankName', 'accountNumber'];
-            return criticalFields.some(f => !emp[f] || emp[f] === 'N/A' || emp[f] === '');
+            if (missing.length > 0) {
+                intAlerts.push({
+                    user: emp.name,
+                    desc: `Incomplete: Missing ${missing.join(', ')}`,
+                    color: '#F97316', // Orange for integrity
+                    icon: 'user-edit',
+                    action: `window.spaEditEmployee('${emp.id}')`
+                });
+            }
         });
 
-        if (incomplete.length > 0) {
-            warningBanner.style.display = 'block';
-            listContainer.innerHTML = '';
-            incomplete.forEach(emp => {
-                const tag = document.createElement('span');
-                tag.style.cssText = 'background: white; border: 1px solid #FECACA; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #991B1B; display: flex; align-items: center; gap: 6px;';
-                tag.innerHTML = `<i class="fas fa-user-clock" style="color:#EF4444;"></i> ${emp.name}`;
-                tag.onclick = () => window.spaEditEmployee(emp.id); // Direct jump to edit
-                tag.style.cursor = 'pointer';
-                listContainer.appendChild(tag);
-            });
-        } else {
-            warningBanner.style.display = 'none';
-        }
+        window.dashboardAlerts.integrity = intAlerts;
+        window.renderAlertHub();
     };
 
     // Auto-run audit when employee list is fetched
