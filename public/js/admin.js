@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Refresh data based on view
         if (targetView && targetView.id === 'dashboard-view') loadDashboardData();
         if (targetView && targetView.id === 'employees-view') fetchEmployeesForSPA();
-        if (targetView && targetView.id === 'shift-summary-view') fetchEmployeesForShiftSummary();
+        if (targetView && targetView.id === 'shift-summary-view') window.loadShiftSummaries();
         if (targetView && targetView.id === 'reports-view') fetchEmployeesForReports();
 
         if (targetView && targetView.id === 'attendance-view') {

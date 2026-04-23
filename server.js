@@ -2594,6 +2594,15 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
     }
 }
 
+// DEBUG: Check reports count
+app.get('/api/debug/reports-count', async (req, res) => {
+    try {
+        const snap = await db.esr_reports().get();
+        const docs = snap.docs.map(d => d.data());
+        res.json({ count: snap.size, samples: docs });
+    } catch(e) { res.json({ error: e.message }); }
+});
+
 // Support for Leave/Swap logic remains distinct
 app.get('/api/leave-swaps', async (req, res) => {
     try {
