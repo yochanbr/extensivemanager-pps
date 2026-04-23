@@ -3030,7 +3030,7 @@ window.addEventListener('error', function (e) {
     if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
 });
 
-});
+
 
 // --- SHIFT SUMMARY DASHBOARD LOGIC ---
 window.loadShiftSummaries = async function (date = null) {

@@ -1980,6 +1980,32 @@ body {
 
 .reporting-studio-table th:first-child { z-index: 12; }
 
+/* Dashboard Status Table */
+.status-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: #FFFFFF !important;
+}
+
+.status-table th {
+    background: #F8FAFC !important;
+    color: #64748B !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 16px 20px !important;
+    text-align: left !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.status-table td {
+    padding: 16px 20px !important;
+    font-size: 14px !important;
+    color: #1E293B !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+}
+
 /* Excel-Style Matrix Architecture */
 .matrix-table {
     border-collapse: collapse !important;
