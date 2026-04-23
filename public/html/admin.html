@@ -81,7 +81,7 @@
 
                 <div
                     style="margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <span style="font-size: 9px; color: #3F3F46; text-transform: uppercase; letter-spacing: 1px;">Build v8.2 Production Stable Edition</span>
+                    <span style="font-size: 9px; color: #3F3F46; text-transform: uppercase; letter-spacing: 1px;">Build v8.3 Payslip Wizard Edition</span>
                 </div>
             </nav>
 
@@ -1322,47 +1322,60 @@
             </div>
             <div class="modern-modal-body">
                 <form id="payslip-config-form">
-                    <div class="modern-form-group">
-                        <label>Select Employee</label>
-                        <select id="payslip-employee-select" class="modern-input" required>
-                            <option value="">Choose Employee...</option>
-                        </select>
-                    </div>
-                    <div class="modern-form-group">
-                        <label>Select Month</label>
-                        <input type="month" id="payslip-month-input" class="modern-input" required>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; padding: 20px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0;">
-                        <div class="modern-form-group" style="margin-bottom: 0;">
-                            <label>Basic Salary (Rs.)</label>
-                            <input type="number" id="payslip-basic-input" class="modern-input" placeholder="9350" required>
+                    <!-- Step 1: Employee & Period -->
+                    <div id="payslip-step-1">
+                        <div class="modern-form-group">
+                            <label style="font-weight: 700; color: #1E293B;">Select Employee</label>
+                            <select id="payslip-employee-select" class="modern-input" style="height: 56px; font-size: 16px;" required>
+                                <option value="">Choose Employee...</option>
+                            </select>
                         </div>
-                        <div class="modern-form-group" style="margin-bottom: 0;">
-                            <label>Holiday Pay/OT (Rs.)</label>
-                            <input type="number" id="payslip-ot-input" class="modern-input" placeholder="0" value="0">
+                        <div class="modern-form-group" style="margin-top: 20px;">
+                            <label style="font-weight: 700; color: #1E293B;">Select Month</label>
+                            <input type="month" id="payslip-month-input" class="modern-input" style="height: 56px; font-size: 16px;" required>
                         </div>
-                        <div class="modern-form-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label>ESI (Rs. or N/A)</label>
-                            <input type="text" id="payslip-esi-input" class="modern-input" placeholder="N/A" value="N/A">
-                        </div>
-                        <div class="modern-form-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label>Billing Difference (Rs.)</label>
-                            <input type="number" id="payslip-billing-diff-input" class="modern-input" placeholder="0" value="0">
-                        </div>
-                        <div class="modern-form-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label>Leave Balance</label>
-                            <input type="number" id="payslip-leave-balance" class="modern-input" placeholder="2" value="2">
-                        </div>
-                        <div class="modern-form-group" style="margin-bottom: 0; margin-top: 10px;">
-                            <label>Location</label>
-                            <input type="text" id="payslip-location-input" class="modern-input" value="Sullia, Karnataka">
-                        </div>
+                        <button type="button" class="modern-btn accent" onclick="window.toPayslipStep2()" style="width: 100%; margin-top: 24px; height: 56px; font-size: 16px; font-weight: 700;">
+                            Continue to Details <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
 
-                    <button type="submit" class="modern-btn accent" style="width: 100%; margin-top: 24px; height: 50px;">
-                        <i class="fas fa-file-invoice-dollar"></i> Generate Professional Payslip
-                    </button>
+                    <!-- Step 2: Financial Grid (Hidden by default) -->
+                    <div id="payslip-step-2" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0;">
+                            <div class="modern-form-group" style="margin-bottom: 0;">
+                                <label>Basic Salary</label>
+                                <input type="number" id="payslip-basic-input" class="modern-input" placeholder="9350">
+                            </div>
+                            <div class="modern-form-group" style="margin-bottom: 0;">
+                                <label>Holiday Pay/OT</label>
+                                <input type="number" id="payslip-ot-input" class="modern-input" value="0">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>ESI</label>
+                                <input type="text" id="payslip-esi-input" class="modern-input" value="N/A">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Billing Diff</label>
+                                <input type="number" id="payslip-billing-diff-input" class="modern-input" value="0">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Leave Balance</label>
+                                <input type="number" id="payslip-leave-balance" class="modern-input" value="2">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Location</label>
+                                <input type="text" id="payslip-location-input" class="modern-input" value="Sullia, Karnataka">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                            <button type="button" class="modern-btn secondary" onclick="window.backToPayslipStep1()" style="flex: 1;">Back</button>
+                            <button type="submit" class="modern-btn accent" style="flex: 2; font-weight: 700;">
+                                <i class="fas fa-file-invoice-dollar"></i> Generate Payslip
+                            </button>
+                        </div>
+                    </div>
+                </form>
                 </form>
             </div>
         </div>

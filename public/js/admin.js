@@ -2784,26 +2784,45 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/employees');
             const data = await res.json();
-            if (data.success && data.employees) {
+            
+            // Fix: Handle array response correctly
+            const employees = Array.isArray(data) ? data : (data.employees || []);
+            
+            if (employees.length > 0) {
                 select.innerHTML = '<option value="">Choose Employee...</option>';
-                data.employees.forEach(emp => {
+                employees.forEach(emp => {
                     const opt = document.createElement('option');
                     opt.value = emp.id;
                     opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
                     select.appendChild(opt);
                 });
             } else {
-                select.innerHTML = '<option value="">Failed to load employees</option>';
+                select.innerHTML = '<option value="">No staff found</option>';
             }
         } catch (err) {
             console.error('Error loading employees for payslip:', err);
             select.innerHTML = '<option value="">Error loading staff</option>';
         }
 
-        // Set default month to current
+        // Always reset to step 1
+        window.backToPayslipStep1();
+        
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('payslip-month-input').value = monthStr;
+    };
+
+    window.toPayslipStep2 = function() {
+        const emp = document.getElementById('payslip-employee-select').value;
+        const month = document.getElementById('payslip-month-input').value;
+        if (!emp || !month) return nammaModalSystem.alert('Choose employee and month first.');
+        document.getElementById('payslip-step-1').style.display = 'none';
+        document.getElementById('payslip-step-2').style.display = 'block';
+    };
+
+    window.backToPayslipStep1 = function() {
+        document.getElementById('payslip-step-1').style.display = 'block';
+        document.getElementById('payslip-step-2').style.display = 'none';
     };
 
     window.closePayslipConfig = function() {
