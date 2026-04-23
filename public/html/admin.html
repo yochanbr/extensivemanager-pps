@@ -307,6 +307,23 @@
 
                     <!-- Dashboard View -->
                     <div id="dashboard-view">
+                        <!-- DATA INTEGRITY WARNING BANNER -->
+                        <div id="data-integrity-warning" style="display: none; margin-bottom: 24px; background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 16px; padding: 20px;">
+                            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: #EF4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0; font-size: 15px; color: #991B1B; font-weight: 700;">Action Required: Incomplete Staff Profiles</h4>
+                                    <p style="margin: 4px 0 0; font-size: 13px; color: #B91C1C; line-height: 1.5;">Some employees are missing critical payroll data (Basic Salary, Bank Details, or Govt IDs). Automated payslip generation will use defaults if not fixed.</p>
+                                    <div id="incomplete-staff-list" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                        <!-- Staff tags injected here -->
+                                    </div>
+                                </div>
+                                <button onclick="this.parentElement.parentElement.style.display='none'" style="background: none; border: none; color: #991B1B; cursor: pointer; font-size: 14px; padding: 4px;"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+
                         <!-- Alert Hub: Quick Analysis -->
                         <div id="alert-hub-section" style="margin-bottom: 32px; display: none;">
                             <div class="live-status-section"
@@ -876,8 +893,8 @@
                                 onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'">
                         </div>
                         <div><label
-                                style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Base
-                                Salary</label><input type="text" id="spa-edit-aadhar-number" name="aadhar-number"
+                                style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Aadhar
+                                Number</label><input type="text" id="spa-edit-aadhar-number" name="aadhar-number"
                                 style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;"
                                 onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'">
                         </div>
@@ -1046,6 +1063,21 @@
                                 style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;box-sizing:border-box;outline:none;font-family:inherit;"
                                 onfocus="this.style.borderColor='#F95A2C'" onblur="this.style.borderColor='#E2E8F0'">
                         </div>
+
+                        <!-- Payroll Specific Fields -->
+                        <div style="grid-column: span 2; margin-top: 10px; padding: 16px; background: #FFF7ED; border-radius: 12px; border: 1.5px dashed #FDBA74; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                            <div style="grid-column: span 2; font-weight: 800; font-size: 11px; color: #C2410C; text-transform: uppercase;">Payroll & Payslip Configuration</div>
+                            <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;display:block;margin-bottom:6px;">Monthly Basic Salary</label>
+                                <input type="number" id="spa-edit-basic-salary" name="basicSalary" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;outline:none;">
+                            </div>
+                            <div><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;display:block;margin-bottom:6px;">ESI / Benefit Code</label>
+                                <input type="text" id="spa-edit-esi" name="esi" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;outline:none;">
+                            </div>
+                            <div style="grid-column: span 2;"><label style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;display:block;margin-bottom:6px;">Work Location</label>
+                                <input type="text" id="spa-edit-location" name="location" style="width:100%;padding:10px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;background:white;outline:none;">
+                            </div>
+                        </div>
+
                         <div><label
                                 style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">Bank
                                 Branch</label><input type="text" id="spa-edit-bank-branch" name="bank-branch"

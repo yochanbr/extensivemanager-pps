@@ -1600,6 +1600,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-account-number', emp.accountNumber);
                 setVal('spa-edit-account-holder-name', emp.accountHolderName);
                 setVal('spa-edit-pan-number', emp.panNumber);
+                setVal('spa-edit-basic-salary', emp.basicSalary);
+                setVal('spa-edit-esi', emp.esi);
+                setVal('spa-edit-location', emp.location);
 
                 // Full-time select
                 const fullTimeEl = document.getElementById('spa-edit-full-time');
@@ -2812,10 +2815,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('payslip-month-input').value = monthStr;
     };
 
-    window.toPayslipStep2 = function() {
-        const emp = document.getElementById('payslip-employee-select').value;
+    window.toPayslipStep2 = async function() {
+        const employeeId = document.getElementById('payslip-employee-select').value;
         const month = document.getElementById('payslip-month-input').value;
-        if (!emp || !month) return nammaModalSystem.alert('Choose employee and month first.');
+        if (!employeeId || !month) return nammaModalSystem.alert('Choose employee and month first.');
+        
+        // AUTO-PREFILL FROM EMPLOYEE DATA
+        try {
+            const res = await fetch(`/api/employees/${employeeId}`);
+            const data = await res.json();
+            const emp = data.employee || data;
+            
+            if (emp) {
+                if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
+                if (emp.esi) document.getElementById('payslip-esi-input').value = emp.esi;
+                if (emp.location) document.getElementById('payslip-location-input').value = emp.location;
+            }
+        } catch (err) {
+            console.warn('Failed to pre-fill from employee profile:', err);
+        }
+
         document.getElementById('payslip-step-1').style.display = 'none';
         document.getElementById('payslip-step-2').style.display = 'block';
     };
@@ -3223,3 +3242,45 @@ window.switchSpaView = function(targetView, activeBtn) {
     if (targetView) targetView.style.display = 'block';
     if (activeBtn) activeBtn.classList.add('active');
 };
+    // --- DATA INTEGRITY AUDIT ---
+    window.auditEmployeeData = function(employees) {
+        const warningBanner = document.getElementById('data-integrity-warning');
+        const listContainer = document.getElementById('incomplete-staff-list');
+        if (!warningBanner || !listContainer) return;
+
+        const incomplete = employees.filter(emp => {
+            // Critical fields for payslip and legal
+            const criticalFields = ['basicSalary', 'panNumber', 'aadharNumber', 'bankName', 'accountNumber'];
+            return criticalFields.some(f => !emp[f] || emp[f] === 'N/A' || emp[f] === '');
+        });
+
+        if (incomplete.length > 0) {
+            warningBanner.style.display = 'block';
+            listContainer.innerHTML = '';
+            incomplete.forEach(emp => {
+                const tag = document.createElement('span');
+                tag.style.cssText = 'background: white; border: 1px solid #FECACA; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #991B1B; display: flex; align-items: center; gap: 6px;';
+                tag.innerHTML = `<i class="fas fa-user-clock" style="color:#EF4444;"></i> ${emp.name}`;
+                tag.onclick = () => window.spaEditEmployee(emp.id); // Direct jump to edit
+                tag.style.cursor = 'pointer';
+                listContainer.appendChild(tag);
+            });
+        } else {
+            warningBanner.style.display = 'none';
+        }
+    };
+
+    // Auto-run audit when employee list is fetched
+    const originalFetchEmployeesForSPA = window.fetchEmployeesForSPA;
+    window.fetchEmployeesForSPA = async function() {
+        if (typeof originalFetchEmployeesForSPA === 'function') {
+            await originalFetchEmployeesForSPA();
+        }
+        
+        // Re-fetch current state for audit if not globally available
+        try {
+            const res = await fetch('/api/employees');
+            const employees = await res.json();
+            window.auditEmployeeData(Array.isArray(employees) ? employees : []);
+        } catch(e) {}
+    };
