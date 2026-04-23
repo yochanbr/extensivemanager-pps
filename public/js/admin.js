@@ -3051,7 +3051,7 @@ window.loadShiftSummaries = async function (date = null) {
                                 <span>${report.date}</span>
                             </div>
                         </div>
-                        <span class="shift-badge shift-badge-id">#${report.id.split('_').pop()}</span>
+                        <span class="shift-badge shift-badge-id">#${report.shift_id || 'N/A'}</span>
                     </div>
                     <div class="shift-card-metrics">
                         <div class="shift-metric">
@@ -3059,17 +3059,17 @@ window.loadShiftSummaries = async function (date = null) {
                             <strong>${report.employeeId}</strong>
                         </div>
                         <div class="shift-metric">
-                            <span>Snapshot</span>
-                            <strong>${report.hasImage ? 'CAPTURED' : 'NONE'}</strong>
+                            <span>Report Type</span>
+                            <strong>TEXT / CLOUD</strong>
                         </div>
                         <div class="shift-metric">
                             <span>Status</span>
-                            <strong style="color: #10b981;">VERIFIED</strong>
+                            <strong style="color: #10b981;">ENCRYPTED</strong>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <span style="font-size: 11px; color: #94a3b8;"><i class="fas fa-cloud"></i> Cloud Storage</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--primary-accent);">View Details <i class="fas fa-arrow-right"></i></span>
+                        <span style="font-size: 11px; color: #94a3b8;"><i class="fas fa-shield-alt"></i> Secure Decryption</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--primary-accent);">Open Report <i class="fas fa-arrow-right"></i></span>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -3097,13 +3097,13 @@ window.showShiftReportDetails = async function (reportId) {
     if (!modal) return;
 
     // Reset and Show Modal
-    textArea.innerHTML = 'Decrypting report data...';
-    imageArea.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+    textArea.innerHTML = 'Decrypting secure report data...';
+    if (imageArea) imageArea.style.display = 'none'; // Hide image area
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 
     try {
-        // 1. Fetch Text Report
+        // Fetch Text Report
         const textResponse = await fetch(`/api/esr-reports/${reportId}`);
         const textData = await textResponse.json();
 
@@ -3111,23 +3111,11 @@ window.showShiftReportDetails = async function (reportId) {
             textArea.textContent = textData.report;
             subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
         } else {
-            textArea.textContent = 'Error loading text report.';
+            textArea.textContent = 'Error loading cloud report or no data found.';
         }
-
-        // 2. Load Snapshot
-        const img = new Image();
-        img.src = `/api/shift-summary/${reportId}/image`;
-        img.onload = () => {
-            imageArea.innerHTML = '';
-            imageArea.appendChild(img);
-        };
-        img.onerror = () => {
-            imageArea.innerHTML = '<span style="color: #64748b;">No snapshot image available.</span>';
-        };
-
     } catch (error) {
         console.error('Error showing report details:', error);
-        textArea.textContent = 'Critical error during decryption.';
+        textArea.textContent = 'Critical error during decryption. Please check network.';
     }
 };
 

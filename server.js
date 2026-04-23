@@ -2388,13 +2388,13 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
  * Endpoint: Bulk Edit Logs
  */
 /**
- * Endpoint: Shift Summary (ESR JPGs)
- * Returns snapshots of end-shift reports
+ * Endpoint: Shift Summary (Text Reports)
+ * Returns metadata of end-shift reports
  */
 app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
     try {
         const { date } = req.query;
-        let query = db.esr_jpgs();
+        let query = db.esr_reports();
         if (date) {
             query = query.where('date', '==', date);
         }
@@ -2406,7 +2406,7 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
                 employeeId: data.employee_id,
                 employeeName: data.employeeName || 'Unknown',
                 date: data.date,
-                hasImage: !!(data.jpg_data_encrypted || data.jpgData)
+                shift_id: data.shift_id
             };
         });
         res.json({ success: true, reports });
