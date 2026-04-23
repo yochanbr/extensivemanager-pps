@@ -1445,14 +1445,6 @@ app.post('/api/verify-employee-otp', async (req, res) => {
     // Generate and save report using consolidated helper
     await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
 
-    const mailOptions = {
-        from: emailConfig.from,
-        to: decrypt(employee.email),
-        subject: 'Extensive Manager - Shift End Report',
-        text: `Hello ${employeeName},\n\nYour shift has ended and your report has been generated in the cloud.\n\nRegards,\nPinpoint Startups`
-    };
-    try { await emailConfig.transporter.sendMail(mailOptions); } catch (e) { console.error('Mail error:', e); }
-
     return res.json({ success: true, message: 'OTP verified. Shift ended and report generated.' });
 });
 
@@ -1507,19 +1499,6 @@ app.post('/api/end-employee-shift', async (req, res) => {
     const shiftStartTime = counter_selections[lastShiftIndex].shiftStartTime;
     const shiftId = counter_selections[lastShiftIndex].shiftId;
     await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
-
-    // Compose email content for shift end report
-    const emailText = `Hello ${employeeName},\n\nYour shift has ended successfully. Your report has been generated in the cloud.\n\nRegards,\nPinpoint Startups`;
-
-    // Send email with nodemailer
-    const mailOptions = {
-        from: emailConfig.from,
-        to: decrypt(employeeRecord.email),
-        subject: 'Pinpoint Startups - Shift End Report',
-        text: emailText
-    };
-
-    try { await emailConfig.transporter.sendMail(mailOptions); } catch (err) { console.error('Mail error:', err); }
 
     return res.json({ success: true, message: 'Shift ended and cloud report generated.' });
 });
@@ -2609,31 +2588,7 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
             created_at: new Date().toISOString()
         });
 
-        // 2. Generate and save Snapshot (JPG) to Firestore
-        try {
-            if (!puppeteer) {
-                try { puppeteer = require('puppeteer'); } catch (e) { }
-            }
-            if (puppeteer) {
-                const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
-                const page = await browser.newPage();
-                await page.setViewport({ width: 1200, height: 800 });
-                await page.goto(`http://localhost:${port}/end_shift_report.html?employeeId=${employeeId}&date=${date}&shiftId=${shiftId}`, { waitUntil: 'networkidle2' });
-                const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'jpeg', quality: 85 });
-                await browser.close();
-
-                await db.esr_jpgs().doc(`${employeeId}_${date}_${shiftId}`).set({
-                    employee_id: employeeId,
-                    employeeName,
-                    date,
-                    shift_id: shiftId,
-                    jpg_data_encrypted: encrypt(screenshotBuffer.toString('base64')),
-                    created_at: new Date().toISOString()
-                });
-            }
-        } catch (jpgError) { console.error('ESR JPG error:', jpgError); }
-
-        console.log(`✅ Cloud ESR generated for ${employeeName} [${shiftId}]`);
+        console.log(`✅ Cloud Text ESR generated for ${employeeName} [${shiftId}]`);
     } catch (error) {
         console.error('❌ ESR Generation failed:', error);
     }
