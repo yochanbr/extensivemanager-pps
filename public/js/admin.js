@@ -1031,6 +1031,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- ALERT HUB ENGINE (REFINED FOR APPROVALS) ---
             const alerts = [];
+            
+            // 1. Scan for employees with missing shift configurations
+            employees.forEach(emp => {
+                if (emp.isActive !== false && (!emp['start-time'] || !emp['end-time'])) {
+                    alerts.push({
+                        id: `missing-shift-${emp.id}`,
+                        type: 'config_error',
+                        icon: 'tools',
+                        title: 'Setup Required',
+                        user: emp.name,
+                        desc: 'Shift times not set (Prevents check-in)',
+                        color: '#f43f5e',
+                        isActionable: false
+                    });
+                }
+            });
             sessions.forEach(session => {
                 if (session.approvalStatus === 'pending_approval') {
                     const type = session.requiresApproval || 'DISCREPANCY';
@@ -2470,8 +2486,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc || a.title}</div>
                 </div>
                 <div style="display: flex; gap: 4px;">
-                    <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
-                    <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                    ${a.isActionable ? `
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                    ` : `
+                        <span style="font-size: 9px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase;">Fix in Profile</span>
+                    `}
                 </div>
             </div>
         `).join('');

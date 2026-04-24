@@ -2179,12 +2179,22 @@ app.post('/api/attendance/scan', async (req, res) => {
                 if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
 
                 // --- DYNAMIC SHIFT DETECTION ---
+                const empStart = emp['start-time'];
+                const empEnd = emp['end-time'];
+
+                if (!empStart || !empEnd) {
+                    await logAttendance(empId, empName, 'BLOCKED_NO_SHIFT', timestamp);
+                    return { 
+                        success: false, 
+                        message: 'Access Denied: Shift timings not configured. Please contact the administrator.', 
+                        code: 'SHIFT_NOT_SET' 
+                    };
+                }
+
                 let earlyExtraMinutes = 0;
                 let lateMinutes = 0;
                 let approvalStatus = 'approved';
                 let requiresApproval = null;
-
-                const empStart = emp['start-time']; // From profile, e.g. "09:00"
                 if (empStart) {
                     const [h, m] = empStart.split(':').map(Number);
                     const shiftStart = new Date(now);
