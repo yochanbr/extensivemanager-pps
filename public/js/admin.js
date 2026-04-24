@@ -3102,7 +3102,6 @@ window.showShiftReportDetails = async function (reportId) {
 
     // Reset and Show Modal
     textArea.innerHTML = 'Decrypting secure report data...';
-    if (imageArea) imageArea.style.display = 'none'; // Hide image area
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 

@@ -2696,10 +2696,9 @@ body {
     gap: 8px;
 }
 
-.esr-detail-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
+.esr-detail-single-column {
+    display: block;
+    width: 100%;
     margin-top: 24px;
 }
 
