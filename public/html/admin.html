@@ -347,8 +347,8 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-grid" style="display: block;">
-                            <div class="live-status-section" style="max-width: 700px; margin: 0;">
+                        <div class="dashboard-grid" style="display: flex; gap: 24px; align-items: flex-start;">
+                            <div class="live-status-section" style="width: 700px; flex-shrink: 0;">
                                 <div class="section-header">
                                     <h3>Live Attendance Monitor</h3>
                                     <div style="display: flex; gap: 10px;">
@@ -374,6 +374,19 @@
                                         </thead>
                                         <tbody id="live-status-tbody"></tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Action Required Card -->
+                            <div class="live-status-section" style="flex: 1; min-width: 300px; border-color: rgba(249, 90, 44, 0.2);">
+                                <div class="section-header">
+                                    <h3 style="color: #F95A2C;"><i class="fas fa-exclamation-circle"></i> Action Required</h3>
+                                </div>
+                                <div id="action-required-list" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+                                    <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
+                                        <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                                        <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
