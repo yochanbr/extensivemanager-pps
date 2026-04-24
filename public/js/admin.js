@@ -3239,14 +3239,14 @@ window.printCurrentEsr = function () {
                         transform: translate(-50%, -50%) rotate(-45deg);
                         font-size: 80px;
                         font-weight: 900;
-                        color: rgba(200, 200, 200, 0.15);
-                        z-index: -1;
+                        color: rgba(180, 180, 180, 0.12);
+                        z-index: 9999;
                         white-space: nowrap;
                         pointer-events: none;
                         user-select: none;
                         text-transform: uppercase;
                     }
-                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; position: relative; z-index: 1; }
+                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; position: relative; }
                     .esr-rendered-section h4 { margin: 0 0 16px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
                     .esr-grid-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
                     .esr-detail-item { display: flex; justify-content: space-between; padding: 4px 0; }
@@ -3267,7 +3267,7 @@ window.printCurrentEsr = function () {
             </head>
             <body>
                 <div class="watermark">Pinpointstartups</div>
-                <h1 style="text-align:center; font-size:24px; margin-bottom:40px; position: relative; z-index: 1;">End Shift Report Summary</h1>
+                <h1 style="text-align:center; font-size:24px; margin-bottom:40px; position: relative;">End Shift Report Summary</h1>
                 ${reportHtml}
             </body>
         </html>
