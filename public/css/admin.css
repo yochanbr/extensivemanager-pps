@@ -2703,114 +2703,150 @@ body {
 }
 
 .esr-text-report {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-  .esr-rendered-container {
-    padding: 2px;
-    font-family: 'Inter', sans-serif;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.esr-rendered-container {
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
 }
 
 .esr-rendered-section {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .esr-rendered-section h4 {
-    margin: 0 0 16px 0;
-    font-size: 13px;
-    color: #64748b;
+    margin: 0 0 20px 0;
+    font-size: 12px;
+    color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 700;
+    letter-spacing: 0.12em;
+    font-weight: 800;
 }
 
 .esr-grid-details {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    font-size: 14px;
+    column-gap: 40px;
+    row-gap: 16px;
 }
 
 .esr-detail-item {
     display: flex;
     justify-content: space-between;
-    padding: 4px 0;
+    align-items: center;
+    border-bottom: 1px solid #f8fafc;
+    padding-bottom: 8px;
 }
 
 .esr-detail-label {
     color: #64748b;
+    font-size: 13px;
     font-weight: 500;
 }
 
 .esr-detail-value {
-    color: #1e293b;
+    color: #0f172a;
+    font-size: 14px;
     font-weight: 700;
 }
 
 .esr-grid-collections {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 16px;
 }
 
 .esr-col-card {
-    padding: 16px 12px;
-    border-radius: 14px;
+    padding: 20px 12px;
+    border-radius: 16px;
     text-align: center;
     border: 1px solid transparent;
+    transition: transform 0.2s;
+}
+
+.esr-col-card:hover {
+    transform: translateY(-2px);
 }
 
 .esr-col-label {
-    font-size: 11px;
-    font-weight: 700;
-    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-bottom: 8px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
 }
 
 .esr-col-value {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 800;
 }
 
-.esr-col-upi-pinelab { background: #fffbeb; border-color: #fef3c7; color: #92400e; }
-.esr-col-card-pinelab { background: #eff6ff; border-color: #dbeafe; color: #1e3a8a; }
-.esr-col-cash { background: #f0fdf4; border-color: #dcfce7; color: #14532d; }
-.esr-col-upi-paytm { background: #f5f3ff; border-color: #ede9fe; color: #4c1d95; }
-.esr-col-card-paytm { background: #fef2f2; border-color: #fee2e2; color: #7f1d1d; }
-.esr-col-retail { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+/* Precise Colors from image 2 */
+.esr-col-upi-pinelab { background: #FFFBF0; border-color: #FEF3C7; color: #B45309; }
+.esr-col-card-pinelab { background: #EBF8FF; border-color: #BEE3F8; color: #2B6CB0; }
+.esr-col-cash { background: #F0FFF4; border-color: #C6F6D5; color: #2F855A; }
+.esr-col-upi-paytm { background: #F5F3FF; border-color: #E9D5FF; color: #6B46C1; }
+.esr-col-card-paytm { background: #FFF5F5; border-color: #FED7D7; color: #C53030; }
+.esr-col-retail { background: #F7FAFC; border-color: #E2E8F0; color: #2D3748; }
 
 .esr-metrics-row {
-    background: #f1f5f9;
-    border-radius: 16px;
-    padding: 16px;
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 24px;
     display: flex;
     justify-content: space-around;
-    text-align: center;
-    margin-top: 12px;
+    align-items: center;
+    border: 1px solid #f1f5f9;
+}
+
+.esr-metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
 .esr-metric-item .m-val {
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 2px;
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
 }
 
 .esr-metric-item .m-lbl {
     font-size: 11px;
     color: #64748b;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .m-green { color: #10b981; }
 .m-blue { color: #3b82f6; }
 .m-red { color: #ef4444; }
+
+.esr-security-footer {
+    text-align: center;
+    padding: 20px 0 10px 0;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
 
 .esr-image-snapshot {
     border: 1px solid #e2e8f0;

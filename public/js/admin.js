@@ -3150,7 +3150,7 @@ window.renderBeautifulEsr = function(text, metadata) {
     return `
         <div class="esr-rendered-container">
             <div class="esr-rendered-section">
-                <h4>Shift Details</h4>
+                <h4><i class="fas fa-info-circle"></i> Shift Details</h4>
                 <div class="esr-grid-details">
                     <div class="esr-detail-item"><span class="esr-detail-label">Employee:</span> <span class="esr-detail-value">${details.name}</span></div>
                     <div class="esr-detail-item"><span class="esr-detail-label">Shift ID:</span> <span class="esr-detail-value">#${details.id}</span></div>
@@ -3159,8 +3159,8 @@ window.renderBeautifulEsr = function(text, metadata) {
                 </div>
             </div>
 
-            <div class="esr-rendered-section" style="background: white;">
-                <h4>Financial Summary</h4>
+            <div class="esr-rendered-section">
+                <h4><i class="fas fa-wallet"></i> Financial Summary</h4>
                 <div class="esr-grid-collections">
                     <div class="esr-col-card esr-col-upi-pinelab">
                         <div class="esr-col-label">UPI PINELAB</div>
@@ -3187,8 +3187,10 @@ window.renderBeautifulEsr = function(text, metadata) {
                         <div class="esr-col-value">₹${details.retail}</div>
                     </div>
                 </div>
+            </div>
 
-                <h4>Activity Audit</h4>
+            <div class="esr-rendered-section" style="margin-bottom: 0;">
+                <h4><i class="fas fa-chart-line"></i> Activity Audit</h4>
                 <div class="esr-metrics-row">
                     <div class="esr-metric-item">
                         <div class="m-val m-green">${details.added}</div>
@@ -3205,7 +3207,7 @@ window.renderBeautifulEsr = function(text, metadata) {
                 </div>
             </div>
             
-            <div style="text-align:center; padding:10px; color:#cbd5e1; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
+            <div class="esr-security-footer">
                 <i class="fas fa-shield-alt"></i> Decrypted Security Payload
             </div>
         </div>
