@@ -2178,11 +2178,29 @@ app.post('/api/attendance/scan', async (req, res) => {
             if (action === 'in') {
                 if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
 
-                // Discrepancy Detection: Late Arrival (Threshold: 10:10 AM)
-                const lateThreshold = new Date(now);
-                lateThreshold.setHours(10, 10, 0, 0);
+                // --- DISCREPANCY DETECTION (NEW 9AM-10PM SHIFT LOGIC) ---
+                const shiftStart = new Date(now);
+                shiftStart.setHours(9, 0, 0, 0);
 
-                const isLate = now > lateThreshold;
+                let isEarly = now < shiftStart;
+                let isLate = now > shiftStart;
+                
+                let earlyExtraMinutes = 0;
+                let lateMinutes = 0;
+                let approvalStatus = 'approved';
+                let requiresApproval = null;
+
+                if (isEarly) {
+                    earlyExtraMinutes = Math.floor((shiftStart - now) / 60000);
+                    approvalStatus = 'pending_approval';
+                    requiresApproval = 'EARLY_ARRIVAL';
+                } else if (isLate) {
+                    lateMinutes = Math.floor((now - shiftStart) / 60000);
+                    // System records late minutes immediately
+                    // If you want late arrival to ALWAYS need approval, keep the line below:
+                    approvalStatus = 'pending_approval';
+                    requiresApproval = 'LATE_ARRIVAL';
+                }
 
                 const newSession = {
                     employeeId: empId,
@@ -2194,11 +2212,17 @@ app.post('/api/attendance/scan', async (req, res) => {
                     breakHistory: [],
                     totalBreakMinutes: 0,
                     status: 'active',
-                    approvalStatus: isLate ? 'pending_approval' : 'approved',
-                    requiresApproval: isLate ? 'LATE_ARRIVAL' : null
+                    earlyExtraMinutes,
+                    lateMinutes,
+                    overtimeMinutes: 0,
+                    approvedExtraMinutes: 0,
+                    approvalStatus,
+                    requiresApproval,
+                    actualWorkMinutes: 0, // Will be updated on checkout
+                    comment: req.body.comment || ''
                 };
                 await db.daily_sessions().add(newSession);
-                await logAttendance(empId, empName, isLate ? 'CLOCK_IN_PENDING' : 'CLOCK_IN', timestamp);
+                await logAttendance(empId, empName, requiresApproval || 'CLOCK_IN', timestamp);
                 return {
                     success: true,
                     message: isLate ? `Welcome ${empName}. Tagged as Late Arrival (Pending Approval).` : `Welcome ${empName}!`,
@@ -2230,28 +2254,29 @@ app.post('/api/attendance/scan', async (req, res) => {
             }
 
             if (action === 'out') {
-                // Discrepancy Detection: Early Exit or Overtime
-                const earlyThreshold = new Date(now);
-                earlyThreshold.setHours(19, 0, 0, 0); // 7:00 PM
+                // --- DISCREPANCY DETECTION (OVERTIME / EARLY EXIT) ---
+                const shiftEnd = new Date(now);
+                shiftEnd.setHours(22, 0, 0, 0); // 10:00 PM
 
-                const overtimeThreshold = new Date(now);
-                overtimeThreshold.setHours(19, 15, 0, 0); // 7:15 PM (Grace period)
-
+                let overtimeMinutes = 0;
                 let approvalStatus = session.approvalStatus || 'approved';
                 let requiresApproval = session.requiresApproval || null;
 
-                if (now < earlyThreshold) {
-                    approvalStatus = 'pending_approval';
-                    requiresApproval = 'EARLY_EXIT';
-                } else if (now > overtimeThreshold) {
+                if (now > shiftEnd) {
+                    overtimeMinutes = Math.floor((now - shiftEnd) / 60000);
                     approvalStatus = 'pending_approval';
                     requiresApproval = 'OVERTIME';
                 }
+
+                const actualWorkMs = (new Date(timestamp) - new Date(session.checkIn)) - ((session.totalBreakMinutes || 0) * 60000);
+                const actualWorkMinutes = Math.floor(actualWorkMs / 60000);
 
                 await session.ref.update({
                     checkOut: timestamp,
                     status: 'completed',
                     onBreak: false,
+                    overtimeMinutes,
+                    actualWorkMinutes,
                     approvalStatus,
                     requiresApproval
                 });
@@ -2381,11 +2406,24 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
         if (!doc.exists) return res.status(404).json({ success: false, message: 'Session not found.' });
 
         const session = doc.data();
-        const update = {
-            approvalStatus: action.toLowerCase() === 'approve' ? 'approved' : 'declined',
+        const isApproved = action.toLowerCase() === 'approve';
+        
+        let update = {
+            approvalStatus: isApproved ? 'approved' : 'declined',
             reviewedAt: new Date().toISOString(),
             reviewedBy: req.admin.username
         };
+
+        if (isApproved) {
+            // Transfer pending minutes to approved fields
+            const early = session.earlyExtraMinutes || 0;
+            const ot = session.overtimeMinutes || 0;
+            update.approvedExtraMinutes = early + ot;
+            // If it was late, we can mark late as 'approved' (meaning excused)
+            if (session.requiresApproval === 'LATE_ARRIVAL') {
+                update.approvedLateMinutes = session.lateMinutes || 0;
+            }
+        }
 
         await sessionRef.update(update);
 

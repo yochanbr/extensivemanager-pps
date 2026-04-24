@@ -1042,15 +1042,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         title = 'Late Arrival';
                         color = '#EF4444';
                         icon = 'clock';
-                    } else if (type === 'EARLY_EXIT') {
-                        title = 'Early Departure';
-                        color = '#F97316';
-                        icon = 'running';
+                        desc = `${session.lateMinutes || 0}m Late`;
+                    } else if (type === 'EARLY_ARRIVAL') {
+                        title = 'Early Extra Time';
+                        color = '#10B981';
+                        icon = 'hourglass-start';
+                        desc = `${session.earlyExtraMinutes || 0}m Early Extra`;
                     } else if (type === 'OVERTIME') {
                         title = 'Overtime Recorded';
                         color = '#8B5CF6';
                         icon = 'stopwatch';
+                        desc = `${session.overtimeMinutes || 0}m Overtime`;
                     }
+
+                    if (session.comment) desc += ` — "${session.comment}"`;
 
                     alerts.push({
                         id: session.id,
@@ -1058,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         icon: icon,
                         title: title,
                         user: session.employeeName,
-                        desc: type.replace('_', ' '),
+                        desc: desc,
                         color: color,
                         isActionable: true
                     });
