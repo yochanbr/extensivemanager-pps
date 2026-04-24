@@ -1423,27 +1423,24 @@ app.post('/api/verify-employee-otp', async (req, res) => {
     let employee = doc.data();
 
     let lastShiftIndex = -1;
-    if (employee.counter_selections) {
-        const today = new Date().toISOString().split('T')[0];
-        lastShiftIndex = employee.counter_selections.reduce((lastIndex, selection, currentIndex) => {
-            if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) return currentIndex;
-            return lastIndex;
-        }, -1);
-
-        if (lastShiftIndex !== -1) {
-            employee.counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
-        }
+    if (employee.counter_selections && employee.counter_selections.length > 0) {
+        // Find the most recent shift (last one in the array)
+        lastShiftIndex = employee.counter_selections.length - 1;
+        employee.counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
     }
+
     await doc.ref.update({ shiftEnded: true, counter_selections: employee.counter_selections || [] });
 
     const employeeName = employee.name || 'Employee';
     const date = endShiftTime.split('T')[0];
-    const shift = employee.counter_selections[lastShiftIndex];
-    const shiftStartTime = shift.shiftStartTime;
-    const shiftId = shift.shiftId;
-
-    // Generate and save report using consolidated helper
-    await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
+    
+    // Safety check: ensure shift data exists before generating ESR
+    if (lastShiftIndex !== -1) {
+        const shift = employee.counter_selections[lastShiftIndex];
+        const shiftStartTime = shift.shiftStartTime;
+        const shiftId = shift.shiftId || `manual_${Date.now()}`;
+        await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
+    }
 
     return res.json({ success: true, message: 'OTP verified. Shift ended and report generated.' });
 });
@@ -1473,16 +1470,10 @@ app.post('/api/end-employee-shift', async (req, res) => {
     const endShiftTime = new Date().toISOString();
     let counter_selections = employeeRecord.counter_selections || [];
     let lastShiftIndex = -1;
-    const today = new Date().toISOString().split('T')[0];
 
-    lastShiftIndex = counter_selections.reduce((lastIndex, selection, currentIndex) => {
-        if (selection.shiftStartTime && selection.shiftStartTime.startsWith(today)) {
-            return currentIndex;
-        }
-        return lastIndex;
-    }, -1);
-
-    if (lastShiftIndex !== -1) {
+    if (counter_selections.length > 0) {
+        // Find the most recent shift (last one in the array)
+        lastShiftIndex = counter_selections.length - 1;
         counter_selections[lastShiftIndex].shiftEndTime = endShiftTime;
     }
 
@@ -1491,14 +1482,15 @@ app.post('/api/end-employee-shift', async (req, res) => {
         counter_selections
     });
 
-    const employeeForShiftEnd = { ...employeeRecord, counter_selections };
-    // Use the employee name fetched earlier for report
     const employeeName = employeeRecord.name || 'Employee';
-
-    // Generate and save report using consolidated helper (Firestore)
-    const shiftStartTime = counter_selections[lastShiftIndex].shiftStartTime;
-    const shiftId = counter_selections[lastShiftIndex].shiftId;
-    await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
+    
+    // Safety check: ensure shift data exists before generating ESR
+    if (lastShiftIndex !== -1) {
+        const shift = counter_selections[lastShiftIndex];
+        const shiftStartTime = shift.shiftStartTime;
+        const shiftId = shift.shiftId || `manual_${Date.now()}`;
+        await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
+    }
 
     return res.json({ success: true, message: 'Shift ended and cloud report generated.' });
 });
