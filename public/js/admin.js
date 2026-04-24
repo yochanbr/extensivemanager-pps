@@ -2436,56 +2436,78 @@ document.addEventListener('DOMContentLoaded', () => {
         setTxt('dash-working', currentlyWorking.size);
         setTxt('dash-break', onBreak.size);
 
-        // Attendance Alerts logic
-        const attAlerts = [];
+        // Action Required Alerts logic
+        const actionsPending = [];
         const SHIFT_START_HOUR = 9;
+        const FULL_DAY_MS = 8 * 60 * 60 * 1000;
+
         Object.keys(sessionsMap).forEach(empId => {
             const s = sessionsMap[empId];
+            const empName = logs.find(l => l.employeeId === empId)?.employeeName || 'Staff';
+
+            // 1. Late Arrival Detection (Only for currently active sessions)
             if (s.currentCheckIn) {
                 const checkInDate = new Date(s.currentCheckIn);
                 const shiftStart = new Date(checkInDate);
                 shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
                 const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
                 if (lateMin > 10) {
-                    attAlerts.push({
-                        user: logs.find(l => l.employeeId === empId)?.employeeName || 'Staff',
+                    actionsPending.push({
+                        user: empName,
                         desc: `Late Arrival: ${lateMin}m late`,
-                        color: '#EF4444', icon: 'clock'
+                        color: '#EF4444', icon: 'clock',
+                        type: 'LATE'
+                    });
+                }
+            }
+
+            // 2. Early Clock-out Detection (For finished sessions)
+            if (!s.currentCheckIn) {
+                const finishedWork = s.totalWorkMs - s.totalBreakMs;
+                if (finishedWork > 60000 && finishedWork < FULL_DAY_MS) { // More than 1 min but less than 8h
+                    const shortMin = Math.round((FULL_DAY_MS - finishedWork) / 60000);
+                    actionsPending.push({
+                        user: empName,
+                        desc: `Early Departure: ${shortMin}m short`,
+                        color: '#F95A2C', icon: 'door-open',
+                        type: 'EARLY'
                     });
                 }
             }
         });
 
-        window.dashboardAlerts.attendance = attAlerts;
-        window.renderAlertHub();
+        window.dashboardAlerts.attendance = actionsPending;
+        window.renderActionRequired();
     };
 
-    window.renderAlertHub = function () {
-        const section = document.getElementById('alert-hub-section');
-        const container = document.getElementById('alert-list-container');
-        const badge = document.getElementById('alert-count-badge');
-        if (!section || !container) return;
+    window.renderActionRequired = function () {
+        const listContainer = document.getElementById('action-required-list');
+        if (!listContainer) return;
 
-        const allAlerts = [...window.dashboardAlerts.attendance, ...window.dashboardAlerts.integrity];
+        const allActions = [...window.dashboardAlerts.attendance];
 
-        if (allAlerts.length === 0) {
-            section.style.display = 'none';
+        if (allActions.length === 0) {
+            listContainer.innerHTML = `
+                <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
+                    <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5; color: #10B981;"></i>
+                    <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
+                </div>`;
             return;
         }
 
-        section.style.display = 'block';
-        badge.textContent = `${allAlerts.length} Issue${allAlerts.length > 1 ? 's' : ''}`;
-
-        container.innerHTML = allAlerts.map(a => `
-            <div style="background: white; border: 1px solid ${a.color}22; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+        listContainer.innerHTML = allActions.map(a => `
+            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
                 <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                    <i class="fas fa-${a.icon || 'info-circle'}"></i>
+                    <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
                 </div>
                 <div style="flex: 1;">
                     <div style="font-weight: 700; font-size: 13px; color: #1E293B;">${a.user}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">${a.desc}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc}</div>
                 </div>
-                ${a.action ? `<button onclick="${a.action}" style="background: none; border: none; color: ${a.color}; cursor: pointer; padding: 8px;"><i class="fas fa-chevron-right"></i></button>` : ''}
+                <div style="display: flex; gap: 4px;">
+                    <button class="action-btn" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
+                    <button class="action-btn" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                </div>
             </div>
         `).join('');
     };
