@@ -3051,7 +3051,7 @@ window.loadShiftSummaries = async function (date = null) {
                                 <span>${report.date}</span>
                             </div>
                         </div>
-                        <span class="shift-badge shift-badge-id">#${report.shift_id || 'N/A'}</span>
+                        <span class="shift-badge-id">#${report.shift_id || 'N/A'}</span>
                     </div>
                     <div class="shift-card-metrics">
                         <div class="shift-metric">
@@ -3059,17 +3059,21 @@ window.loadShiftSummaries = async function (date = null) {
                             <strong>${report.employeeId}</strong>
                         </div>
                         <div class="shift-metric">
-                            <span>Report Type</span>
+                            <span>Type</span>
                             <strong>TEXT / CLOUD</strong>
                         </div>
                         <div class="shift-metric">
                             <span>Status</span>
-                            <strong style="color: #10b981;">ENCRYPTED</strong>
+                            <strong class="shift-status-encrypted"><i class="fas fa-lock"></i> SECURE</strong>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <span style="font-size: 11px; color: #94a3b8;"><i class="fas fa-shield-alt"></i> Secure Decryption</span>
-                        <span style="font-size: 12px; font-weight: 600; color: var(--primary-accent);">Open Report <i class="fas fa-arrow-right"></i></span>
+                    <div class="shift-card-footer">
+                        <div class="secure-tag">
+                            <i class="fas fa-shield-alt"></i> 256-bit AES
+                        </div>
+                        <div class="open-link">
+                            Open Report <i class="fas fa-arrow-right"></i>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);

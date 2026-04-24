@@ -2514,30 +2514,33 @@ body {
 /* --- Shift Summary Dashboard --- */
 .shift-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    margin-top: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
 }
 
 .shift-summary-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 24px;
     padding: 24px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .shift-summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.05);
-    background: white;
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--primary-accent);
 }
 
 .shift-summary-card::before {
@@ -2545,71 +2548,144 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 6px;
     height: 100%;
-    background: var(--primary-accent);
+    background: linear-gradient(to bottom, var(--primary-accent), #f97316);
+    opacity: 0.8;
 }
 
 .shift-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .shift-card-user {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .shift-user-avatar {
-    width: 40px;
-    height: 40px;
-    background: var(--primary-accent);
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary-accent), #f97316);
     color: white;
-    border-radius: 12px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 18px;
     font-weight: 800;
+    box-shadow: 0 8px 16px rgba(249, 90, 44, 0.2);
 }
 
 .shift-user-info h4 {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     margin: 0;
-    color: var(--primary-text);
+    color: #1e293b;
+    letter-spacing: -0.01em;
 }
 
 .shift-user-info span {
     font-size: 12px;
-    color: var(--secondary-text);
+    color: #64748b;
+    font-weight: 500;
+    display: block;
+    margin-top: 2px;
+}
+
+.shift-badge-id {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid #e2e8f0;
 }
 
 .shift-card-metrics {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 12px;
 }
 
 .shift-metric {
-    background: rgba(248, 250, 252, 0.8);
-    padding: 10px;
-    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.5);
+    padding: 12px 8px;
+    border-radius: 16px;
     text-align: center;
-    border: 1px solid #f1f5f9;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    transition: all 0.3s ease;
+}
+
+.shift-summary-card:hover .shift-metric {
+    background: white;
+    border-color: #e2e8f0;
 }
 
 .shift-metric span {
     display: block;
     font-size: 10px;
-    color: var(--secondary-text);
-    margin-bottom: 2px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
 }
 
 .shift-metric strong {
+    font-size: 12px;
+    color: #334155;
+    font-weight: 700;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shift-status-encrypted {
+    color: #10b981 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.shift-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.shift-card-footer .secure-tag {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.shift-card-footer .open-link {
     font-size: 13px;
-    color: var(--primary-text);
+    font-weight: 700;
+    color: var(--primary-accent);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: gap 0.2s;
+}
+
+.shift-summary-card:hover .open-link {
+    gap: 10px;
 }
 
 /* ESR Detailed View Modal */
