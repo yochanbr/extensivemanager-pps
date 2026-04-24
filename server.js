@@ -1808,43 +1808,47 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
 // --- DIAGNOSTICS & SUMMARY APIS ---
 
 /**
- * Endpoint: Get Today's Report Summary (Aggregate Sales/Collection)
+ * Internal Helper: Get Today's Report Summary (Aggregate Sales/Collection)
  */
+async function internalGetReportSummary(date) {
+    const snapshot = await db.employees().get();
+    let totals = { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
+
+    snapshot.forEach(doc => {
+        const emp = doc.data();
+        const processGroup = (arr, modeField, amountField) => {
+            if (arr && Array.isArray(arr)) {
+                arr.forEach(item => {
+                    if (item && item.timestamp && item.timestamp.split('T')[0] === date) {
+                        const mode = (item[modeField] || '').toLowerCase();
+                        const amount = parseFloat(item[amountField]) || 0;
+                        if (mode.includes('upi pinelab')) totals.upiPinelab += amount;
+                        else if (mode.includes('card pinelab')) totals.cardPinelab += amount;
+                        else if (mode.includes('upi paytm')) totals.upiPaytm += amount;
+                        else if (mode.includes('card paytm')) totals.cardPaytm += amount;
+                        else if (mode.includes('cash')) totals.cash += amount;
+                    }
+                });
+            }
+        };
+        processGroup(emp.extra, 'modeOfPay', 'extraAmount');
+        processGroup(emp.bill_paid, 'modeOfPayment', 'amount');
+        if (emp.retail_credit && Array.isArray(emp.retail_credit)) {
+            emp.retail_credit.forEach(item => {
+                if (item.timestamp && item.timestamp.split('T')[0] === date) {
+                    totals.retailCredit += (parseFloat(item.amount) || 0);
+                }
+            });
+        }
+    });
+    return totals;
+}
+
 app.get('/api/todays-report-summary', async (req, res) => {
     try {
         const { date } = req.query;
         if (!date) return res.status(400).json({ success: false, message: 'Date is required.' });
-
-        const snapshot = await db.employees().get();
-        let totals = { upiPinelab: 0, cardPinelab: 0, upiPaytm: 0, cardPaytm: 0, cash: 0, retailCredit: 0 };
-
-        snapshot.forEach(doc => {
-            const emp = doc.data();
-            const processGroup = (arr, modeField, amountField) => {
-                if (arr && Array.isArray(arr)) {
-                    arr.forEach(item => {
-                        if (item && item.timestamp && item.timestamp.split('T')[0] === date) {
-                            const mode = (item[modeField] || '').toLowerCase();
-                            const amount = parseFloat(item[amountField]) || 0;
-                            if (mode.includes('upi pinelab')) totals.upiPinelab += amount;
-                            else if (mode.includes('card pinelab')) totals.cardPinelab += amount;
-                            else if (mode.includes('upi paytm')) totals.upiPaytm += amount;
-                            else if (mode.includes('card paytm')) totals.cardPaytm += amount;
-                            else if (mode.includes('cash')) totals.cash += amount;
-                        }
-                    });
-                }
-            };
-            processGroup(emp.extra, 'modeOfPay', 'extraAmount');
-            processGroup(emp.bill_paid, 'modeOfPayment', 'amount');
-            if (emp.retail_credit && Array.isArray(emp.retail_credit)) {
-                emp.retail_credit.forEach(item => {
-                    if (item.timestamp && item.timestamp.split('T')[0] === date) {
-                        totals.retailCredit += (parseFloat(item.amount) || 0);
-                    }
-                });
-            }
-        });
+        const totals = await internalGetReportSummary(date);
         res.json(totals);
     } catch (error) {
         console.error('Error in /api/todays-report-summary:', error);
@@ -1853,59 +1857,64 @@ app.get('/api/todays-report-summary', async (req, res) => {
 });
 
 /**
- * Endpoint: Get Data Activity Summary (Audit Counts)
+ * Internal Helper: Get Data Activity Summary (Audit Counts)
  */
+async function internalGetActivitySummary(employeeId, date, shiftStartTime, shiftEndTime) {
+    const doc = await db.employees().doc(employeeId).get();
+    if (!doc.exists) throw new Error('Employee not found');
+    const emp = doc.data();
+
+    let stats = { edited: 0, deleted: 0, inputed: 0 };
+
+    const isInRange = (ts) => {
+        if (!ts) return false;
+        const itemTime = new Date(ts);
+        if (shiftStartTime) {
+            const start = new Date(shiftStartTime);
+            if (itemTime < start) return false;
+        }
+        if (shiftEndTime) {
+            const end = new Date(shiftEndTime);
+            if (itemTime > end) return false;
+        }
+        if (!shiftStartTime && !shiftEndTime) {
+            return ts.split('T')[0] === date;
+        }
+        return true;
+    };
+
+    const check = (arr) => {
+        if (arr && Array.isArray(arr)) {
+            arr.forEach(item => {
+                if (item && item.timestamp && isInRange(item.timestamp)) stats.inputed++;
+            });
+        }
+    };
+
+    check(emp.extra); check(emp.delivery); check(emp.bill_paid); check(emp.issue); check(emp.retail_credit);
+
+    if (emp.history && Array.isArray(emp.history)) {
+        emp.history.forEach(log => {
+            if (log.timestamp && isInRange(log.timestamp)) {
+                if (log.action === 'edit') stats.edited++;
+                if (log.action === 'delete') stats.deleted++;
+            }
+        });
+    }
+    return stats;
+}
+
 app.get('/api/data-activity-summary', async (req, res) => {
     try {
         const { employeeId, date, shiftStartTime, shiftEndTime } = req.query;
         if (!employeeId || !date) return res.status(400).json({ success: false });
 
-        const doc = await db.employees().doc(employeeId).get();
-        if (!doc.exists) return res.status(404).json({ success: false });
-        const emp = doc.data();
-
-        let stats = { edited: 0, deleted: 0, inputed: 0 };
-
-        // Helper to check if a timestamp falls within the requested range
-        const isInRange = (ts) => {
-            if (!ts) return false;
-            const itemTime = new Date(ts);
-            if (shiftStartTime) {
-                const start = new Date(shiftStartTime);
-                if (itemTime < start) return false;
-            }
-            if (shiftEndTime) {
-                const end = new Date(shiftEndTime);
-                if (itemTime > end) return false;
-            }
-            // If no shift times provided, fallback to date matching
-            if (!shiftStartTime && !shiftEndTime) {
-                return ts.split('T')[0] === date;
-            }
-            return true;
-        };
-
-        const check = (arr) => {
-            if (arr && Array.isArray(arr)) {
-                arr.forEach(item => {
-                    if (item && item.timestamp && isInRange(item.timestamp)) stats.inputed++;
-                });
-            }
-        };
-
-        check(emp.extra); check(emp.delivery); check(emp.bill_paid); check(emp.issue); check(emp.retail_credit);
-
-        if (emp.history && Array.isArray(emp.history)) {
-            emp.history.forEach(log => {
-                if (log.timestamp && isInRange(log.timestamp)) {
-                    if (log.action === 'edit') stats.edited++;
-                    if (log.action === 'delete') stats.deleted++;
-                }
-            });
-        }
-        // Return flattened stats for easier frontend access
+        const stats = await internalGetActivitySummary(employeeId, date, shiftStartTime, shiftEndTime);
         res.json({ success: true, ...stats });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        console.error('Error in /api/data-activity-summary:', error);
+        res.status(500).json({ success: false }); 
+    }
 });
 
 // --- END OF CORE ROUTING ---
@@ -2395,7 +2404,7 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
     try {
         const { date } = req.query;
         let query = db.esr_reports();
-        if (date) {
+        if (date && date.trim() !== '') {
             query = query.where('date', '==', date);
         }
         const snapshot = await query.orderBy('date', 'desc').limit(50).get();
@@ -2554,13 +2563,11 @@ async function logAttendance(employeeId, employeeName, type, timestamp) {
  */
 async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId) {
     const date = endShiftTime.split('T')[0];
+    console.log(`[ESR DEBUG] Starting ESR generation for ${employeeName} | Date: ${date} | Shift: ${shiftId}`);
     try {
-        // Fetch summaries using internal loopback (keeping existing logic flow)
-        const reportSummaryResponse = await fetch(`http://localhost:${port}/api/todays-report-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
-        const reportSummary = await reportSummaryResponse.json();
-        
-        const activitySummaryResponse = await fetch(`http://localhost:${port}/api/data-activity-summary?employeeId=${employeeId}&date=${date}&shiftStartTime=${shiftStartTime}&shiftEndTime=${endShiftTime}`);
-        const activitySummary = await activitySummaryResponse.json();
+        // CALL INTERNAL HELPERS DIRECTLY (Avoiding loopback fetch which fails on Vercel)
+        const reportSummary = await internalGetReportSummary(date);
+        const activitySummary = await internalGetActivitySummary(employeeId, date, shiftStartTime, endShiftTime);
 
         const reportText = `End Shift Report for ${employeeName}\n\n` +
             `Shift Details:\n` +
@@ -2578,6 +2585,8 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
             `- Added: ${activitySummary.inputed || 0}, Edited: ${activitySummary.edited || 0}, Deleted: ${activitySummary.deleted || 0}\n\n` +
             `Regards, Pinpoint Startups`;
 
+        console.log(`[ESR DEBUG] Report text generated. Saving to Firestore...`);
+
         // 1. Save Text Report to Firestore (Compact & Encrypted)
         await db.esr_reports().doc(`${employeeId}_${date}_${shiftId}`).set({
             employee_id: employeeId,
@@ -2588,9 +2597,9 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
             created_at: new Date().toISOString()
         });
 
-        console.log(`✅ Cloud Text ESR generated for ${employeeName} [${shiftId}]`);
+        console.log(`✅ [ESR DEBUG] Cloud Text ESR successfully saved for ${employeeName}`);
     } catch (error) {
-        console.error('❌ ESR Generation failed:', error);
+        console.error('❌ [ESR DEBUG] ESR Generation failed:', error);
     }
 }
 
