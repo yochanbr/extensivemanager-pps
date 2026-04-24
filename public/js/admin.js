@@ -3,6 +3,11 @@ if (localStorage.getItem('adminLoggedIn') !== 'true') {
     window.location.href = '/';
 }
 
+// --- GLOBAL IST CONFIGURATION --- //
+const formatIST = (date) => {
+    return new Date(date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- INACTIVITY MONITOR (1 MINUTE) --- //
     let inactivityTimer;
@@ -2291,6 +2296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
         logs.forEach(log => {
             const time = new Date(log.timestamp).toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
                 day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
 
@@ -3228,7 +3234,7 @@ window.printCurrentEsr = function () {
     printWindow.document.write(`
         <html>
             <head>
-                <title>Shift Report - ${new Date().toLocaleDateString()}</title>
+                <title>Shift Report - ${formatIST(new Date()).split(',')[0]}</title>
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
                 <style>
                     body { font-family: 'Inter', sans-serif; padding: 40px; position: relative; }

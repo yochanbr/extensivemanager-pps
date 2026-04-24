@@ -2,6 +2,10 @@ const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
+
+// --- SYSTEM TIME CONFIGURATION (IST) ---
+process.env.TZ = 'Asia/Kolkata';
+
 const shortid = require('shortid');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
@@ -60,7 +64,7 @@ const apiLimiter = (req, res, next) => {
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'online',
-        time: new Date().toISOString(),
+        time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         firebaseInitialized: !!firestore,
         nodeVersion: process.version
     });
@@ -2573,8 +2577,8 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
 
         const reportText = `End Shift Report for ${employeeName}\n\n` +
             `Shift Details:\n` +
-            `- Start: ${new Date(shiftStartTime).toLocaleString()}\n` +
-            `- End: ${new Date(endShiftTime).toLocaleString()}\n` +
+            `- Start: ${new Date(shiftStartTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n` +
+            `- End: ${new Date(endShiftTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n` +
             `- ID: ${shiftId}\n\n` +
             `Summary:\n` +
             `- UPI Pinelab: ₹${reportSummary.upiPinelab || 0}\n` +
