@@ -2178,28 +2178,30 @@ app.post('/api/attendance/scan', async (req, res) => {
             if (action === 'in') {
                 if (currentState !== 'IDLE') return { success: false, message: 'Already checked in.' };
 
-                // --- DISCREPANCY DETECTION (NEW 9AM-10PM SHIFT LOGIC) ---
-                const shiftStart = new Date(now);
-                shiftStart.setHours(9, 0, 0, 0);
-
-                let isEarly = now < shiftStart;
-                let isLate = now > shiftStart;
-                
+                // --- DYNAMIC SHIFT DETECTION ---
                 let earlyExtraMinutes = 0;
                 let lateMinutes = 0;
                 let approvalStatus = 'approved';
                 let requiresApproval = null;
 
-                if (isEarly) {
-                    earlyExtraMinutes = Math.floor((shiftStart - now) / 60000);
-                    approvalStatus = 'pending_approval';
-                    requiresApproval = 'EARLY_ARRIVAL';
-                } else if (isLate) {
-                    lateMinutes = Math.floor((now - shiftStart) / 60000);
-                    // System records late minutes immediately
-                    // If you want late arrival to ALWAYS need approval, keep the line below:
-                    approvalStatus = 'pending_approval';
-                    requiresApproval = 'LATE_ARRIVAL';
+                const empStart = emp['start-time']; // From profile, e.g. "09:00"
+                if (empStart) {
+                    const [h, m] = empStart.split(':').map(Number);
+                    const shiftStart = new Date(now);
+                    shiftStart.setHours(h, m, 0, 0);
+
+                    if (now < shiftStart) {
+                        earlyExtraMinutes = Math.floor((shiftStart - now) / 60000);
+                        approvalStatus = 'pending_approval';
+                        requiresApproval = 'EARLY_ARRIVAL';
+                    } else if (now > shiftStart) {
+                        lateMinutes = Math.floor((now - shiftStart) / 60000);
+                        // If it's more than 1 minute late, mark for review
+                        if (lateMinutes > 0) {
+                            approvalStatus = 'pending_approval';
+                            requiresApproval = 'LATE_ARRIVAL';
+                        }
+                    }
                 }
 
                 const newSession = {
@@ -2254,18 +2256,22 @@ app.post('/api/attendance/scan', async (req, res) => {
             }
 
             if (action === 'out') {
-                // --- DISCREPANCY DETECTION (OVERTIME / EARLY EXIT) ---
-                const shiftEnd = new Date(now);
-                shiftEnd.setHours(22, 0, 0, 0); // 10:00 PM
-
+                // --- DYNAMIC SHIFT DETECTION (OVERTIME) ---
                 let overtimeMinutes = 0;
                 let approvalStatus = session.approvalStatus || 'approved';
                 let requiresApproval = session.requiresApproval || null;
 
-                if (now > shiftEnd) {
-                    overtimeMinutes = Math.floor((now - shiftEnd) / 60000);
-                    approvalStatus = 'pending_approval';
-                    requiresApproval = 'OVERTIME';
+                const empEnd = emp['end-time']; // e.g. "22:00"
+                if (empEnd) {
+                    const [h, m] = empEnd.split(':').map(Number);
+                    const shiftEnd = new Date(now);
+                    shiftEnd.setHours(h, m, 0, 0);
+
+                    if (now > shiftEnd) {
+                        overtimeMinutes = Math.floor((now - shiftEnd) / 60000);
+                        approvalStatus = 'pending_approval';
+                        requiresApproval = 'OVERTIME';
+                    }
                 }
 
                 const actualWorkMs = (new Date(timestamp) - new Date(session.checkIn)) - ((session.totalBreakMinutes || 0) * 60000);
