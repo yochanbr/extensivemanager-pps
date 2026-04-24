@@ -2200,14 +2200,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const t = new Date(log.timestamp).getTime() || Date.now();
                     const action = (log.action || log.type || '').toUpperCase();
 
-                    if (action === 'CLOCK_IN' || action === 'CLOCK_IN_PENDING' || action === 'CHECK_IN' || action === 'IN') {
+                    if (action.includes('CLOCK_IN') || action.includes('CHECK_IN') || action === 'IN' || action === 'EARLY_ARRIVAL' || action === 'LATE_ARRIVAL') {
                         if (m.checkInTs === null) m.checkInTs = t; // only first check-in (including late arrivals)
                     } else if (action === 'BREAK_START') {
                         m.currentBreakStart = t;
                     } else if (action === 'BREAK_END' && m.currentBreakStart) {
                         m.totalBreakMs += (t - m.currentBreakStart);
                         m.currentBreakStart = null;
-                    } else if (action === 'CLOCK_OUT' || action === 'CHECK_OUT' || action === 'OUT') {
+                    } else if (action.includes('CLOCK_OUT') || action.includes('CHECK_OUT') || action === 'OUT') {
                         m.checkOutTs = t; // always update to latest checkout
                     }
                     m.lastEventTs = t;
@@ -2421,10 +2421,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!sessionsMap[empId]) sessionsMap[empId] = { totalWorkMs: 0, currentCheckIn: null, currentBreakStart: null, totalBreakMs: 0 };
             const m = sessionsMap[empId];
             const t = new Date(log.timestamp).getTime();
-            if (log.action === 'CLOCK_IN') m.currentCheckIn = t;
+            if (log.action && (log.action.includes('CLOCK_IN') || log.action === 'EARLY_ARRIVAL' || log.action === 'LATE_ARRIVAL')) m.currentCheckIn = t;
             else if (log.action === 'BREAK_START') m.currentBreakStart = t;
             else if (log.action === 'BREAK_END' && m.currentBreakStart) { m.totalBreakMs += (t - m.currentBreakStart); m.currentBreakStart = null; }
-            else if (log.action === 'CLOCK_OUT' && m.currentCheckIn) { m.totalWorkMs += (t - m.currentCheckIn); m.currentCheckIn = null; }
+            else if (log.action && log.action.includes('CLOCK_OUT') && m.currentCheckIn) { m.totalWorkMs += (t - m.currentCheckIn); m.currentCheckIn = null; }
         });
 
         const nowMs = Date.now();
