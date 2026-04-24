@@ -3112,15 +3112,105 @@ window.showShiftReportDetails = async function (reportId) {
         const textData = await textResponse.json();
 
         if (textData.success) {
-            textArea.textContent = textData.report;
+            textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
             subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
         } else {
-            textArea.textContent = 'Error loading cloud report or no data found.';
+            textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
         }
     } catch (error) {
         console.error('Error showing report details:', error);
         textArea.textContent = 'Critical error during decryption. Please check network.';
     }
+};
+
+window.renderBeautifulEsr = function(text, metadata) {
+    if (!text) return '';
+    
+    // Helper to extract values using regex
+    const extract = (pattern) => {
+        const match = text.match(pattern);
+        return match ? match[1].trim() : '0';
+    };
+
+    const details = {
+        name: metadata.employeeName || text.match(/Report for (.*)/)?.[1] || 'Guest',
+        start: extract(/- Start: (.*)/),
+        end: extract(/- End: (.*)/),
+        id: metadata.shift_id || extract(/- ID: (.*)/),
+        upiPinelab: extract(/- UPI Pinelab: ₹(.*)/),
+        cardPinelab: extract(/- Card Pinelab: ₹(.*)/),
+        upiPaytm: extract(/- UPI Paytm: ₹(.*)/),
+        cardPaytm: extract(/- Card Paytm: ₹(.*)/),
+        cash: extract(/- Cash: ₹(.*)/),
+        retail: extract(/- Retail Credit: ₹(.*)/),
+        added: extract(/- Added: (.*?),/),
+        edited: extract(/Edited: (.*?),/),
+        deleted: extract(/Deleted: (.*)/)
+    };
+
+    return `
+        <div class="esr-rendered-container">
+            <div class="esr-rendered-section">
+                <h4>Shift Details</h4>
+                <div class="esr-grid-details">
+                    <div class="esr-detail-item"><span class="esr-detail-label">Employee:</span> <span class="esr-detail-value">${details.name}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">Shift ID:</span> <span class="esr-detail-value">#${details.id}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">Start Time:</span> <span class="esr-detail-value">${details.start}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">End Time:</span> <span class="esr-detail-value">${details.end}</span></div>
+                </div>
+            </div>
+
+            <div class="esr-rendered-section" style="background: white;">
+                <h4>Financial Summary</h4>
+                <div class="esr-grid-collections">
+                    <div class="esr-col-card esr-col-upi-pinelab">
+                        <div class="esr-col-label">UPI PINELAB</div>
+                        <div class="esr-col-value">₹${details.upiPinelab}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-card-pinelab">
+                        <div class="esr-col-label">CARD PINELAB</div>
+                        <div class="esr-col-value">₹${details.cardPinelab}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-cash">
+                        <div class="esr-col-label">CASH</div>
+                        <div class="esr-col-value">₹${details.cash}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-upi-paytm">
+                        <div class="esr-col-label">UPI PAYTM</div>
+                        <div class="esr-col-value">₹${details.upiPaytm}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-card-paytm">
+                        <div class="esr-col-label">CARD PAYTM</div>
+                        <div class="esr-col-value">₹${details.cardPaytm}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-retail">
+                        <div class="esr-col-label">RETAIL CREDIT</div>
+                        <div class="esr-col-value">₹${details.retail}</div>
+                    </div>
+                </div>
+
+                <h4>Activity Audit</h4>
+                <div class="esr-metrics-row">
+                    <div class="esr-metric-item">
+                        <div class="m-val m-green">${details.added}</div>
+                        <div class="m-lbl">New Records</div>
+                    </div>
+                    <div class="esr-metric-item">
+                        <div class="m-val m-blue">${details.edited}</div>
+                        <div class="m-lbl">Edited</div>
+                    </div>
+                    <div class="esr-metric-item">
+                        <div class="m-val m-red">${details.deleted}</div>
+                        <div class="m-lbl">Deleted</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align:center; padding:10px; color:#cbd5e1; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;">
+                <i class="fas fa-shield-alt"></i> Decrypted Security Payload
+            </div>
+        </div>
+    `;
 };
 
 window.closeEsrDetailModal = function () {
@@ -3132,18 +3222,41 @@ window.closeEsrDetailModal = function () {
 };
 
 window.printCurrentEsr = function () {
-    const reportText = document.getElementById('esr-detail-text').textContent;
+    const reportHtml = document.getElementById('esr-detail-text').innerHTML;
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html>
-            <head><title>Shift Report - ${new Date().toLocaleDateString()}</title></head>
-            <body style="font-family: monospace; white-space: pre-wrap; padding: 40px; font-size: 14px; line-height: 1.6;">
-                ${reportText}
+            <head>
+                <title>Shift Report - ${new Date().toLocaleDateString()}</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <style>
+                    body { font-family: 'Inter', sans-serif; padding: 40px; }
+                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; }
+                    .esr-rendered-section h4 { margin: 0 0 16px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+                    .esr-grid-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
+                    .esr-detail-item { display: flex; justify-content: space-between; padding: 4px 0; }
+                    .esr-detail-label { color: #64748b; font-weight: 500; }
+                    .esr-detail-value { color: #1e293b; font-weight: 700; }
+                    .esr-grid-collections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+                    .esr-col-card { padding: 16px 12px; border-radius: 14px; text-align: center; border: 1px solid #e2e8f0; }
+                    .esr-col-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+                    .esr-col-value { font-size: 18px; font-weight: 800; }
+                    .esr-metrics-row { background: #f1f5f9; border-radius: 16px; padding: 16px; display: flex; justify-content: space-around; text-align: center; }
+                    .esr-metric-item .m-val { font-size: 24px; font-weight: 800; }
+                    .esr-metric-item .m-lbl { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; }
+                    .m-green { color: #10b981; } .m-blue { color: #3b82f6; } .m-red { color: #ef4444; }
+                </style>
+            </head>
+            <body>
+                <h1 style="text-align:center; font-size:24px; margin-bottom:40px;">End Shift Report Summary</h1>
+                ${reportHtml}
             </body>
         </html>
     `);
     printWindow.document.close();
-    printWindow.print();
+    setTimeout(() => {
+        printWindow.print();
+    }, 500);
 };
 
 // Auto-load summaries when switching to the view
