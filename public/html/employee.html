@@ -1468,18 +1468,8 @@
             modal.style.left = '50%';
             modal.style.top = '50px';
 
-            // 5. Screenshot logic capturing just the aesthetic summary view
-            setTimeout(async () => {
-                try {
-                    const captureTarget = document.getElementById('esr-capture-area');
-                    const canvas = await html2canvas(captureTarget, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
-                    const jpgData = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-                    await fetch('/api/save-esr-jpg', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ employeeId, date, shiftId: effectiveShiftId, jpgData })
-                    });
-                } catch (e) { console.error('Screenshot failed', e); }
-            }, 1000);
+            // 5. Cloud generation is now handled server-side during shift termination
+            // No longer need client-side screenshot or JPG saving
         }
 
         async function closeEsrModal() {

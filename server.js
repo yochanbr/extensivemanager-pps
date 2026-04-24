@@ -1034,12 +1034,22 @@ app.post('/api/end-shift', async (req, res) => {
             const selections = [...employee.counter_selections];
             const activeShift = selections[selections.length - 1];
             if (!activeShift.shiftEndTime) {
-                activeShift.shiftEndTime = new Date().toISOString();
+                const endShiftTime = new Date().toISOString();
+                activeShift.shiftEndTime = endShiftTime;
+                
                 await doc.ref.update({
                     counter_selections: selections,
                     shiftEnded: true
                 });
-                return res.json({ success: true, message: 'Shift strictly terminated.' });
+
+                // Generate and save report to cloud
+                const employeeName = employee.name || 'Employee';
+                const shiftStartTime = activeShift.shiftStartTime;
+                const shiftId = activeShift.shiftId || `manual_${Date.now()}`;
+                
+                await generateAndSaveESR(employeeId, employeeName, shiftStartTime, endShiftTime, shiftId);
+
+                return res.json({ success: true, message: 'Shift strictly terminated and report generated.' });
             }
         }
         res.json({ success: true, message: 'No active shift to terminate.' });
