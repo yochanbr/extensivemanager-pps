@@ -3231,8 +3231,22 @@ window.printCurrentEsr = function () {
                 <title>Shift Report - ${new Date().toLocaleDateString()}</title>
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
                 <style>
-                    body { font-family: 'Inter', sans-serif; padding: 40px; }
-                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; }
+                    body { font-family: 'Inter', sans-serif; padding: 40px; position: relative; }
+                    .watermark {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%) rotate(-45deg);
+                        font-size: 80px;
+                        font-weight: 900;
+                        color: rgba(200, 200, 200, 0.15);
+                        z-index: -1;
+                        white-space: nowrap;
+                        pointer-events: none;
+                        user-select: none;
+                        text-transform: uppercase;
+                    }
+                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; position: relative; z-index: 1; }
                     .esr-rendered-section h4 { margin: 0 0 16px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
                     .esr-grid-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
                     .esr-detail-item { display: flex; justify-content: space-between; padding: 4px 0; }
@@ -3246,10 +3260,14 @@ window.printCurrentEsr = function () {
                     .esr-metric-item .m-val { font-size: 24px; font-weight: 800; }
                     .esr-metric-item .m-lbl { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; }
                     .m-green { color: #10b981; } .m-blue { color: #3b82f6; } .m-red { color: #ef4444; }
+                    @media print {
+                        .watermark { -webkit-print-color-adjust: exact; }
+                    }
                 </style>
             </head>
             <body>
-                <h1 style="text-align:center; font-size:24px; margin-bottom:40px;">End Shift Report Summary</h1>
+                <div class="watermark">Pinpointstartups</div>
+                <h1 style="text-align:center; font-size:24px; margin-bottom:40px; position: relative; z-index: 1;">End Shift Report Summary</h1>
                 ${reportHtml}
             </body>
         </html>
