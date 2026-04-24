@@ -1064,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
-            if (window.renderAlertHub) window.renderAlertHub(alerts);
+            window.renderActionRequired(alerts);
 
             // Build Table
             const tbody = document.getElementById('live-status-tbody');
@@ -2436,57 +2436,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setTxt('dash-working', currentlyWorking.size);
         setTxt('dash-break', onBreak.size);
 
-        // Action Required Alerts logic
-        const actionsPending = [];
-        const SHIFT_START_HOUR = 9;
-        const FULL_DAY_MS = 8 * 60 * 60 * 1000;
-
-        Object.keys(sessionsMap).forEach(empId => {
-            const s = sessionsMap[empId];
-            const empName = logs.find(l => l.employeeId === empId)?.employeeName || 'Staff';
-
-            // 1. Late Arrival Detection (Only for currently active sessions)
-            if (s.currentCheckIn) {
-                const checkInDate = new Date(s.currentCheckIn);
-                const shiftStart = new Date(checkInDate);
-                shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
-                const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
-                if (lateMin > 10) {
-                    actionsPending.push({
-                        user: empName,
-                        desc: `Late Arrival: ${lateMin}m late`,
-                        color: '#EF4444', icon: 'clock',
-                        type: 'LATE'
-                    });
-                }
-            }
-
-            // 2. Early Clock-out Detection (For finished sessions)
-            if (!s.currentCheckIn) {
-                const finishedWork = s.totalWorkMs - s.totalBreakMs;
-                if (finishedWork > 60000 && finishedWork < FULL_DAY_MS) { // More than 1 min but less than 8h
-                    const shortMin = Math.round((FULL_DAY_MS - finishedWork) / 60000);
-                    actionsPending.push({
-                        user: empName,
-                        desc: `Early Departure: ${shortMin}m short`,
-                        color: '#F95A2C', icon: 'door-open',
-                        type: 'EARLY'
-                    });
-                }
-            }
-        });
-
-        window.dashboardAlerts.attendance = actionsPending;
-        window.renderActionRequired();
+        // We now rely on loadDashboardData's engine for Action Required alerts
     };
 
-    window.renderActionRequired = function () {
+    window.renderActionRequired = function (manualAlerts) {
         const listContainer = document.getElementById('action-required-list');
         if (!listContainer) return;
 
-        const allActions = [...window.dashboardAlerts.attendance];
+        // Use manualAlerts passed from loadDashboardData if available, fallback to global
+        const alerts = manualAlerts || window.dashboardAlerts.attendance || [];
 
-        if (allActions.length === 0) {
+        if (alerts.length === 0) {
             listContainer.innerHTML = `
                 <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
                     <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5; color: #10B981;"></i>
@@ -2495,18 +2455,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        listContainer.innerHTML = allActions.map(a => `
+        listContainer.innerHTML = alerts.map(a => `
             <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
                 <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                     <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
                 </div>
                 <div style="flex: 1;">
                     <div style="font-weight: 700; font-size: 13px; color: #1E293B;">${a.user}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc || a.title}</div>
                 </div>
                 <div style="display: flex; gap: 4px;">
-                    <button class="action-btn" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
-                    <button class="action-btn" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                    <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
+                    <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
                 </div>
             </div>
         `).join('');
