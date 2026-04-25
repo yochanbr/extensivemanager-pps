@@ -378,11 +378,14 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
         .where('date', '==', today)
         .get();
 
-    const activeSession = sessionSnapshot.docs.find(d => d.data().status === 'active');
+    const sessions = sessionSnapshot.docs.map(d => d.data());
+    // Sort to get the most recent session first
+    sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+
+    const activeSession = sessions.find(s => s.status === 'active');
 
     if (!activeSession) {
-        const anySession = sessionSnapshot.docs.length > 0;
-        const lastSession = anySession ? sessionSnapshot.docs[0].data() : null;
+        const lastSession = sessions.length > 0 ? sessions[0] : null;
         
         let msg = 'Access Denied: You must be Checked-In to enter the portal.';
         if (lastSession && lastSession.status === 'on_break') {
@@ -636,10 +639,14 @@ app.get('/api/attendance/session-status/:employeeId', async (req, res) => {
             .where('date', '==', today)
             .get();
 
-        const activeSession = snapshot.docs.find(d => d.data().status === 'active');
+        const sessions = snapshot.docs.map(d => d.data());
+        // Sort to get late session state
+        sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+        
+        const latestStatus = sessions.length > 0 ? sessions[0].status : 'idle';
         res.json({
             success: true,
-            status: activeSession ? 'active' : 'inactive'
+            status: latestStatus === 'active' ? 'active' : 'inactive'
         });
     } catch (e) {
         res.status(500).json({ success: false, message: 'Status check failed' });
