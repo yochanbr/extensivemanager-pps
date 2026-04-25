@@ -1153,7 +1153,142 @@
             </div>
         </div>
     </div>
-    <!-- FACE REGISTRATION MODAL -->
+    <!-- ADD EMPLOYEE SLIDE-OVER PANEL -->
+    <div class="side-panel-overlay" id="add-employee-overlay" onclick="window.closeAddEmployeePanel()"></div>
+    <div class="side-panel" id="add-employee-panel">
+        <div class="side-panel-header">
+            <div class="panel-title">
+                <h3>New Staff Enrollment</h3>
+                <p>Register a new member to the system</p>
+            </div>
+            <button class="close-panel-btn" onclick="window.closeAddEmployeePanel()">&times;</button>
+        </div>
+        
+        <div class="side-panel-body">
+            <!-- Progress Stepper -->
+            <div class="stepper-minimal">
+                <div class="step-dot active" data-step="1"></div>
+                <div class="step-line"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-line"></div>
+                <div class="step-dot" data-step="3"></div>
+                <div class="step-line"></div>
+                <div class="step-dot" data-step="4"></div>
+            </div>
+
+            <form id="spa-add-employee-form">
+                <!-- STEP 1: Personal -->
+                <div class="spa-step active" id="spa-step-1">
+                    <div class="form-section-title">Personal Information</div>
+                    <div class="input-group">
+                        <label>Full Name *</label>
+                        <input type="text" name="name" placeholder="Johnathan Doe" required>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Phone *</label>
+                            <input type="tel" name="phone" placeholder="9876543210" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Gender</label>
+                            <select name="gender">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" placeholder="john@example.com">
+                    </div>
+                </div>
+
+                <!-- STEP 2: Job -->
+                <div class="spa-step" id="spa-step-2">
+                    <div class="form-section-title">Job & Schedule</div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Employee ID *</label>
+                            <input type="text" name="employee-id" placeholder="EMP101" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Category</label>
+                            <select name="full-time">
+                                <option value="yes">Full Time</option>
+                                <option value="no">Part Time</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Shift Start</label>
+                            <input type="time" name="start-time" value="09:00">
+                        </div>
+                        <div class="input-group">
+                            <label>Shift End</label>
+                            <input type="time" name="end-time" value="18:00">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Working Days</label>
+                        <div class="mini-days-selector">
+                            <label><input type="checkbox" name="working-days" value="Monday" checked> M</label>
+                            <label><input type="checkbox" name="working-days" value="Tuesday" checked> T</label>
+                            <label><input type="checkbox" name="working-days" value="Wednesday" checked> W</label>
+                            <label><input type="checkbox" name="working-days" value="Thursday" checked> T</label>
+                            <label><input type="checkbox" name="working-days" value="Friday" checked> F</label>
+                            <label><input type="checkbox" name="working-days" value="Saturday" checked> S</label>
+                            <label><input type="checkbox" name="working-days" value="Sunday"> S</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Financial -->
+                <div class="spa-step" id="spa-step-3">
+                    <div class="form-section-title">Financial Details</div>
+                    <div class="input-group">
+                        <label>Basic Salary (Monthly) *</label>
+                        <input type="number" name="basicSalary" placeholder="e.g. 18000" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank-name" placeholder="SBI, HDFC, etc.">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Account Number</label>
+                            <input type="text" name="account-number" placeholder="000012345678">
+                        </div>
+                        <div class="input-group">
+                            <label>IFSC Code</label>
+                            <input type="text" name="ifsc-code" placeholder="SBIN0001234">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Login -->
+                <div class="spa-step" id="spa-step-4">
+                    <div class="form-section-title">Security Credentials</div>
+                    <p style="font-size: 12px; color: #64748B; margin-bottom: 15px;">Set up the initial password for system access. The Employee ID will be their username.</p>
+                    <div class="input-group">
+                        <label>Create Password *</label>
+                        <input type="password" name="password" id="spa-pass-1" placeholder="Minimum 6 characters" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Confirm Password *</label>
+                        <input type="password" id="spa-pass-2" placeholder="Repeat password" required>
+                    </div>
+                </div>
+
+                <div class="panel-footer">
+                    <button type="button" class="panel-btn secondary" id="spa-btn-prev" style="display: none;">Back</button>
+                    <button type="button" class="panel-btn primary" id="spa-btn-next">Next <i class="fas fa-chevron-right"></i></button>
+                    <button type="submit" class="panel-btn accent" id="spa-btn-submit" style="display: none;">Finish & Save <i class="fas fa-check"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- FACE REGISTRATION MODAL (SMART SCANNER) -->
     <div class="modal-overlay" id="face-register-modal">
         <div class="modern-modal" style="max-width: 540px; border-radius: 32px; overflow: hidden; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);">

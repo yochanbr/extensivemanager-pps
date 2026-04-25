@@ -1363,10 +1363,117 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Attach to "+ Add New Employee" button if it exists
+    // --- ADD EMPLOYEE SPA SLIDE-OVER LOGIC ---
+    let currentAddStep = 1;
+
+    window.openAddEmployeePanel = function() {
+        const panel = document.getElementById('add-employee-panel');
+        const overlay = document.getElementById('add-employee-overlay');
+        const form = document.getElementById('spa-add-employee-form');
+        if(form) form.reset();
+        currentAddStep = 1;
+        updateAddStepUI();
+        if (panel && overlay) {
+            overlay.classList.add('show');
+            panel.classList.add('show');
+        }
+    };
+
+    window.closeAddEmployeePanel = function() {
+        const panel = document.getElementById('add-employee-panel');
+        const overlay = document.getElementById('add-employee-overlay');
+        if (panel && overlay) {
+            overlay.classList.remove('show');
+            panel.classList.remove('show');
+        }
+    };
+
+    function updateAddStepUI() {
+        document.querySelectorAll('.spa-step').forEach((s, i) => {
+            s.classList.toggle('active', (i + 1) === currentAddStep);
+        });
+        document.querySelectorAll('.step-dot').forEach((d, i) => {
+            d.classList.toggle('active', (i + 1) === currentAddStep);
+            d.classList.toggle('completed', (i + 1) < currentAddStep);
+        });
+        
+        document.getElementById('spa-btn-prev').style.display = currentAddStep === 1 ? 'none' : 'flex';
+        if (currentAddStep === 4) {
+            document.getElementById('spa-btn-next').style.display = 'none';
+            document.getElementById('spa-btn-submit').style.display = 'flex';
+        } else {
+            document.getElementById('spa-btn-next').style.display = 'flex';
+            document.getElementById('spa-btn-submit').style.display = 'none';
+        }
+    }
+
+    document.getElementById('spa-btn-next').addEventListener('click', () => {
+        // Basic validation
+        const activeStep = document.getElementById(`spa-step-${currentAddStep}`);
+        const inputs = activeStep.querySelectorAll('input[required], select[required]');
+        let valid = true;
+        inputs.forEach(i => {
+            if(!i.value.trim()) {
+                i.style.borderColor = '#EF4444';
+                valid = false;
+            } else {
+                i.style.borderColor = '#E2E8F0';
+            }
+        });
+        
+        if(valid) {
+            currentAddStep++;
+            updateAddStepUI();
+        }
+    });
+
+    document.getElementById('spa-btn-prev').addEventListener('click', () => {
+        currentAddStep--;
+        updateAddStepUI();
+    });
+
+    document.getElementById('spa-add-employee-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p1 = document.getElementById('spa-pass-1').value;
+        const p2 = document.getElementById('spa-pass-2').value;
+        if(p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
+
+        const btn = document.getElementById('spa-btn-submit');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        data['working-days'] = formData.getAll('working-days').join(',');
+        data.isActive = true;
+
+        try {
+            const res = await fetch('/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if(result.success) {
+                await nammaModalSystem.alert("Employee added successfully!");
+                window.closeAddEmployeePanel();
+                if(typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
+            } else {
+                await nammaModalSystem.alert("Error: " + result.message);
+            }
+        } catch(err) {
+            await nammaModalSystem.alert("Server communication failed.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    });
+
     const spaAddEmployeeBtn = document.getElementById('spa-add-employee-btn');
     if (spaAddEmployeeBtn) {
         spaAddEmployeeBtn.addEventListener('click', () => {
-            window.location.href = '/add_employee';
+            window.openAddEmployeePanel();
         });
     }
 
