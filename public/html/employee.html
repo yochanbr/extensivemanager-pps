@@ -2582,9 +2582,42 @@
         // Initial fetch and polling
         fetchBroadcast();
         setInterval(fetchBroadcast, 10000);
-        setInterval(loadDashboardData, 60000);
+        /**
+         * Real-time Session Status Guard
+         * Instant logout if on break or not active
+         */
+        let statusGuardActive = false;
+        async function runSessionStatusGuard() {
+            if (statusGuardActive) return;
+            statusGuardActive = true;
 
+            const employeeId = localStorage.getItem('employeeId');
+            if (!employeeId) return;
 
+            try {
+                const res = await fetch(`/api/attendance/session-status/${employeeId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status !== 'active') {
+                        // FORCE LOGOUT
+                        localStorage.clear();
+                        window.location.href = '/'; 
+                        return; // Stop polling
+                    }
+                }
+            } catch (e) {
+                console.error('Guard poll failed:', e);
+            } finally {
+                statusGuardActive = false;
+            }
+        }
+
+        // Start Guard
+        setInterval(runSessionStatusGuard, 5000); // 5 sec poll
+        runSessionStatusGuard();
+
+        // Initial background initialization
+        loadDashboardData();
     </script>
 </body>
 

@@ -373,8 +373,23 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     }
 
     const today = new Date().toISOString().split('T')[0];
+    const sessionSnapshot = await db.daily_sessions()
+        .where('employeeId', '==', employee.id)
+        .where('date', '==', today)
+        .get();
+
+    const activeSession = sessionSnapshot.docs.find(d => d.data().status === 'active');
+
+    if (!activeSession) {
+        return res.status(401).json({
+            success: false,
+            message: 'Access Denied: You must be Checked-In and Working to enter. Please use the scan page first or end your break.',
+            code: 'NOT_WORKING'
+        });
+    }
+
     let hasActiveShift = false;
-    if (employee.counter_selections.length > 0) {
+    if (employee.counter_selections && employee.counter_selections.length > 0) {
         const lastShift = employee.counter_selections[employee.counter_selections.length - 1];
         if (!lastShift.shiftEndTime && lastShift.shiftStartTime && lastShift.shiftStartTime.startsWith(today)) {
             hasActiveShift = true;
@@ -597,6 +612,26 @@ app.post('/api/counter-selection', async (req, res) => {
     });
 
     return res.json({ success: true, message: 'Shift started successfully.' });
+});
+
+// Real-time Session Status Check for Employee Guard
+app.get('/api/attendance/session-status/:employeeId', async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const today = new Date().toISOString().split('T')[0];
+        const snapshot = await db.daily_sessions()
+            .where('employeeId', '==', employeeId)
+            .where('date', '==', today)
+            .get();
+
+        const activeSession = snapshot.docs.find(d => d.data().status === 'active');
+        res.json({
+            success: true,
+            status: activeSession ? 'active' : 'inactive'
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Status check failed' });
+    }
 });
 
 // Handle extra data submission
