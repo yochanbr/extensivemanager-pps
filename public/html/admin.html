@@ -1154,37 +1154,60 @@
         </div>
     </div>
     <!-- FACE REGISTRATION MODAL -->
+    <!-- FACE REGISTRATION MODAL (SMART SCANNER) -->
     <div class="modal-overlay" id="face-register-modal">
-        <div class="modern-modal" style="max-width: 500px;">
-            <div class="modern-modal-header">
+        <div class="modern-modal" style="max-width: 540px; border-radius: 32px; overflow: hidden; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);">
+            <div class="modern-modal-header" style="border: none; padding: 32px 32px 10px 32px;">
                 <div class="modal-title-area">
-                    <h2>Face Registration</h2>
-                    <p id="face-reg-subtitle">Register biometric data for Staff</p>
+                    <h2 style="font-size: 26px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px;">Biometric Enrollment</h2>
+                    <p id="face-reg-subtitle" style="color: #64748B; font-weight: 500; font-size: 14px;">Secure staff identity using AI face mapping</p>
                 </div>
-                <button class="close-modal-btn" onclick="window.closeFaceRegistration()">&times;</button>
+                <button class="close-modal-btn" onclick="window.closeFaceRegistration()" style="background: #F1F5F9; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #94A3B8;">&times;</button>
             </div>
-            <div class="modern-modal-body"
-                style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-                <div id="face-reg-container"
-                    style="position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                    <video id="face-reg-video" autoplay muted playsinline
-                        style="width: 100%; height: 100%; object-fit: cover;"></video>
-                    <canvas id="face-reg-overlay"
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
-                    <div id="face-reg-scanner-line"
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #F95A2C, transparent); animation: scan 2s linear infinite; display: none;">
+            <div class="modern-modal-body" style="padding: 0 32px 32px 32px; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+                <div id="face-reg-container" style="position: relative; width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
+                    <video id="face-reg-video" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"></video>
+                    <canvas id="face-reg-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5;"></canvas>
+                    
+                    <!-- Smart Scanning Guide Overlay -->
+                    <div id="smart-scan-guide" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 70%; border: 2px dashed rgba(255,255,255,0.3); border-radius: 40px; z-index: 2; transition: all 0.3s ease;">
+                        <div class="scan-corner tl" style="position: absolute; top: -2px; left: -2px; width: 30px; height: 30px; border-top: 4px solid #F95A2C; border-left: 4px solid #F95A2C; border-radius: 12px 0 0 0;"></div>
+                        <div class="scan-corner tr" style="position: absolute; top: -2px; right: -2px; width: 30px; height: 30px; border-top: 4px solid #F95A2C; border-right: 4px solid #F95A2C; border-radius: 0 12px 0 0;"></div>
+                        <div class="scan-corner bl" style="position: absolute; bottom: -2px; left: -2px; width: 30px; height: 30px; border-bottom: 4px solid #F95A2C; border-left: 4px solid #F95A2C; border-radius: 0 0 0 12px;"></div>
+                        <div class="scan-corner br" style="position: absolute; bottom: -2px; right: -2px; width: 30px; height: 30px; border-bottom: 4px solid #F95A2C; border-right: 4px solid #F95A2C; border-radius: 0 0 12px 0;"></div>
                     </div>
+
+                    <div id="face-reg-scanner-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: linear-gradient(to bottom, rgba(249, 90, 44, 0.2), transparent); border-top: 2px solid #F95A2C; z-index: 3; animation: scanMove 3s infinite ease-in-out; display: none; opacity: 0.5;"></div>
                 </div>
-                <div id="face-reg-status"
-                    style="width: 100%; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #64748B; font-size: 13px; font-weight: 500; text-align: center;">
-                    Waiting for camera...
+
+                <div id="face-reg-status-pill" style="display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-radius: 100px; background: #F8FAFC; border: 1px solid #E2E8F0; width: 100%; transition: all 0.3s;">
+                    <div id="status-indicator" style="width: 10px; height: 10px; border-radius: 50%; background: #94A3B8; box-shadow: 0 0 10px rgba(148, 163, 184, 0.5); animation: blink 1.5s infinite;"></div>
+                    <span id="face-reg-status" style="font-size: 14px; font-weight: 600; color: #64748B;">Initialize AI Core...</span>
                 </div>
-                <button id="capture-face-btn" class="modern-btn accent" style="width: 100%;" disabled>
-                    <i class="fas fa-camera"></i> Capture & Register
+
+                <button id="capture-face-btn" class="modern-btn" disabled style="width: 100%; height: 64px; border-radius: 20px; background: #0F172A; color: white; border: none; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: not-allowed; opacity: 0.5; transition: all 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
+                    <i class="fas fa-fingerprint"></i> Complete Registration
                 </button>
             </div>
         </div>
     </div>
+
+    <style>
+        @keyframes scanMove {
+            0% { transform: translateY(-100%); }
+            50% { transform: translateY(300%); }
+            100% { transform: translateY(-100%); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .scan-corner { transition: border-color 0.3s, transform 0.3s; }
+        #face-register-modal.face-ready .scan-corner { border-color: #10B981 !important; transform: scale(1.1); }
+        #face-register-modal.face-ready #smart-scan-guide { border-color: rgba(16, 185, 129, 0.4) !important; background: rgba(16, 185, 129, 0.05); }
+        #face-register-modal.face-ready #status-indicator { background: #10B981 !important; box-shadow: 0 0 12px #10B981 !important; }
+        #face-register-modal.face-ready #capture-face-btn { background: #10B981 !important; opacity: 1 !important; cursor: pointer !important; transform: translateY(-2px); box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3); }
+    </style>
 
 
 

@@ -2742,21 +2742,51 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (detections) {
+                const modal = document.getElementById('face-register-modal');
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                faceapi.draw.drawDetections(canvas, resizedDetections);
-                if (status) {
-                    status.textContent = 'Face detected. Hold steady...';
-                    status.style.color = '#10B981';
+                
+                // Custom Smart Rendering Logic
+                const box = resizedDetections.detection.box;
+                const centerX = box.x + box.width / 2;
+                const centerY = box.y + box.height / 2;
+                
+                // Smart check: Is face centered in the guide?
+                const isCentered = Math.abs(centerX - displaySize.width / 2) < 70 && 
+                                  Math.abs(centerY - displaySize.height / 2) < 70;
+                
+                if (isCentered) {
+                    if (modal && !modal.classList.contains('face-ready')) {
+                        modal.classList.add('face-ready');
+                        // Optional: trigger subtle sound or haptic feedback if supported
+                    }
+                    if (status) {
+                        status.textContent = 'Face Locked. Optimal Positioning.';
+                        status.style.color = '#10B981';
+                        document.getElementById('face-reg-status-pill').style.borderColor = '#10B981';
+                    }
+                    captureBtn.disabled = false;
+                } else {
+                    if (modal) modal.classList.remove('face-ready');
+                    if (status) {
+                        status.textContent = 'Align face with center guide...';
+                        status.style.color = '#64748B';
+                        document.getElementById('face-reg-status-pill').style.borderColor = '#E2E8F0';
+                    }
+                    captureBtn.disabled = true;
                 }
-                if (captureBtn) captureBtn.disabled = false;
-                window.lastDescriptor = detections.descriptor;
+                
+                // We don't draw the detection box anymore, the guide handles it visually
             } else {
+                const modal = document.getElementById('face-register-modal');
+                if (modal) modal.classList.remove('face-ready');
                 if (status) {
-                    status.textContent = 'Position your face in the center';
+                    status.textContent = 'No face detected. Scanning...';
                     status.style.color = '#64748B';
+                    document.getElementById('face-reg-status-pill').style.borderColor = '#E2E8F0';
                 }
-                if (captureBtn) captureBtn.disabled = true;
+                captureBtn.disabled = true;
             }
+
             if (detectionActive) requestAnimationFrame(detect);
         };
         detect();
