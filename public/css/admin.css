@@ -2871,3 +2871,158 @@ body {
 }
 
 
+/* --- MENU SETTINGS PAGE STYLES --- */
+.settings-container {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+    margin-top: 24px;
+    align-items: flex-start;
+}
+
+.settings-card {
+    background: #FFFFFF;
+    border-radius: 28px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid #E2E8F0;
+    transition: transform 0.3s ease;
+}
+
+.settings-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.settings-card-header .icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.settings-card-header h4 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0F172A;
+    margin: 0;
+}
+
+.settings-card-description {
+    font-size: 14px;
+    color: #64748B;
+    line-height: 1.6;
+    margin-bottom: 32px;
+}
+
+/* Danger Zone Internal Component */
+.danger-zone-box {
+    margin-top: 40px;
+    padding: 32px;
+    background: #FFF7F7;
+    border: 1.5px dashed #FECACA;
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.danger-zone-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #EF4444;
+}
+
+.danger-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.danger-title-row i {
+    color: #EF4444;
+    font-size: 20px;
+}
+
+.danger-title-row span {
+    font-weight: 800;
+    font-size: 13px;
+    color: #991B1B;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.reset-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.reset-option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #F1F5F9;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reset-option-item:hover {
+    border-color: #EF4444;
+    background: #FEF2F2;
+}
+
+.reset-option-item input[type="checkbox"] {
+    accent-color: #EF4444;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.cloud-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.cloud-status-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: #F8FAFC;
+    border-radius: 18px;
+    border: 1px solid #F1F5F9;
+}
+
+.cloud-status-item i {
+    font-size: 20px;
+}
+
+.cloud-status-item .label {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+    .settings-container {
+        grid-template-columns: 1fr;
+    }
+}
