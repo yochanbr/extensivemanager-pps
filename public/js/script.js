@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 } else {
-                    await nammaModalSystem.alert('Login failed. Please try again.');
+                    await nammaModalSystem.alert(data.message || 'Login failed. Please try again.');
                 }
             } catch (error) {
                 console.error('Error during login:', error);

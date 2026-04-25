@@ -381,9 +381,21 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
     const activeSession = sessionSnapshot.docs.find(d => d.data().status === 'active');
 
     if (!activeSession) {
+        const anySession = sessionSnapshot.docs.length > 0;
+        const lastSession = anySession ? sessionSnapshot.docs[0].data() : null;
+        
+        let msg = 'Access Denied: You must be Checked-In to enter the portal.';
+        if (lastSession && lastSession.status === 'on_break') {
+            msg = 'Access Denied: You are currently ON BREAK. Please end your break on the scan page first.';
+        } else if (lastSession && lastSession.status === 'completed') {
+            msg = 'Access Denied: Your shift for today is already completed.';
+        } else {
+            msg = 'Access Denied: You have not Checked-In yet. Please scan your face to start your shift first.';
+        }
+
         return res.status(401).json({
             success: false,
-            message: 'Access Denied: You must be Checked-In and Working to enter. Please use the scan page first or end your break.',
+            message: msg,
             code: 'NOT_WORKING'
         });
     }
