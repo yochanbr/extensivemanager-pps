@@ -2742,7 +2742,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const video = document.getElementById('face-reg-video');
         if (video && video.srcObject) {
             video.srcObject.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
         }
+        const modal = document.getElementById('face-register-modal');
+        if (modal) modal.classList.remove('face-ready');
     }
 
     async function startDetectionLoop() {
@@ -2779,7 +2782,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isCentered) {
                     if (modal && !modal.classList.contains('face-ready')) {
                         modal.classList.add('face-ready');
-                        // Optional: trigger subtle sound or haptic feedback if supported
                     }
                     if (status) {
                         status.textContent = 'Face Locked. Optimal Positioning.';
@@ -2787,6 +2789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('face-reg-status-pill').style.borderColor = '#10B981';
                     }
                     captureBtn.disabled = false;
+                    window.lastDescriptor = detections.descriptor;
                 } else {
                     if (modal) modal.classList.remove('face-ready');
                     if (status) {
@@ -2814,13 +2817,18 @@ document.addEventListener('DOMContentLoaded', () => {
         detect();
     }
 
-    if (document.getElementById('capture-face-btn')) {
-        document.getElementById('capture-face-btn').addEventListener('click', async () => {
-            if (!window.lastDescriptor || !currentRegId) return;
+    // Attach to button only once
+    const captureBtn = document.getElementById('capture-face-btn');
+    if (captureBtn && !captureBtn.dataset.listenerAttached) {
+        captureBtn.dataset.listenerAttached = 'true';
+        captureBtn.addEventListener('click', async () => {
+            if (!window.lastDescriptor || !currentRegId) {
+                await nammaModalSystem.alert('Biometric focus lost. Please align your face again.');
+                return;
+            }
 
-            const btn = document.getElementById('capture-face-btn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            btn.disabled = true;
+            captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing...';
+            captureBtn.disabled = true;
 
             try {
                 const res = await fetch('/api/employees/' + currentRegId + '/face', {
@@ -2832,6 +2840,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     await nammaModalSystem.alert('Biometric registration successful!');
                     window.closeFaceRegistration();
+                    if (typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
                 } else {
                     await nammaModalSystem.alert('Failed to register: ' + data.message);
                 }
@@ -2839,11 +2848,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 await nammaModalSystem.alert('Cloud synchronization failed.');
                 console.error(err);
             } finally {
-                btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register';
-                btn.disabled = false;
+                captureBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Complete Registration';
+                // Button state will be managed by detection loop after reset
             }
         });
     }
+
+
 
 
 
