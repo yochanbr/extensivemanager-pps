@@ -2676,15 +2676,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.openFaceRegistration = async function (employeeId) {
-        currentRegId = employeeId;
-        const modal = document.getElementById('face-register-modal');
-        if (modal) {
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10);
-        }
+        try {
+            // Pre-check: Does this employee already have a face model?
+            const res = await fetch('/api/employees/' + employeeId);
+            const emp = await res.json();
+            
+            if (emp.faceDescriptor) {
+                const proceed = await nammaModalSystem.confirm(`Existing biometric data found for ${emp.name}. Do you want to delete the old model and register a new one?`, {
+                    confirmText: "Delete and Re-scan",
+                    cancelText: "Cancel",
+                    theme: "danger"
+                });
+                
+                if (!proceed) return;
+                
+                // Optional: Explicitly nullify on server first to be safe, 
+                // but the capture process will overwrite it regardless.
+            }
+            
+            currentRegId = employeeId;
+            const modal = document.getElementById('face-register-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('show'), 10);
+            }
 
-        await loadModels();
-        startCamera();
+            await loadModels();
+            startCamera();
+        } catch (err) {
+            console.error('Error checking employee face data:', err);
+            await nammaModalSystem.alert('Failed to initialize biometric check. Please try again.');
+        }
     };
 
     window.closeFaceRegistration = function () {
