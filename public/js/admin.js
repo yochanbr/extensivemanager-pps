@@ -1361,12 +1361,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderEmployeesSPA(filtered);
         });
     }
-            .catch(err => {
-                console.error('Error fetching employees:', err);
-                const container = document.getElementById('spa-employee-list');
-                if (container) container.innerHTML = '<p style="color:red; padding: 20px;">Failed to load employees.</p>';
-            });
-    }
 
     // Attach to "+ Add New Employee" button if it exists
     const spaAddEmployeeBtn = document.getElementById('spa-add-employee-btn');
@@ -3370,76 +3364,3 @@ window.printCurrentEsr = function () {
         printWindow.print();
     }, 500);
 };
-
-// Auto-load summaries when switching to the view
-const originalSwitchSpaView = window.switchSpaView;
-window.switchSpaView = function(targetView, activeBtn) {
-    if (targetView && targetView.id === 'shift-summary-view') {
-        window.loadShiftSummaries();
-    }
-    
-    // Check if we need to call original
-    const buttons = [
-        document.getElementById('dashboard-btn'),
-        document.getElementById('manage-employees-btn'),
-        document.getElementById('view-report-btn'),
-        document.getElementById('view-esr-jpgs-btn'),
-        document.getElementById('attendance-btn'),
-        document.getElementById('settings-btn'),
-        document.querySelector('.master-report-btn')
-    ];
-    
-    const views = [
-        document.getElementById('dashboard-view'),
-        document.getElementById('employees-view'),
-        document.getElementById('reports-view'),
-        document.getElementById('shift-summary-view'),
-        document.getElementById('attendance-view'),
-        document.getElementById('settings-view'),
-        document.getElementById('master-reports-hub-v2')
-    ];
-
-    views.forEach(v => { if (v) v.style.display = 'none'; });
-    buttons.forEach(b => { if (b) b.classList.remove('active'); });
-
-    if (targetView) targetView.style.display = 'block';
-    if (activeBtn) activeBtn.classList.add('active');
-};
-    // --- DATA INTEGRITY AUDIT ---
-    window.auditEmployeeData = function(employees) {
-        const intAlerts = [];
-        employees.forEach(emp => {
-            const missing = [];
-            if (!emp.basicSalary) missing.push('Salary');
-            if (!emp.bankName || !emp.accountNumber) missing.push('Bank Info');
-            if (!emp.aadharNumber || !emp.panNumber) missing.push('Govt IDs');
-
-            if (missing.length > 0) {
-                intAlerts.push({
-                    user: emp.name,
-                    desc: `Incomplete: Missing ${missing.join(', ')}`,
-                    color: '#F97316', // Orange for integrity
-                    icon: 'user-edit',
-                    action: `window.spaEditEmployee('${emp.id}')`
-                });
-            }
-        });
-
-        window.dashboardAlerts.integrity = intAlerts;
-        window.renderAlertHub();
-    };
-
-    // Auto-run audit when employee list is fetched
-    const originalFetchEmployeesForSPA = window.fetchEmployeesForSPA;
-    window.fetchEmployeesForSPA = async function() {
-        if (typeof originalFetchEmployeesForSPA === 'function') {
-            await originalFetchEmployeesForSPA();
-        }
-        
-        // Re-fetch current state for audit if not globally available
-        try {
-            const res = await fetch('/api/employees');
-            const employees = await res.json();
-            window.auditEmployeeData(Array.isArray(employees) ? employees : []);
-        } catch(e) {}
-    };
