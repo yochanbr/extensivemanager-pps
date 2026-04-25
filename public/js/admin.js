@@ -1226,61 +1226,141 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // SPA Employee Management Logic
+    let allEmployeesForSPA = [];
+
     function fetchEmployeesForSPA() {
+        const container = document.getElementById('spa-employee-list');
+        if (!container) return;
+
         fetch('/api/employees')
             .then(res => res.json())
             .then(employees => {
-                const container = document.getElementById('spa-employee-list');
-                if (!container) return;
-
-                let tableHTML = `
-                <div class="table-wrapper">
-                    <table class="status-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                if (employees.length === 0) {
-                    tableHTML += `<tr><td colspan="3" style="text-align: center;">No employees found.</td></tr>`;
-                } else {
-                    employees.forEach(emp => {
-                        tableHTML += `
-                            <tr>
-                                <td>
-                                    <div style="display:flex; align-items:center; gap:10px;">
-                                        <div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600;">
-                                            ${(emp.name ? emp.name.charAt(0).toUpperCase() : '?')}
-                                        </div>
-                                        <div style="font-weight: 500;">${emp.name}</div>
-                                    </div>
-                                </td>
-                                <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${emp.isActive === false ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; color:${emp.isActive === false ? '#ef4444' : '#10b981'};">${emp.isActive === false ? 'Deactivated' : 'Active'}</span></td>
-                                 <td>
-                                    <div class="actions-cell">
-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="spaToggleEmployeeStatus('${emp.id}', ${emp.isActive !== false})"><i class="fas fa-${emp.isActive === false ? 'check' : 'ban'}"></i> <span>${emp.isActive === false ? 'Activate' : 'Deactivate'}</span></button>
-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.openFaceRegistration('${emp.id}')"><i class="fas fa-camera"></i> <span>Face</span></button>
-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.spaEditEmployee('${emp.id}')"><i class="fas fa-edit"></i> <span>Edit</span></button>
-                                        <button class="action-btn danger" style="padding: 6px 10px; font-size: 12px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 8px;" onclick="spaDeleteEmployee('${emp.id}')"><i class="fas fa-trash"></i> <span>Delete</span></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                tableHTML += `
-                        </tbody>
-                    </table>
-                </div>
-                `;
-                container.innerHTML = tableHTML;
+                allEmployeesForSPA = employees;
+                renderEmployeesSPA(employees);
             })
+            .catch(err => {
+                console.error('Error fetching employees:', err);
+                container.innerHTML = '<p style="color:red; padding: 20px;">Failed to load employees.</p>';
+            });
+    }
+
+    function renderEmployeesSPA(employees) {
+        const container = document.getElementById('spa-employee-list');
+        if (!container) return;
+
+        if (employees.length === 0) {
+            container.innerHTML = `
+                <div style="padding: 100px 40px; text-align: center; color: #94A3B8;">
+                    <i class="fas fa-users-slash" style="font-size: 48px; opacity: 0.2; margin-bottom: 16px;"></i>
+                    <p style="font-weight: 600;">No staff records found matching your search.</p>
+                </div>`;
+            return;
+        }
+
+        let listHTML = `
+        <div class="modern-table-container" style="background: white; border-radius: 20px; overflow: hidden; border: 1px solid #F1F5F9;">
+            <table class="status-table">
+                <thead>
+                    <tr style="background: #F8FAFC; border-bottom: 1px solid #F1F5F9;">
+                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Staff Member</th>
+                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Availability</th>
+                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B; text-align: right;">Command Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        employees.forEach(emp => {
+            const isActive = emp.isActive !== false;
+            const initial = (emp.name ? emp.name.charAt(0).toUpperCase() : '?');
+            const empRole = emp['blood-group'] || 'Staff Member';
+            
+            listHTML += `
+                <tr class="employee-row" style="transition: background 0.2s; border-bottom: 1px solid #F8FAFC;">
+                    <td style="padding: 20px 24px;">
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <div style="width:44px; height:44px; border-radius:14px; background: ${isActive ? 'linear-gradient(135deg, #F95A2C 0%, #FF8C42 100%)' : '#E2E8F0'}; color:white; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 18px; box-shadow: 0 4px 12px ${isActive ? 'rgba(249, 90, 44, 0.2)' : 'rgba(0,0,0,0.05)'};">
+                                ${initial}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #1E293B; font-size: 15px;">${emp.name}</div>
+                                <div style="font-size: 12px; color: #94A3B8; font-weight: 500;">ID: ${emp.employeeId || 'EM-99'} • ${empRole}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 20px 24px;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: ${isActive ? '#DCFCE7' : '#FEE2E2'}; color: ${isActive ? '#166534' : '#991B1B'}; border: 1px solid ${isActive ? '#BBF7D0' : '#FECACA'};">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+                            ${isActive ? 'Active' : 'Deactivated'}
+                        </span>
+                    </td>
+                    <td style="padding: 20px 24px; text-align: right;">
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button class="icon-action-btn" title="${isActive ? 'Deactivate' : 'Activate'}" 
+                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#0F172A'" 
+                                onmouseout="this.style.background='white'; this.style.color='#64748B'"
+                                onclick="spaToggleEmployeeStatus('${emp.id}', ${isActive})">
+                                <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
+                            </button>
+                            <button class="icon-action-btn" title="Biometric Setup" 
+                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#F95A2C'; this.style.borderColor='#F95A2C'" 
+                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
+                                onclick="window.openFaceRegistration('${emp.id}')">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button class="icon-action-btn" title="Quick Edit" 
+                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#3B82F6'; this.style.borderColor='#3B82F6'" 
+                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
+                                onclick="window.spaEditEmployee('${emp.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="icon-action-btn" title="Remove Record" 
+                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #FEE2E2; background: #FFF1F2; color: #EF4444; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#EF4444'; this.style.color='white'" 
+                                onmouseout="this.style.background='#FFF1F2'; this.style.color='#EF4444'"
+                                onclick="spaDeleteEmployee('${emp.id}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        listHTML += `
+                </tbody>
+            </table>
+        </div>
+        `;
+        container.innerHTML = listHTML;
+        
+        if (!document.getElementById('emp-row-hover-style')) {
+            const style = document.createElement('style');
+            style.id = 'emp-row-hover-style';
+            style.innerHTML = '.employee-row:hover { background: #F8FAFC !important; }';
+            document.head.appendChild(style);
+        }
+    }
+
+    // Attach search listener
+    const spaEmpSearch = document.getElementById('spa-employee-search');
+    if (spaEmpSearch) {
+        spaEmpSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                renderEmployeesSPA(allEmployeesForSPA);
+                return;
+            }
+            const filtered = allEmployeesForSPA.filter(emp => 
+                (emp.name && emp.name.toLowerCase().includes(query)) || 
+                (emp.employeeId && emp.employeeId.toLowerCase().includes(query))
+            );
+            renderEmployeesSPA(filtered);
+        });
+    }
             .catch(err => {
                 console.error('Error fetching employees:', err);
                 const container = document.getElementById('spa-employee-list');
