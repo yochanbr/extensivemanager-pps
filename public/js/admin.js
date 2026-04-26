@@ -3684,13 +3684,11 @@ let currentBvStructuredData = null;
 
 window.openBillVerification = function(reportId) {
     currentBvReportId = reportId;
-    const panel = document.getElementById('bill-verification-panel');
     const overlay = document.getElementById('bill-verification-overlay');
     const loading = document.getElementById('bv-loading');
     const step1 = document.getElementById('bv-step-1');
     const step2 = document.getElementById('bv-step-2');
 
-    panel.classList.add('show');
     overlay.classList.add('show');
     loading.style.display = 'block';
     step1.style.display = 'none';
@@ -3702,7 +3700,6 @@ window.openBillVerification = function(reportId) {
         .then(data => {
             loading.style.display = 'none';
             step1.style.display = 'block';
-            // Data comes back with structured_data if it's a new report, or we might need to fallback
             currentBvStructuredData = data.structured_data || {};
         })
         .catch(() => {
@@ -3712,9 +3709,7 @@ window.openBillVerification = function(reportId) {
 };
 
 window.closeBillVerification = function() {
-    const panel = document.getElementById('bill-verification-panel');
     const overlay = document.getElementById('bill-verification-overlay');
-    panel.classList.remove('show');
     overlay.classList.remove('show');
     // Reset form
     document.getElementById('bv-step-1').style.display = 'block';
@@ -3764,22 +3759,22 @@ window.handleBvSubtypeChange = function() {
         if (currentBvStructuredData) {
             if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
                 upiHtml += `<div class="input-group">
-                    <label>UPI Difference (Pinelab)</label>
-                    <input type="number" id="bv-diff-pinelab" placeholder="0">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Pinelab)</label>
+                    <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
                 </div>`;
             }
             if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
                 upiHtml += `<div class="input-group">
-                    <label>UPI Difference (Paytm)</label>
-                    <input type="number" id="bv-diff-paytm" placeholder="0">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Paytm)</label>
+                    <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
                 </div>`;
             }
         }
         // Fallback if no specific data detected
         if (!upiHtml) {
             upiHtml = `<div class="input-group">
-                <label>UPI Difference (General)</label>
-                <input type="number" id="bv-diff-upi-gen" placeholder="0">
+                <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (General)</label>
+                <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
             </div>`;
         }
         upiRow.innerHTML = upiHtml;
@@ -3841,8 +3836,15 @@ window.loadBillVerificationReports = async function() {
         const tbody = document.getElementById('bill-reports-tbody');
         if (!tbody) return;
 
+        // Upgrade to modern-table styling
+        const table = tbody.closest('table');
+        if (table) {
+            table.className = 'modern-table';
+            table.style.marginTop = '0';
+        }
+
         if (!data.success || data.history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No bill verification reports found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
             return;
         }
 
@@ -3850,29 +3852,39 @@ window.loadBillVerificationReports = async function() {
             const ver = rep.verification_data || {};
             const diffs = ver.differences || {};
             let diffStr = [];
-            if (diffs.cash) diffStr.push(`Cash: ${diffs.cash}`);
-            if (diffs.pinelab) diffStr.push(`PL: ${diffs.pinelab}`);
-            if (diffs.paytm) diffStr.push(`PT: ${diffs.paytm}`);
-            if (diffs.upi_general) diffStr.push(`UPI: ${diffs.upi_general}`);
+            if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
+            if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
+            if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
+            if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
+
+            const hasRemarks = ver.remarks !== 'No';
 
             return `
                 <tr>
-                    <td style="font-weight:700;">${rep.employeeName}</td>
-                    <td>${rep.date}</td>
                     <td>
-                        <span style="background:${ver.remarks === 'No' ? '#F1F5F9' : '#FFF1ED'}; color:${ver.remarks === 'No' ? '#64748b' : '#F95A2C'}; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">
-                            ${ver.remarks === 'No' ? 'NO REMARKS' : 'HAS REMARKS'}
+                        <div style="font-weight:800; color:#0f172a; font-size:14px;">${rep.employeeName}</div>
+                        <div style="font-size:11px; color:#64748b; margin-top:2px; font-weight:600;">Shift ID: ${rep.id.slice(-6).toUpperCase()}</div>
+                    </td>
+                    <td style="font-weight:700; color:#475569; font-size:13px;">${rep.date}</td>
+                    <td>
+                        <span class="pill ${hasRemarks ? 'absent' : 'working'}" style="font-size:10px; padding:6px 12px; letter-spacing:0.5px; font-weight:800;">
+                            ${hasRemarks ? 'HAS REMARKS' : 'NO REMARKS'}
                         </span>
                     </td>
-                    <td>${ver.type || '-'}</td>
-                    <td style="font-family:monospace; font-size:12px;">${diffStr.join(', ') || '-'}</td>
                     <td>
-                        <div style="font-weight:600; font-size:12px;">${ver.verifiedBy || '-'}</div>
-                        <div style="font-size:10px; color:#94a3b8;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString() : ''}</div>
+                        <div style="font-weight:700; font-size:12px; color:#1e293b;">${ver.type || '-'}</div>
+                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.subType || ''}</div>
+                    </td>
+                    <td style="font-family:'Inter', sans-serif;">
+                        ${diffStr.join('') || '<span style="color:#cbd5e1;">-</span>'}
                     </td>
                     <td>
-                        <button class="action-btn" onclick="window.viewShiftReport('${rep.id}')" style="background:#f1f5f9; color:#1e293b; border:none; padding:6px; border-radius:6px; cursor:pointer;">
-                            <i class="fas fa-eye"></i>
+                        <div style="font-weight:700; font-size:13px; color:#0f172a;">${ver.verifiedBy || '-'}</div>
+                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString([], {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short'}) : ''}</div>
+                    </td>
+                    <td>
+                        <button class="action-btn secondary" onclick="window.viewShiftReport('${rep.id}')" style="width:36px; height:36px; padding:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border:none; transition: all 0.2s ease;">
+                            <i class="fas fa-eye" style="font-size:14px; color:#1e293b;"></i>
                         </button>
                     </td>
                 </tr>

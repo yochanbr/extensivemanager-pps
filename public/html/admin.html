@@ -1620,80 +1620,87 @@
         </div>
     </div>
 
-    <!-- BILL VERIFICATION SIDE-PANEL -->
-    <div class="side-panel-overlay" id="bill-verification-overlay" onclick="window.closeBillVerification()"></div>
-    <div class="side-panel" id="bill-verification-panel">
-        <div class="side-panel-header">
-            <h2 id="bv-panel-title">Verify Shift Bill</h2>
-            <button class="close-panel-btn" onclick="window.closeBillVerification()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="side-panel-content">
-            <div id="bv-loading" style="display:none; text-align:center; padding:40px;">
-                <i class="fas fa-spinner fa-spin fa-2x" style="color:#F95A2C;"></i>
-                <p style="margin-top:10px; color:#64748b;">Detecting ESR data...</p>
+    <!-- BILL VERIFICATION MODAL (Centered Popup) -->
+    <div class="modal-overlay" id="bill-verification-overlay" onclick="window.closeBillVerification()">
+        <div class="modern-modal" id="bill-verification-modal" style="max-width: 500px;" onclick="event.stopPropagation()">
+            <div class="modern-modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 24px 32px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: #F8FAFC; color: #F95A2C; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;">Verify Shift Bill</h2>
+                </div>
+                <button class="close-panel-btn" onclick="window.closeBillVerification()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748b;">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+            
+            <div class="modern-modal-content" style="padding: 32px;">
+                <div id="bv-loading" style="display:none; text-align:center; padding:40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color:#F95A2C;"></i>
+                    <p style="margin-top:16px; color:#64748b; font-weight: 500;">Detecting ESR data...</p>
+                </div>
 
-            <div id="bv-step-1">
-                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:16px; padding:24px; text-align:center;">
-                    <i class="fas fa-question-circle fa-3x" style="color:#3B82F6; margin-bottom:16px;"></i>
-                    <h3>Any remarks in Bill?</h3>
-                    <p style="color:#64748b; margin-bottom:20px;">Review the shift collection report before finalizing.</p>
-                    <div style="display:flex; gap:12px;">
-                        <button class="panel-btn-secondary" onclick="window.saveBillVerification('No')" style="flex:1;">No Remarks</button>
-                        <button class="panel-btn-primary" onclick="window.toBvStep2()" style="flex:1;">Yes, Add Remarks</button>
+                <div id="bv-step-1">
+                    <div style="text-align:center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: #E0F2FE; color: #3B82F6; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px;">
+                            <i class="fas fa-question"></i>
+                        </div>
+                        <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 12px;">Any remarks in Bill?</h3>
+                        <p style="color:#64748b; margin-bottom:32px; line-height: 1.6;">Please review the shift collection report before finalizing this verification.</p>
+                        
+                        <div style="display:flex; flex-direction: column; gap:12px;">
+                            <button class="modern-btn accent" onclick="window.toBvStep2()" style="height: 54px; font-weight: 700; font-size: 15px;">
+                                Yes, Add Remarks <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                            </button>
+                            <button class="modern-btn secondary" onclick="window.saveBillVerification('No')" style="height: 54px; font-weight: 600; font-size: 15px; border-color: #E2E8F0;">
+                                No Remarks, Proceed
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="bv-step-2" style="display:none;">
-                <h3 class="form-section-title">Select Remark Category</h3>
-                <div class="input-group">
-                    <label>What type of remark?</label>
-                    <div class="custom-select-wrapper">
-                        <select id="bv-type" onchange="window.handleBvTypeChange()">
+                <div id="bv-step-2" style="display:none;">
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Remark Category</label>
+                        <select id="bv-type" onchange="window.handleBvTypeChange()" style="width: 100%; height: 50px; border-radius: 12px; border: 1px solid #E2E8F0; padding: 0 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC;">
                             <option value="">Choose Category...</option>
                             <option value="Bill Error">Bill Error</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                </div>
 
-                <div id="bv-bill-error-group" style="display:none; margin-top:20px;">
-                    <div class="input-group">
-                        <label>Select Bill Error Type</label>
-                        <div class="custom-select-wrapper">
-                            <select id="bv-subtype" onchange="window.handleBvSubtypeChange()">
-                                <option value="">Choose Sub-category...</option>
-                                <option value="Bill difference issue">Bill difference issue</option>
-                                <option value="Other">Other</option>
-                            </select>
+                    <div id="bv-bill-error-group" style="display:none; margin-top:20px;">
+                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Error Type</label>
+                        <select id="bv-subtype" onchange="window.handleBvSubtypeChange()" style="width: 100%; height: 50px; border-radius: 12px; border: 1px solid #E2E8F0; padding: 0 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC;">
+                            <option value="">Choose Sub-category...</option>
+                            <option value="Bill difference issue">Bill difference issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div id="bv-differences-group" style="display:none; margin-top:20px; background:#FFF1ED; padding:20px; border-radius:16px; border:1px solid rgba(249,90,44,0.1);">
+                        <h4 style="color:#F95A2C; margin-bottom:15px; font-size:12px; text-transform:uppercase; font-weight: 800; letter-spacing: 0.5px;">Input Cash/UPI Differences</h4>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                            <div class="input-group">
+                                <label style="font-size: 12px; font-weight: 700; color: #475569;">Cash Difference</label>
+                                <input type="number" id="bv-diff-cash" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
+                            </div>
+                            <div id="bv-diff-upi-row" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                                <!-- UPI inputs injected here -->
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="bv-differences-group" style="display:none; margin-top:20px; background:#FFF1ED; padding:20px; border-radius:16px; border:1px solid rgba(249,90,44,0.1);">
-                    <h4 style="color:#F95A2C; margin-bottom:15px; font-size:13px; text-transform:uppercase;">Input Differences (Negative values allowed)</h4>
-                    <div class="input-row">
-                        <div class="input-group">
-                            <label>Cash Difference</label>
-                            <input type="number" id="bv-diff-cash" placeholder="0">
-                        </div>
+                    <div id="bv-manual-text-group" style="display:none; margin-top:20px;">
+                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Detailed Remarks</label>
+                        <textarea id="bv-manual-text" placeholder="Explain the situation..." rows="3" style="width: 100%; border-radius: 12px; border: 1px solid #E2E8F0; padding: 12px 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC; resize: none;"></textarea>
                     </div>
-                    <div class="input-row" id="bv-diff-upi-row">
-                        <!-- UPI inputs will be injected here (Pinelab/Paytem) -->
-                    </div>
-                </div>
 
-                <div id="bv-manual-text-group" style="display:none; margin-top:20px;">
-                    <div class="input-group">
-                        <label>Detailed Remarks</label>
-                        <textarea id="bv-manual-text" placeholder="Enter remarks here..." rows="4"></textarea>
+                    <div style="margin-top:32px; display:flex; gap:12px;">
+                        <button class="modern-btn secondary" onclick="window.backToBvStep1()" style="flex:1; height: 50px;">Back</button>
+                        <button class="modern-btn accent" onclick="window.saveBillVerification('Yes')" style="flex:2; height: 50px; font-weight: 700;">Save Verification</button>
                     </div>
-                </div>
-
-                <div style="margin-top:30px; display:flex; gap:12px;">
-                    <button class="panel-btn-secondary" onclick="window.backToBvStep1()" style="flex:1;">Back</button>
-                    <button class="panel-btn-primary" onclick="window.saveBillVerification('Yes')" style="flex:2;">Save & Verify Bill</button>
                 </div>
             </div>
         </div>
