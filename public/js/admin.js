@@ -700,10 +700,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (billingCard) {
         billingCard.addEventListener('click', () => {
-            nammaModalSystem.alert("Billing Analytics is a premium module and is currently being configured for your store.", {
-                title: "Coming Soon",
-                theme: "default"
-            });
+            if (typeof window.showBillReportingView === 'function') {
+                window.showBillReportingView();
+            }
         });
     }
 
