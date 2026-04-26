@@ -1214,20 +1214,51 @@
                         </div>
                         <div class="input-group">
                             <label>Category</label>
-                            <select name="full-time">
-                                <option value="yes">Full Time</option>
-                                <option value="no">Part Time</option>
-                            </select>
+                            <div class="custom-select-wrapper">
+                                <select name="full-time">
+                                    <option value="yes">Full Time</option>
+                                    <option value="no">Part Time</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-icon"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Shift Start</label>
-                            <input type="time" name="start-time" value="09:00">
+                            <label>Shift Start (12h)</label>
+                            <div class="time-12h-group">
+                                <select name="start-hour" class="t-hour">
+                                    <option value="09">09</option><option value="10">10</option><option value="11">11</option>
+                                    <option value="12">12</option><option value="01">01</option><option value="02">02</option>
+                                    <option value="03" selected>03</option><option value="04">04</option><option value="05">05</option>
+                                    <option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                                </select>
+                                <span class="t-sep">:</span>
+                                <select name="start-min" class="t-min">
+                                    <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                                </select>
+                                <select name="start-period" class="t-period">
+                                    <option value="AM">AM</option><option value="PM" selected>PM</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label>Shift End</label>
-                            <input type="time" name="end-time" value="18:00">
+                            <label>Shift End (12h)</label>
+                            <div class="time-12h-group">
+                                <select name="end-hour" class="t-hour">
+                                    <option value="06" selected>06</option><option value="07">07</option><option value="08">08</option>
+                                    <option value="09">09</option><option value="10">10</option><option value="11">11</option>
+                                    <option value="12">12</option><option value="01">01</option><option value="02">02</option>
+                                    <option value="03">03</option><option value="04">04</option><option value="05">05</option>
+                                </select>
+                                <span class="t-sep">:</span>
+                                <select name="end-min" class="t-min">
+                                    <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                                </select>
+                                <select name="end-period" class="t-period">
+                                    <option value="AM">AM</option><option value="PM" selected>PM</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="input-group">

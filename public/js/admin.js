@@ -1464,6 +1464,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
+
+            // Convert 12h format to 24h for backend
+            const convertTo24h = (h, m, p) => {
+                let hour = parseInt(h);
+                if (p === 'PM' && hour < 12) hour += 12;
+                if (p === 'AM' && hour === 12) hour = 0;
+                return `${String(hour).padStart(2, '0')}:${m}`;
+            };
+
+            data['start-time'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
+            data['end-time'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
+
+            // Cleanup temp 12h fields
+            ['start-hour', 'start-min', 'start-period', 'end-hour', 'end-min', 'end-period'].forEach(f => delete data[f]);
+
             data['working-days'] = formData.getAll('working-days').join(',');
             data.isActive = true;
 
