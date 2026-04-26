@@ -2605,28 +2605,40 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
 
         // 1. Fetch all ESR reports for this employee in this month
         let totalDiff = 0;
+        
+        // Fetch current employee name for fallback matching
+        const empDoc = await db.employees().doc(employeeId).get();
+        const empName = empDoc.exists ? empDoc.data().name : null;
+
         const processReport = (doc) => {
             const data = doc.data();
-            // Match month (YYYY-MM) against date string (any format containing it)
             const dateStr = data.date || '';
-            const isMatch = dateStr.includes(month); // e.g. "2026-04-26" includes "2026-04"
+            const isMatch = dateStr.includes(month);
             
             if (isMatch && data.verified && data.verification_data) {
                 const diffs = data.verification_data.differences || {};
-                totalDiff += (parseFloat(diffs.cash) || 0) + 
-                             (parseFloat(diffs.pinelab) || 0) + 
-                             (parseFloat(diffs.paytm) || 0) + 
-                             (parseFloat(diffs.upi_general) || 0);
+                // Sum UP ALL numeric values in the differences object as a robust fallback
+                Object.values(diffs).forEach(val => {
+                    const num = parseFloat(val);
+                    if (!isNaN(num)) totalDiff += num;
+                });
             }
         };
 
-        const [snap1, snap2] = await Promise.all([
+        const [snap1, snap2, snap3] = await Promise.all([
             db.esr_reports().where('employee_id', '==', employeeId).get(),
-            db.esr_reports().where('employeeId', '==', employeeId).get()
+            db.esr_reports().where('employeeId', '==', employeeId).get(),
+            empName ? db.esr_reports().where('employeeName', '==', empName).get() : Promise.resolve({ docs: [] })
         ]);
         
-        snap1.docs.forEach(processReport);
-        snap2.docs.forEach(processReport);
+        // Collect all unique doc IDs to avoid double counting
+        const processedDocs = new Set();
+        [...snap1.docs, ...snap2.docs, ...snap3.docs].forEach(doc => {
+            if (!processedDocs.has(doc.id)) {
+                processReport(doc);
+                processedDocs.add(doc.id);
+            }
+        });
 
         // 2. Fetch Attendance for worked days (Daily Sessions)
         const sessSnapshot = await db.daily_sessions()
