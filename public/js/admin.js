@@ -3407,7 +3407,6 @@ document.addEventListener('DOMContentLoaded', () => {
         str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + ' ' : '';
         return str.trim();
     }
-});
 
 window.addEventListener('error', function (e) {
     const tbody = document.getElementById('attendance-logs-tbody');
