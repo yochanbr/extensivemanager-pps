@@ -2579,6 +2579,22 @@ app.post('/api/admin/verify-bill', verifyAdmin, async (req, res) => {
 });
 
 /**
+ * Endpoint: Delete Bill Verification (Reset to Unverified)
+ */
+app.delete('/api/admin/verify-bill/:reportId', verifyAdmin, async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        await db.esr_reports().doc(reportId).update({
+            verified: false,
+            verification_data: admin.firestore.FieldValue.delete()
+        });
+        res.json({ success: true, message: 'Verification deleted.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
  * Endpoint: Get Bill Verification Reports (Studio)
  */
 app.get('/api/admin/bill-verification-reports', verifyAdmin, async (req, res) => {

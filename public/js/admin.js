@@ -3513,6 +3513,38 @@ window.showShiftReportDetails = async function (reportId) {
         if (textData.success) {
             textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
             subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
+            
+            // If verified, append the management bar
+            if (textData.metadata.verified) {
+                const ver = textData.metadata.verification_data || {};
+                const hasRemarks = ver.remarks !== 'No';
+                
+                const mgmtBar = document.createElement('div');
+                mgmtBar.className = 'esr-rendered-section';
+                mgmtBar.style.marginTop = '24px';
+                mgmtBar.style.border = '2px solid #F1F5F9';
+                mgmtBar.style.background = '#FFFFFF';
+                
+                mgmtBar.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Audit Management</h4>
+                        <span class="pill ${hasRemarks ? 'absent' : 'working'}">${hasRemarks ? 'REMARKS PENDING' : 'AUDIT SOLVED'}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+                        <button class="modern-btn secondary" onclick="window.editBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
+                            <i class="fas fa-edit"></i> Edit Audit
+                        </button>
+                        ${hasRemarks ? `
+                        <button class="modern-btn" onclick="window.solveBillRemarks('${reportId}')" style="font-size:12px; padding:12px; background:#10B981; color:white; border:none;">
+                            <i class="fas fa-check-double"></i> Mark Solved
+                        </button>` : ''}
+                        <button class="modern-btn accent" onclick="window.deleteBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
+                            <i class="fas fa-trash-alt"></i> Delete Audit
+                        </button>
+                    </div>
+                `;
+                textArea.appendChild(mgmtBar);
+            }
         } else {
             textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
         }
@@ -3826,7 +3858,110 @@ window.saveBillVerification = async function(remarkChoice) {
     } catch (err) {
         await nammaModalSystem.alert("Failed to connect to server.");
     }
+// --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
+window.deleteBillVerification = async function(reportId) {
+    const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
+        confirmText: "Yes, Delete",
+        cancelText: "Keep it",
+        theme: "danger"
+    });
+    if (!proceed) return;
+
+    try {
+        const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) {
+            await nammaModalSystem.alert("Verification deleted successfully.");
+            window.closeEsrDetailModal();
+            window.loadBillVerificationReports();
+        } else {
+            await nammaModalSystem.alert("Error deleting verification: " + result.message);
+        }
+    } catch (err) {
+        await nammaModalSystem.alert("Failed to connect to server.");
+    }
 };
+
+window.solveBillRemarks = async function(reportId) {
+    const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
+        confirmText: "Mark Solved",
+        cancelText: "Cancel"
+    });
+    if (!proceed) return;
+
+    try {
+        // Fetch existing data first to preserve differences
+        const res1 = await fetch(`/api/esr-reports/${reportId}`);
+        const data1 = await res1.json();
+        const existing = data1.metadata.verification_data || {};
+
+        const payload = {
+            reportId,
+            remarks: "No",
+            type: existing.type || "Other",
+            subType: existing.subType || "",
+            differences: existing.differences || {},
+            manualText: existing.manualText || "Marked as solved by Admin"
+        };
+
+        const res2 = await fetch('/api/admin/verify-bill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await res2.json();
+        if (result.success) {
+            await nammaModalSystem.alert("Audit solved successfully.");
+            window.showReportDetails(reportId); // Refresh the modal
+            window.loadBillVerificationReports(); // Refresh the table
+        }
+    } catch (err) {
+        await nammaModalSystem.alert("Failed to solve remarks.");
+    }
+};
+
+window.editBillVerification = async function(reportId) {
+    // 1. Close the current detail modal
+    window.closeEsrDetailModal();
+    
+    // 2. Open the verification overlay
+    window.openBillVerification(reportId);
+    
+    // 3. Pre-fill existing data
+    try {
+        const res = await fetch(`/api/esr-reports/${reportId}`);
+        const data = await res.json();
+        if (data.metadata && data.metadata.verification_data) {
+            const v = data.metadata.verification_data;
+            setTimeout(() => {
+                document.getElementById('bv-type').value = v.type || '';
+                window.handleBvTypeChange();
+                document.getElementById('bv-subtype').value = v.subType || '';
+                window.handleBvSubtypeChange();
+                if (v.differences) {
+                    if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
+                    if (v.differences.pinelab) {
+                        const pl = document.getElementById('bv-diff-pinelab');
+                        if (pl) pl.value = v.differences.pinelab;
+                    }
+                    if (v.differences.paytm) {
+                        const pt = document.getElementById('bv-diff-paytm');
+                        if (pt) pt.value = v.differences.paytm;
+                    }
+                    if (v.differences.upi_general) {
+                        const ug = document.getElementById('bv-diff-upi-gen');
+                        if (ug) ug.value = v.differences.upi_general;
+                    }
+                }
+                document.getElementById('bv-manual-text').value = v.manualText || '';
+            }, 500); // Wait for openBillVerification fetch to finish
+        }
+    } catch (e) {
+        console.error("Error pre-filling edit form", e);
+    }
+};
+
+const BV_SAVE_PARITY = true;
 
 // --- BILL REPORTING Logic ---
 window.loadBillVerificationReports = async function() {
