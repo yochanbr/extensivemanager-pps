@@ -3303,7 +3303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="payslip-label">Employee ID</td>
                                     <td class="payslip-value">${employee.username || employee['employee-id'] || 'N/A'}</td>
                                     <td class="payslip-label">Location</td>
-                                    <td class="payslip-value">${location}</td>
+                                    <td class="payslip-value">${employee.location || location}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Employee Name</td>
@@ -3313,27 +3313,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Designation</td>
-                                    <td class="payslip-value">Customer Representative</td>
+                                    <td class="payslip-value">${employee.designation || 'Customer Representative'}</td>
                                     <td class="payslip-label">Worked Days</td>
                                     <td class="payslip-value">${workedDays}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Department</td>
-                                    <td class="payslip-value">Operations</td>
+                                    <td class="payslip-value">${employee.department || 'Operations'}</td>
                                     <td class="payslip-label">LOP Days</td>
                                     <td class="payslip-value">${lopDays}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Joining Date</td>
-                                    <td class="payslip-value">NOT SPECIFIED</td>
+                                    <td class="payslip-value">${employee['joining-date'] || 'NOT SPECIFIED'}</td>
                                     <td class="payslip-label">Leave Balance</td>
                                     <td class="payslip-value">${leaveBalance}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">ESI Number</td>
-                                    <td class="payslip-value">NOT SPECIFIED</td>
+                                    <td class="payslip-value">${employee.esi || 'NOT SPECIFIED'}</td>
                                     <td class="payslip-label">PF Number</td>
-                                    <td class="payslip-value">N/A</td>
+                                    <td class="payslip-value">${employee['pf-number'] || 'N/A'}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Bank Name</td>
@@ -3345,7 +3345,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="payslip-label">PAN Number</td>
                                     <td class="payslip-value">${employee['pan-number'] || 'N/A'}</td>
                                     <td class="payslip-label">PF UAN Number</td>
-                                    <td class="payslip-value">N/A</td>
+                                    <td class="payslip-value">${employee['uan-number'] || 'N/A'}</td>
                                 </tr>
                             </table>
 
