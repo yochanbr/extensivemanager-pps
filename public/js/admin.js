@@ -3897,18 +3897,32 @@ window.loadBillVerificationReports = async function() {
 
 window.showBillReportingView = function() {
     // Hide all Studio sub-views
-    document.querySelectorAll('#master-reports-hub-v2 ~ div').forEach(div => div.style.display = 'none');
-    document.getElementById('attendance-matrix-view').style.display = 'none';
+    document.querySelectorAll('#master-reports-hub-v2 ~ div').forEach(div => {
+        if (div) div.style.display = 'none';
+    });
     
-    document.getElementById('master-reports-hub-v2').style.display = 'none';
-    document.getElementById('bill-report-view').style.display = 'block';
-    window.loadBillVerificationReports();
+    const attMatrix = document.getElementById('attendance-matrix-view');
+    if (attMatrix) attMatrix.style.display = 'none';
+    
+    const hub = document.getElementById('master-reports-hub-v2');
+    if (hub) hub.style.display = 'none';
+    
+    const billView = document.getElementById('bill-report-view');
+    if (billView) {
+        billView.style.display = 'block';
+        window.loadBillVerificationReports();
+    }
 };
 
 window.backToStudioHub = function() {
-    document.getElementById('attendance-matrix-view').style.display = 'none';
-    document.getElementById('bill-report-view').style.display = 'none';
-    document.getElementById('master-reports-hub-v2').style.display = 'block';
+    const attMatrix = document.getElementById('attendance-matrix-view');
+    if (attMatrix) attMatrix.style.display = 'none';
+    
+    const billView = document.getElementById('bill-report-view');
+    if (billView) billView.style.display = 'none';
+    
+    const hub = document.getElementById('master-reports-hub-v2');
+    if (hub) hub.style.display = 'block';
 };
 
 window.viewShiftReport = function(id) {
