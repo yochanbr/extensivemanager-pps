@@ -2583,8 +2583,12 @@ app.post('/api/admin/verify-bill', verifyAdmin, async (req, res) => {
  */
 app.get('/api/admin/bill-verification-reports', verifyAdmin, async (req, res) => {
     try {
-        const snapshot = await db.esr_reports().where('verified', '==', true).orderBy('created_at', 'desc').limit(100).get();
-        const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const snapshot = await db.esr_reports().where('verified', '==', true).limit(100).get();
+        let history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort in memory to avoid Firestore index requirements
+        history.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        
         res.json({ success: true, history });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
