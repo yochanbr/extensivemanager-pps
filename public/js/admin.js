@@ -1875,6 +1875,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-ifsc-code', emp['ifsc-code'] || emp.ifscCode);
                 setVal('spa-edit-pan-number', emp['pan-number'] || emp.panNumber);
                 setVal('spa-edit-basic-salary', emp.basicSalary || emp['basic-salary'] || emp['basicSalary']);
+                setVal('spa-edit-lop-per-day', emp.lopPerDay || '');
+                setVal('spa-edit-lop-per-hour', emp.lopPerHour || '');
                 setVal('spa-edit-esi', emp.esi || emp.ESI);
                 setVal('spa-edit-designation', emp.designation);
                 setVal('spa-edit-department', emp.department);
