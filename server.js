@@ -2609,34 +2609,50 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         // Fetch current employee details for matching
         const empDoc = await db.employees().doc(employeeId).get();
         const empData = empDoc.exists ? empDoc.data() : {};
-        const empName = (empData.name || '').toLowerCase();
-        const empUsername = (empData.username || '').toLowerCase();
+        const empName = empData.name || '';
+        const empUsername = empData.username || '';
 
-        // fetch ALL verified reports. We filter by month and employee in memory for absolute reliability.
-        // Usually there are only a few hundred verified reports per month, so this is very fast.
-        const snapshot = await db.esr_reports().where('verified', '==', true).get();
-        
-        snapshot.docs.forEach(doc => {
+        const processReport = (doc) => {
             const data = doc.data();
             const reportDate = data.date || '';
-            
-            // 1. Check Month Match (YYYY-MM)
             if (!reportDate.includes(month)) return;
 
-            // 2. Check Employee Match (Case Insensitive Name OR ID)
-            const rName = (data.employeeName || '').toLowerCase();
-            const rId = (data.employee_id || data.employeeId || '').toLowerCase();
-            
-            const isNameMatch = empName && rName === empName;
-            const isIdMatch = (employeeId && rId === employeeId.toLowerCase()) || (empUsername && rId === empUsername);
-
-            if ((isNameMatch || isIdMatch) && data.verification_data && data.verification_data.differences) {
+            if (data.verified && data.verification_data && data.verification_data.differences) {
                 const diffs = data.verification_data.differences;
                 Object.values(diffs).forEach(val => {
                     const num = parseFloat(val);
                     if (!isNaN(num)) totalDiff += num;
                 });
             }
+        };
+
+        // Run multiple queries in parallel to catch all variations without composite indexes
+        // This is much safer than scanning the whole collection
+        const queries = [
+            db.esr_reports().where('employee_id', '==', employeeId).get(),
+            db.esr_reports().where('employeeId', '==', employeeId).get()
+        ];
+
+        if (empName) {
+            queries.push(db.esr_reports().where('employeeName', '==', empName).get());
+            queries.push(db.esr_reports().where('employeeName', '==', empName.toLowerCase()).get());
+            queries.push(db.esr_reports().where('employeeName', '==', empName.toUpperCase()).get());
+        }
+        if (empUsername) {
+            queries.push(db.esr_reports().where('employee_id', '==', empUsername).get());
+            queries.push(db.esr_reports().where('employeeId', '==', empUsername).get());
+        }
+
+        const snapshots = await Promise.all(queries);
+        
+        const processedDocs = new Set();
+        snapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => {
+                if (!processedDocs.has(doc.id)) {
+                    processReport(doc);
+                    processedDocs.add(doc.id);
+                }
+            });
         });
 
         // 2. Fetch Attendance for worked days (Daily Sessions)
