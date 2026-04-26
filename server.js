@@ -2539,6 +2539,59 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
 });
 
 /**
+ * Endpoint: Get Unverified Shift Bills
+ */
+app.get('/api/admin/unverified-shifts', verifyAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.esr_reports().where('verified', '==', false).get();
+        const reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ success: true, reports });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * Endpoint: Save Bill Verification
+ */
+app.post('/api/admin/verify-bill', verifyAdmin, async (req, res) => {
+    try {
+        const { reportId, remarks, type, subType, differences, manualText } = req.body;
+        if (!reportId) return res.status(400).json({ success: false, message: 'Missing reportId' });
+
+        await db.esr_reports().doc(reportId).update({
+            verified: true,
+            verification_data: {
+                remarks: remarks || 'No',
+                type: type || null,
+                subType: subType || null,
+                differences: differences || {},
+                manualText: manualText || '',
+                verifiedAt: new Date().toISOString(),
+                verifiedBy: req.admin.username
+            }
+        });
+
+        res.json({ success: true, message: 'Bill verification saved.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * Endpoint: Get Bill Verification Reports (Studio)
+ */
+app.get('/api/admin/bill-verification-reports', verifyAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.esr_reports().where('verified', '==', true).orderBy('created_at', 'desc').limit(100).get();
+        const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json({ success: true, history });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
  * Endpoint: Get Shift Text Report (Decrypted)
  */
 app.get('/api/esr-reports/:id', verifyAdmin, async (req, res) => {
@@ -2708,6 +2761,15 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
             date,
             shift_id: shiftId,
             report_data: encrypt(reportText.trim()),
+            structured_data: {
+                upiPinelab: reportSummary.upiPinelab || 0,
+                upiPaytm: reportSummary.upiPaytm || 0,
+                cardPinelab: reportSummary.cardPinelab || 0,
+                cardPaytm: reportSummary.cardPaytm || 0,
+                cash: reportSummary.cash || 0,
+                retailCredit: reportSummary.retailCredit || 0
+            },
+            verified: false,
             created_at: new Date().toISOString()
         });
 

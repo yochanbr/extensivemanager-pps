@@ -951,13 +951,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const dateInput = document.getElementById('mainDateFilter');
             const dateStr = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
-            const [empRes, logsRes] = await Promise.all([
+            const [empRes, logsRes, unverifiedRes] = await Promise.all([
                 fetch('/api/employees'),
-                fetch(`/api/daily-sessions?date=${dateStr}`)
+                fetch(`/api/daily-sessions?date=${dateStr}`),
+                fetch('/api/admin/unverified-shifts')
             ]);
             const employees = await empRes.json();
             const logsData = await logsRes.json();
+            const unverifiedData = await unverifiedRes.json();
             const sessions = logsData.success ? logsData.sessions : [];
+            const unverifiedReports = unverifiedData.success ? unverifiedData.reports : [];
 
             let active = 0, checkins = 0, breakCount = 0, checkouts = 0, leaveWorked = 0;
             let totalWorkMs = 0, totalBreakMs = 0;
@@ -1033,6 +1036,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const alerts = [];
             
             // 1. Scan for employees with missing shift configurations
+            // 2. Scan for unverified shift bills
+            unverifiedReports.forEach(rep => {
+                alerts.push({
+                    id: `verify-bill-${rep.id}`,
+                    type: 'bill_verification',
+                    icon: 'file-invoice-dollar',
+                    title: 'Bill Verification',
+                    user: rep.employeeName || 'Staff',
+                    desc: `Shift Ended (${rep.date}). Verify collections.`,
+                    color: '#3B82F6',
+                    isActionable: true,
+                    action: `window.openBillVerification('${rep.id}')`,
+                    actionLabel: 'Verify Bill'
+                });
+            });
+
             employees.forEach(emp => {
                 if (emp.isActive !== false && (!emp['start-time'] || !emp['end-time'])) {
                     alerts.push({
@@ -2770,8 +2789,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        listContainer.innerHTML = alerts.map(a => `
-            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+        listContainer.innerHTML = alerts.map(a => {
+            let actionHtml = '';
+            if (a.isActionable) {
+                if (a.type === 'bill_verification') {
+                    actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">${a.actionLabel || 'VERIFY'}</button>`;
+                } else {
+                    actionHtml = `
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                    `;
+                }
+            } else {
+                actionHtml = `<span style="font-size: 9px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase;">INFO</span>`;
+            }
+
+            return `
+            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
                 <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                     <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
                 </div>
@@ -2780,15 +2814,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc || a.title}</div>
                 </div>
                 <div style="display: flex; gap: 4px;">
-                    ${a.isActionable ? `
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
-                    ` : `
-                        <span style="font-size: 9px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase;">Fix in Profile</span>
-                    `}
+                    ${actionHtml}
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     };
 
     /**
@@ -3646,4 +3676,232 @@ window.printCurrentEsr = function () {
     setTimeout(() => {
         printWindow.print();
     }, 500);
+};
+
+// --- BILL VERIFICATION LOGIC ---
+let currentBvReportId = null;
+let currentBvStructuredData = null;
+
+window.openBillVerification = function(reportId) {
+    currentBvReportId = reportId;
+    const panel = document.getElementById('bill-verification-panel');
+    const overlay = document.getElementById('bill-verification-overlay');
+    const loading = document.getElementById('bv-loading');
+    const step1 = document.getElementById('bv-step-1');
+    const step2 = document.getElementById('bv-step-2');
+
+    panel.classList.add('show');
+    overlay.classList.add('show');
+    loading.style.display = 'block';
+    step1.style.display = 'none';
+    step2.style.display = 'none';
+
+    // Fetch report to get structured data (for Pinelab/Paytem detection)
+    fetch('/api/esr-reports/' + reportId)
+        .then(res => res.json())
+        .then(data => {
+            loading.style.display = 'none';
+            step1.style.display = 'block';
+            // Data comes back with structured_data if it's a new report, or we might need to fallback
+            currentBvStructuredData = data.structured_data || {};
+        })
+        .catch(() => {
+            loading.style.display = 'none';
+            step1.style.display = 'block';
+        });
+};
+
+window.closeBillVerification = function() {
+    const panel = document.getElementById('bill-verification-panel');
+    const overlay = document.getElementById('bill-verification-overlay');
+    panel.classList.remove('show');
+    overlay.classList.remove('show');
+    // Reset form
+    document.getElementById('bv-step-1').style.display = 'block';
+    document.getElementById('bv-step-2').style.display = 'none';
+    document.getElementById('bv-type').value = '';
+    document.getElementById('bv-subtype').value = '';
+    document.getElementById('bv-bill-error-group').style.display = 'none';
+    document.getElementById('bv-differences-group').style.display = 'none';
+    document.getElementById('bv-manual-text-group').style.display = 'none';
+    document.getElementById('bv-diff-cash').value = '';
+    document.getElementById('bv-manual-text').value = '';
+};
+
+window.toBvStep2 = function() {
+    document.getElementById('bv-step-1').style.display = 'none';
+    document.getElementById('bv-step-2').style.display = 'block';
+};
+
+window.backToBvStep1 = function() {
+    document.getElementById('bv-step-1').style.display = 'block';
+    document.getElementById('bv-step-2').style.display = 'none';
+};
+
+window.handleBvTypeChange = function() {
+    const type = document.getElementById('bv-type').value;
+    const errorGroup = document.getElementById('bv-bill-error-group');
+    const manualGroup = document.getElementById('bv-manual-text-group');
+
+    errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
+    manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
+    
+    if (type !== 'Bill Error') {
+        document.getElementById('bv-subtype').value = '';
+        document.getElementById('bv-differences-group').style.display = 'none';
+    }
+};
+
+window.handleBvSubtypeChange = function() {
+    const subtype = document.getElementById('bv-subtype').value;
+    const diffGroup = document.getElementById('bv-differences-group');
+    const upiRow = document.getElementById('bv-diff-upi-row');
+
+    if (subtype === 'Bill difference issue') {
+        diffGroup.style.display = 'block';
+        // Inject dynamic UPI inputs based on ESR
+        let upiHtml = '';
+        if (currentBvStructuredData) {
+            if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
+                upiHtml += `<div class="input-group">
+                    <label>UPI Difference (Pinelab)</label>
+                    <input type="number" id="bv-diff-pinelab" placeholder="0">
+                </div>`;
+            }
+            if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
+                upiHtml += `<div class="input-group">
+                    <label>UPI Difference (Paytm)</label>
+                    <input type="number" id="bv-diff-paytm" placeholder="0">
+                </div>`;
+            }
+        }
+        // Fallback if no specific data detected
+        if (!upiHtml) {
+            upiHtml = `<div class="input-group">
+                <label>UPI Difference (General)</label>
+                <input type="number" id="bv-diff-upi-gen" placeholder="0">
+            </div>`;
+        }
+        upiRow.innerHTML = upiHtml;
+    } else {
+        diffGroup.style.display = 'none';
+    }
+};
+
+window.saveBillVerification = async function(remarkChoice) {
+    let payload = {
+        reportId: currentBvReportId,
+        remarks: remarkChoice
+    };
+
+    if (remarkChoice === 'Yes') {
+        payload.type = document.getElementById('bv-type').value;
+        payload.subType = document.getElementById('bv-subtype').value;
+        payload.manualText = document.getElementById('bv-manual-text').value;
+        
+        payload.differences = {
+            cash: parseFloat(document.getElementById('bv-diff-cash').value) || 0
+        };
+        
+        const pinelabEl = document.getElementById('bv-diff-pinelab');
+        if (pinelabEl) payload.differences.pinelab = parseFloat(pinelabEl.value) || 0;
+        const paytmEl = document.getElementById('bv-diff-paytm');
+        if (paytmEl) payload.differences.paytm = parseFloat(paytmEl.value) || 0;
+        const upiGenEl = document.getElementById('bv-diff-upi-gen');
+        if (upiGenEl) payload.differences.upi_general = parseFloat(upiGenEl.value) || 0;
+    }
+
+    try {
+        const res = await fetch('/api/admin/verify-bill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.success) {
+            await nammaModalSystem.alert("Bill verification saved successfully!");
+            window.closeBillVerification();
+            window.loadDashboardData(); // Refresh notifications
+            if (document.getElementById('bill-report-view').style.display === 'block') {
+                window.loadBillVerificationReports();
+            }
+        } else {
+            await nammaModalSystem.alert("Error: " + result.message);
+        }
+    } catch (err) {
+        await nammaModalSystem.alert("Failed to connect to server.");
+    }
+};
+
+// --- BILL REPORTING Logic ---
+window.loadBillVerificationReports = async function() {
+    try {
+        const res = await fetch('/api/admin/bill-verification-reports');
+        const data = await res.json();
+        const tbody = document.getElementById('bill-reports-tbody');
+        if (!tbody) return;
+
+        if (!data.success || data.history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">No bill verification reports found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.history.map(rep => {
+            const ver = rep.verification_data || {};
+            const diffs = ver.differences || {};
+            let diffStr = [];
+            if (diffs.cash) diffStr.push(`Cash: ${diffs.cash}`);
+            if (diffs.pinelab) diffStr.push(`PL: ${diffs.pinelab}`);
+            if (diffs.paytm) diffStr.push(`PT: ${diffs.paytm}`);
+            if (diffs.upi_general) diffStr.push(`UPI: ${diffs.upi_general}`);
+
+            return `
+                <tr>
+                    <td style="font-weight:700;">${rep.employeeName}</td>
+                    <td>${rep.date}</td>
+                    <td>
+                        <span style="background:${ver.remarks === 'No' ? '#F1F5F9' : '#FFF1ED'}; color:${ver.remarks === 'No' ? '#64748b' : '#F95A2C'}; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">
+                            ${ver.remarks === 'No' ? 'NO REMARKS' : 'HAS REMARKS'}
+                        </span>
+                    </td>
+                    <td>${ver.type || '-'}</td>
+                    <td style="font-family:monospace; font-size:12px;">${diffStr.join(', ') || '-'}</td>
+                    <td>
+                        <div style="font-weight:600; font-size:12px;">${ver.verifiedBy || '-'}</div>
+                        <div style="font-size:10px; color:#94a3b8;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString() : ''}</div>
+                    </td>
+                    <td>
+                        <button class="action-btn" onclick="window.viewShiftReport('${rep.id}')" style="background:#f1f5f9; color:#1e293b; border:none; padding:6px; border-radius:6px; cursor:pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+window.showBillReportingView = function() {
+    // Hide all Studio sub-views
+    document.querySelectorAll('#master-reports-hub-v2 ~ div').forEach(div => div.style.display = 'none');
+    document.getElementById('attendance-matrix-view').style.display = 'none';
+    
+    document.getElementById('master-reports-hub-v2').style.display = 'none';
+    document.getElementById('bill-report-view').style.display = 'block';
+    window.loadBillVerificationReports();
+};
+
+window.backToStudioHub = function() {
+    document.getElementById('attendance-matrix-view').style.display = 'none';
+    document.getElementById('bill-report-view').style.display = 'none';
+    document.getElementById('master-reports-hub-v2').style.display = 'block';
+};
+
+window.viewShiftReport = function(id) {
+    if(typeof window.showReportDetails === 'function') {
+        window.showReportDetails(id);
+    }
 };
