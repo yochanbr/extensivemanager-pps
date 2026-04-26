@@ -2661,49 +2661,49 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
             .where('employeeId', '==', employeeId)
             .get();
         
-        let workedWeight = 0;
+        let totalWorkedMinutes = 0;
         const uniqueDates = new Set();
         
         sessSnapshot.docs.forEach(doc => {
             const data = doc.data();
             const sessDate = data.date || '';
             if (sessDate.includes(month) && (data.status === 'completed' || data.checkOut)) {
+                 // EXACT duration as calculated from attendance logs (CLOCK_IN to CLOCK_OUT minus breaks)
                  const duration = data.durationMinutes || 0;
-                 if (duration >= 300) { // 5+ hours = Full Day
-                    workedWeight += 1.0;
-                 } else if (duration >= 180) { // 3-5 hours = Half Day
-                    workedWeight += 0.5;
-                 }
+                 totalWorkedMinutes += duration;
                  uniqueDates.add(sessDate);
             }
         });
 
-        // 3. Calculate LOP (Loss of Pay)
+        // 3. Calculate LOP (Loss of Pay) exactly from time logs
         const [year, m] = month.split('-').map(Number);
         const totalDaysInMonth = new Date(year, m, 0).getDate();
         const paidOffsAllowed = 4; // Constant as requested
         
-        // Absent Days = Month Total - Worked Weight - Paid Offs
-        // Note: workedWeight already accounts for half days as 0.5
-        const absentDaysValue = totalDaysInMonth - workedWeight - paidOffsAllowed;
-        const lopDaysValue = Math.max(0, absentDaysValue);
+        const standardDayMinutes = 480; // 8 hours baseline
+        const requiredMinutes = (totalDaysInMonth - paidOffsAllowed) * standardDayMinutes;
+        
+        // Loss of minutes = Standard required - total worked
+        const lostMinutes = Math.max(0, requiredMinutes - totalWorkedMinutes);
         
         const lopRateDay = parseFloat(empData.lopPerDay) || 0;
         const lopRateHour = parseFloat(empData.lopPerHour) || 0;
         
-        const fullLopDays = Math.floor(lopDaysValue);
-        const partialLopDays = lopDaysValue - fullLopDays;
-        const partialLopHours = partialLopDays * 8; // Assuming 8-hour work day baseline
+        // Exact calculation: how many full days lost and how many extra hours lost
+        const lopDays = Math.floor(lostMinutes / standardDayMinutes);
+        const lopRemainingMinutes = lostMinutes % standardDayMinutes;
+        const lopHours = lopRemainingMinutes / 60;
 
-        const lopAmount = (fullLopDays * lopRateDay) + (partialLopHours * lopRateHour);
+        const lopAmount = (lopDays * lopRateDay) + (lopHours * lopRateHour);
 
         res.json({
             success: true,
             billingDifference: totalDiff,
-            workedDays: workedWeight, // Return weight for accurate payslip display
+            workedDays: (totalWorkedMinutes / standardDayMinutes).toFixed(1), // Display exactly how many "8-hour days" were worked
             attendanceDays: uniqueDates.size, // Number of physical days present
-            lopDays: lopDaysValue,
+            lopDays: (lostMinutes / standardDayMinutes).toFixed(1), // Total lost days equivalent
             lopAmount: lopAmount,
+            totalWorkedMinutes,
             employeeId,
             month
         });
