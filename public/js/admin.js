@@ -3184,21 +3184,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const reconData = await reconRes.json();
             
             if (reconData.success) {
-                // Pre-fill billing difference
                 document.getElementById('payslip-billing-diff-input').value = reconData.billingDifference || 0;
-                
-                // We'll also store workedDays for the final generation if needed
-                // But for now, we just pre-fill the editable fields.
-                // Leave balance is manual for now as requested (keep space)
-                document.getElementById('payslip-leave-balance').value = 2; // Default
+            }
+
+            // --- AUTO-GENERATE MODAL ---
+            // Instead of showing Step 2, we trigger the submit handler directly!
+            const form = document.getElementById('payslip-config-form');
+            if (form) {
+                // We dispatch a submit event or just call the logic
+                // For safety and clean flow, let's just trigger the form submit
+                const submitEvent = new Event('submit', { cancelable: true, bubbles: true });
+                form.dispatchEvent(submitEvent);
             }
 
         } catch (err) {
-            console.warn('Failed to pre-fill from employee profile:', err);
+            console.warn('Failed to auto-generate payslip:', err);
+            // Fallback to step 2 if something goes wrong so they can manually fix
+            document.getElementById('payslip-step-1').style.display = 'none';
+            document.getElementById('payslip-step-2').style.display = 'block';
         }
-
-        document.getElementById('payslip-step-1').style.display = 'none';
-        document.getElementById('payslip-step-2').style.display = 'block';
     };
 
     window.backToPayslipStep1 = function () {
