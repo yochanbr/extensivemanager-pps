@@ -1957,6 +1957,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- PDF EXPORT LOGIC ---
+    window.downloadEmployeePDF = function() {
+        const form = document.getElementById('spa-edit-employee-form');
+        if (!form) return;
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        const empName = data.name || 'Employee';
+        const empId = data['employee-id'] || 'N/A';
+
+        // Create a temporary container for the PDF content
+        const element = document.createElement('div');
+        element.style.padding = '40px';
+        element.style.fontFamily = "'Outfit', 'Inter', sans-serif";
+        element.style.color = '#1E293B';
+        element.style.background = '#FFFFFF';
+
+        element.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0; color: #0F172A; font-size: 28px; font-weight: 800;">Staff Profile</h1>
+                    <p style="margin: 5px 0 0; color: #64748B; font-size: 14px; font-weight: 500;">Extensive Manager | Official Record</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="background: #F95A2C; color: white; padding: 8px 16px; border-radius: 10px; font-weight: 700; display: inline-block;">
+                        ID: ${empId}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                <!-- Column 1: Personal -->
+                <div>
+                    <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Personal Details</h3>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Full Name:</strong> <span style="display: block; font-size: 15px; font-weight: 600;">${empName}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Phone:</strong> <span style="display: block; font-size: 15px;">${data.phone || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Email:</strong> <span style="display: block; font-size: 15px;">${data.email || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Aadhar:</strong> <span style="display: block; font-size: 15px;">${data['aadhar-number'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">DOB:</strong> <span style="display: block; font-size: 15px;">${data.dob || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Address:</strong> <span style="display: block; font-size: 14px; line-height: 1.5;">${data.address || 'N/A'}</span></div>
+                </div>
+
+                <!-- Column 2: Employment & Banking -->
+                <div>
+                    <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Work & Financials</h3>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Employment:</strong> <span style="display: block; font-size: 15px;">${data['full-time'] === 'yes' ? 'Full Time' : 'Part Time'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Salary:</strong> <span style="display: block; font-size: 16px; font-weight: 700; color: #16A34A;">₹${data.basicSalary || '0'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Bank Name:</strong> <span style="display: block; font-size: 15px;">${data['bank-name'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">A/C Number:</strong> <span style="display: block; font-size: 15px;">${data['account-number'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">IFSC:</strong> <span style="display: block; font-size: 15px;">${data['ifsc-code'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PAN:</strong> <span style="display: block; font-size: 15px;">${data['pan-number'] || 'N/A'}</span></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
+                <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Guardian & Emergency</h3>
+                <div style="display: flex; gap: 40px;">
+                    <div><strong style="font-size: 12px; color: #64748B;">Name:</strong> <span style="display: block; font-size: 15px;">${data['guardian-name'] || 'N/A'}</span></div>
+                    <div><strong style="font-size: 12px; color: #64748B;">Relation:</strong> <span style="display: block; font-size: 15px;">${data['guardian-relationship'] || 'N/A'}</span></div>
+                    <div><strong style="font-size: 12px; color: #64748B;">Phone:</strong> <span style="display: block; font-size: 15px;">${data['guardian-phone'] || 'N/A'}</span></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #94A3B8;">
+                This is a digitally generated document from Extensive Manager ERP System. <br>
+                Generated on ${new Date().toLocaleString()}
+            </div>
+        `;
+
+        const opt = {
+            margin: 0,
+            filename: `Staff_Profile_${empId}_${empName.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    };
+
     // Toggle full-time specific fields in Edit Modal
     const spaEditFullTimeSelect = document.getElementById('spa-edit-full-time');
     if (spaEditFullTimeSelect) {
