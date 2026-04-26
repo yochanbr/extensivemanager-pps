@@ -3238,8 +3238,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.printPayslip = function () {
-        window.print();
+    window.downloadPayslip = function () {
+        const element = document.getElementById('payslip-rendering-area');
+        if (!element) return;
+        
+        // Try to get employee name and month for filename
+        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
+        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
+        const cleanName = empName.trim().replace(/\s+/g, '_');
+        
+        const opt = {
+            margin: 0,
+            filename: `Payslip_${cleanName}_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
     };
 
     const payslipConfigForm = document.getElementById('payslip-config-form');
