@@ -3199,6 +3199,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (reconData.success) {
                 document.getElementById('payslip-billing-diff-input').value = reconData.billingDifference || 0;
+                document.getElementById('payslip-worked-days-input').value = reconData.workedDays || 0;
+                document.getElementById('payslip-lop-days-input').value = reconData.lopDays || 0;
+                document.getElementById('payslip-lop-input').value = Math.round(reconData.lopAmount || 0);
             }
 
             // --- AUTO-GENERATE MODAL ---
@@ -3280,35 +3283,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const empData = await empRes.json();
                 const employee = empData.employee || empData;
 
-                // 2. Fetch Attendance for calculation
-                const attnRes = await fetch(`/api/reports/attendance-grid?month=${month}`);
-                const attnData = await attnRes.json();
-
-                let workedDays = 0;
-                let lopDays = 0;
-                let stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
-
-                if (attnData.success && attnData.grid) {
-                    const empRow = attnData.grid.find(r => r.id === employeeId);
-                    if (empRow && empRow.daily) {
-                        const dailyValues = Object.values(empRow.daily);
-                        workedDays = dailyValues.filter(v => v.status === 'P').length;
-                        lopDays = dailyValues.filter(v => v.status === 'A').length;
-                    }
-                }
-
                 // 3. Gather Inputs
                 const basic = parseFloat(document.getElementById('payslip-basic-input').value) || 0;
                 const ot = parseFloat(document.getElementById('payslip-ot-input').value) || 0;
                 const esi = document.getElementById('payslip-esi-input').value || 'N/A';
                 const billingDiff = parseFloat(document.getElementById('payslip-billing-diff-input').value) || 0;
+                const lopAmount = parseFloat(document.getElementById('payslip-lop-input').value) || 0;
+                const lopDays = parseFloat(document.getElementById('payslip-lop-days-input').value) || 0;
+                const workedDays = parseFloat(document.getElementById('payslip-worked-days-input').value) || 0;
                 const leaveBalance = document.getElementById('payslip-leave-balance').value || 2;
                 const location = document.getElementById('payslip-location-input').value || 'SULLIA, KARNATAKA';
+                
+                const stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
 
                 // Calculations
                 const grossEarnings = basic + ot;
                 const esiValue = isNaN(parseFloat(esi)) ? 0 : parseFloat(esi);
-                const grossDeductions = esiValue + billingDiff + (lopDays * (basic / stdDays));
+                const grossDeductions = esiValue + billingDiff + lopAmount;
                 const netSalary = Math.round(grossEarnings - grossDeductions);
 
                 // 4. Render Payslip
@@ -3402,7 +3393,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td></td>
                                     <td></td>
                                     <td>LOP</td>
-                                    <td style="text-align: right;">${(lopDays * (basic / stdDays)).toFixed(2)}</td>
+                                    <td style="text-align: right;">${lopAmount.toFixed(2)}</td>
                                 </tr>
                                 <tr class="payslip-total-row">
                                     <td>Gross Earnings</td>
