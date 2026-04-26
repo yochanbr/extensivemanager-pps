@@ -1473,13 +1473,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `${String(hour).padStart(2, '0')}:${m}`;
             };
 
-            data['start-time'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
-            data['end-time'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
+            data['startTime'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
+            data['endTime'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
+            data['workingDays'] = formData.getAll('working-days').join(',');
+            data['employeeId'] = data['employee-id'];
+
+            // Legacy compatibility
+            data['start-time'] = data['startTime'];
+            data['end-time'] = data['endTime'];
+            data['working-days'] = data['workingDays'];
 
             // Cleanup temp 12h fields
             ['start-hour', 'start-min', 'start-period', 'end-hour', 'end-min', 'end-period'].forEach(f => delete data[f]);
-
-            data['working-days'] = formData.getAll('working-days').join(',');
             data.isActive = true;
 
             try {
@@ -1797,23 +1802,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Global action: Edit Employee
+    
+    // --- EDIT EMPLOYEE SPA SLIDE-OVER LOGIC ---
+    window.openEditEmployeePanel = function() {
+        const panel = document.getElementById('edit-employee-panel');
+        const overlay = document.getElementById('edit-employee-overlay');
+        if (panel && overlay) {
+            overlay.classList.add('show');
+            panel.classList.add('show');
+        }
+    };
+
+    window.closeEditEmployeePanel = function() {
+        const panel = document.getElementById('edit-employee-panel');
+        const overlay = document.getElementById('edit-employee-overlay');
+        if (panel && overlay) {
+            overlay.classList.remove('show');
+            panel.classList.remove('show');
+        }
+    };
+
     window.spaEditEmployee = function (id) {
         fetch('/api/employees/' + id)
             .then(res => res.json())
             .then(emp => {
-                // Helper: set value + handle select elements correctly
                 const setVal = (vid, val) => {
                     const el = document.getElementById(vid);
                     if (!el) return;
                     if (el.tagName === 'SELECT') {
-                        // Find the matching option (case-insensitive)
-                        const target = (val || '').toString().toLowerCase();
-                        for (const opt of el.options) {
-                            if (opt.value.toLowerCase() === target || opt.text.toLowerCase() === target) {
-                                el.value = opt.value;
-                                return;
-                            }
-                        }
                         el.value = val || '';
                     } else {
                         el.value = val !== undefined && val !== null ? val : '';
@@ -1822,77 +1838,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setVal('spa-edit-id', emp.id || emp._id);
                 setVal('spa-edit-name', emp.name);
-                setVal('spa-edit-employee-id', emp.employeeId);
-                setVal('spa-edit-address', emp.address);
-                setVal('spa-edit-blood-group', emp.bloodGroup);
+                setVal('spa-edit-employee-id', emp.employeeId || emp['employee-id'] || emp.username);
                 setVal('spa-edit-phone', emp.phone);
-                setVal('spa-edit-guardian-name', emp.guardianName);
-                setVal('spa-edit-relationship', emp.relationship);
-                setVal('spa-edit-guardian-phone', emp.guardianPhone);
-                setVal('spa-edit-aadhar-number', emp.aadharNumber);
+                setVal('spa-edit-aadhar-number', emp['aadhar-number'] || emp.aadharNumber);
+                setVal('spa-edit-email', emp.email);
+                setVal('spa-edit-address', emp.address);
+                setVal('spa-edit-username', emp.username);
+                setVal('spa-edit-password', emp.password);
+                setVal('spa-edit-break-time', emp['break-time'] || emp.breakTime || 30);
+                setVal('spa-edit-guardian-name', emp['guardian-name'] || emp.guardianName);
+                setVal('spa-edit-guardian-phone', emp['guardian-phone'] || emp.guardianPhone);
+                setVal('spa-edit-guardian-relationship', emp['guardian-relationship'] || emp.guardianRelationship || emp.relationship);
+                setVal('spa-edit-bank-name', emp['bank-name'] || emp.bankName);
+                setVal('spa-edit-bank-branch', emp['bank-branch'] || emp.bankBranch);
+                setVal('spa-edit-account-number', emp['account-number'] || emp.accountNumber);
+                setVal('spa-edit-account-holder-name', emp['account-holder-name'] || emp.accountHolderName);
+                setVal('spa-edit-ifsc-code', emp['ifsc-code'] || emp.ifscCode);
+                setVal('spa-edit-pan-number', emp['pan-number'] || emp.panNumber);
+                setVal('spa-edit-basic-salary', emp.basicSalary || emp['basic-salary'] || emp['basicSalary']);
+                setVal('spa-edit-esi', emp.esi || emp.ESI);
 
-                // DOB - normalize to date input format
+                setVal('spa-edit-gender', emp.gender);
+                setVal('spa-edit-marital-status', emp['marital-status'] || emp.maritalStatus);
+                setVal('spa-edit-full-time', emp['full-time'] || emp.fullTime || 'yes');
+
                 const dobEl = document.getElementById('spa-edit-dob');
                 if (dobEl) {
                     try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
-                    catch (e) { dobEl.value = emp.dob || ''; }
+                    catch (e) { dobEl.value = ''; }
                 }
 
-                setVal('spa-edit-gender', emp.gender);
-                setVal('spa-edit-marital-status', emp.maritalStatus);
-                setVal('spa-edit-email', emp.email);
-                setVal('spa-edit-bank-name', emp.bankName);
-                setVal('spa-edit-bank-branch', emp.bankBranch);
-                setVal('spa-edit-ifsc-code', emp.ifscCode);
-                setVal('spa-edit-account-number', emp.accountNumber);
-                setVal('spa-edit-account-holder-name', emp.accountHolderName);
-                setVal('spa-edit-pan-number', emp.panNumber);
-                setVal('spa-edit-basic-salary', emp.basicSalary);
-                setVal('spa-edit-esi', emp.esi);
-                setVal('spa-edit-location', emp.location);
-
-                // Full-time select
-                const fullTimeEl = document.getElementById('spa-edit-full-time');
-                if (fullTimeEl) {
-                    fullTimeEl.value = emp.fullTime || 'yes';
-                    fullTimeEl.dispatchEvent(new Event('change'));
-                }
-                setVal('spa-edit-start-time', emp.startTime);
-                setVal('spa-edit-end-time', emp.endTime);
-                setVal('spa-edit-break-time', emp.breakTime);
-
-                // Working days checkboxes
-                const days = emp.workingDays
-                    ? (Array.isArray(emp.workingDays) ? emp.workingDays : emp.workingDays.split(',').map(d => d.trim()))
-                    : [];
-                document.querySelectorAll('input[name="working-days"]').forEach(cb => {
+                const days = (emp.workingDays || '').split(',');
+                document.querySelectorAll('#spa-edit-employee-form input[name="working-days"]').forEach(cb => {
                     cb.checked = days.includes(cb.value);
                 });
 
-                setVal('spa-edit-username', emp.username);
-                setVal('spa-edit-password', emp.password);
+                const convertTo12h = (timeStr, prefix) => {
+                    if(!timeStr) return;
+                    try {
+                        const [h24, m] = timeStr.split(':');
+                        let hour = parseInt(h24);
+                        let period = 'AM';
+                        if(hour >= 12) {
+                            period = 'PM';
+                            if(hour > 12) hour -= 12;
+                        } else if(hour === 0) {
+                            hour = 12;
+                        }
+                        setVal(`spa-edit-${prefix}-hour`, String(hour).padStart(2, '0'));
+                        setVal(`spa-edit-${prefix}-min`, m);
+                        setVal(`spa-edit-${prefix}-period`, period);
+                    } catch(e) {}
+                };
 
-                // Open modal with animation
-                const modal = document.getElementById('spa-edit-employee-modal');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.add('show'), 10);
-                }
+                convertTo12h(emp.startTime, 'start');
+                convertTo12h(emp.endTime, 'end');
+
+                window.openEditEmployeePanel();
             })
             .catch(err => console.error('Error fetching employee:', err));
     };
-
-    // Make edit modal closer workable
-    document.querySelectorAll('.close-spa-edit, .close-spa-edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const modal = document.getElementById('spa-edit-employee-modal');
-            if (modal) {
-                modal.classList.remove('show');
-                setTimeout(() => modal.style.display = 'none', 300);
-            }
-        });
-    });
-
     // Handle Edit form submission
     const spaEditSaveBtn = document.getElementById('spa-edit-save-btn');
     if (spaEditSaveBtn) {
@@ -1907,59 +1912,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
 
-            // Handling checkboxes intentionally
-            data['working-days'] = formData.getAll('working-days').join(',');
-
-            // Transform data structure equivalent to edit handling:
-            const mappedData = {
-                name: data.name,
-                employeeId: data['employee-id'],
-                address: data.address,
-                bloodGroup: data['blood-group'],
-                phone: data.phone,
-                guardianName: data['guardian-name'],
-                relationship: data.relationship,
-                guardianPhone: data['guardian-phone'],
-                aadharNumber: data['aadhar-number'],
-                dob: data.dob,
-                gender: data.gender,
-                maritalStatus: data['marital-status'],
-                email: data.email,
-                bankName: data['bank-name'],
-                bankBranch: data['bank-branch'],
-                ifscCode: data['ifsc-code'],
-                accountNumber: data['account-number'],
-                accountHolderName: data['account-holder-name'],
-                panNumber: data['pan-number'],
-                fullTime: data['full-time'],
-                startTime: data['start-time'],
-                endTime: data['end-time'],
-                breakTime: data['break-time'],
-                workingDays: data['working-days'],
-                username: data.username,
-                password: data.password
+            // Convert 12h format to 24h for backend
+            const convertTo24h = (h, m, p) => {
+                let hour = parseInt(h);
+                if (p === 'PM' && hour < 12) hour += 12;
+                if (p === 'AM' && hour === 12) hour = 0;
+                return `${String(hour).padStart(2, '0')}:${m}`;
             };
+
+            data['startTime'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
+            data['endTime'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
+            data['workingDays'] = formData.getAll('working-days').join(',');
+            data['employeeId'] = data['employee-id'];
+            data['guardianRelationship'] = data['guardian-relationship'];
+
+            const btn = document.getElementById('spa-edit-save-btn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             fetch('/api/employees/' + id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(mappedData)
+                body: JSON.stringify(data)
             })
                 .then(res => res.json())
                 .then(async (result) => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
                     if (result.success) {
-                        await nammaModalSystem.alert('Employee details updated successfully!');
-                        const modal = document.getElementById('spa-edit-employee-modal');
-                        modal.classList.remove('show');
-                        setTimeout(() => modal.style.display = 'none', 300);
+                        await nammaModalSystem.alert('Employee record modernized & saved!');
+                        window.closeEditEmployeePanel();
                         fetchEmployeesForSPA();
                     } else {
                         await nammaModalSystem.alert('Error updating employee: ' + result.message);
                     }
                 })
                 .catch(async (err) => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
                     console.error(err);
-                    await nammaModalSystem.alert('Failed to connect to server.');
+                    await nammaModalSystem.alert('Server error while saving.');
                 });
         });
     }
