@@ -2656,17 +2656,17 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         });
 
         // 2. Fetch Attendance for worked days (Daily Sessions)
+        // Fetch all sessions for this employee and filter by month in memory to avoid composite index requirements
         const sessSnapshot = await db.daily_sessions()
             .where('employeeId', '==', employeeId)
-            .where('date', '>=', `${month}-01`)
-            .where('date', '<=', `${month}-31`)
             .get();
         
         const uniqueDates = new Set();
         sessSnapshot.docs.forEach(doc => {
             const data = doc.data();
-            if (data.status === 'completed' || data.checkOut) {
-                 uniqueDates.add(data.date);
+            const sessDate = data.date || '';
+            if (sessDate.includes(month) && (data.status === 'completed' || data.checkOut)) {
+                 uniqueDates.add(sessDate);
             }
         });
 
