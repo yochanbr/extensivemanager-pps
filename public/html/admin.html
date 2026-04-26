@@ -931,6 +931,21 @@
 
                 <div class="input-row">
                     <div class="input-group">
+                        <label>Designation</label>
+                        <input type="text" id="spa-edit-designation" name="designation" placeholder="e.g. Sales Associate">
+                    </div>
+                    <div class="input-group">
+                        <label>Department</label>
+                        <input type="text" id="spa-edit-department" name="department" placeholder="e.g. Operations">
+                    </div>
+                    <div class="input-group">
+                        <label>Joining Date</label>
+                        <input type="date" id="spa-edit-joining-date" name="joining-date">
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
                         <label>Employee ment type</label>
                         <div class="custom-select-wrapper">
                             <select id="spa-edit-full-time" name="full-time">
@@ -1051,6 +1066,16 @@
                 </div>
                 <div class="input-row">
                     <div class="input-group">
+                        <label>PF Number</label>
+                        <input type="text" id="spa-edit-pf-number" name="pf-number" placeholder="KN/SUL/...">
+                    </div>
+                    <div class="input-group">
+                        <label>PF UAN Number</label>
+                        <input type="text" id="spa-edit-uan-number" name="uan-number" placeholder="12-digit UAN">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
                         <label>Monthly Basic salary</label>
                         <input type="number" id="spa-edit-basic-salary" name="basicSalary">
                     </div>
@@ -1058,6 +1083,10 @@
                         <label>Esi/benefit Code</label>
                         <input type="text" id="spa-edit-esi" name="esi">
                     </div>
+                </div>
+                <div class="input-group">
+                    <label>Work Location</label>
+                    <input type="text" id="spa-edit-location" name="location" placeholder="e.g. Sullia, Karnataka">
                 </div>
             </form>
         </div>
@@ -1233,6 +1262,20 @@
                     </div>
                     <div class="input-row">
                         <div class="input-group">
+                            <label>Designation</label>
+                            <input type="text" name="designation" placeholder="e.g. Sales Associate">
+                        </div>
+                        <div class="input-group">
+                            <label>Department</label>
+                            <input type="text" name="department" placeholder="e.g. Operations">
+                        </div>
+                        <div class="input-group">
+                            <label>Joining Date</label>
+                            <input type="date" name="joining-date">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
                             <label>Employee ment type</label>
                             <div class="custom-select-wrapper">
                                 <select name="full-time">
@@ -1357,13 +1400,29 @@
                 <!-- STEP 4: Payroll Configuration -->
                 <div class="spa-step" id="spa-step-4">
                     <div class="form-section-title">Payroll Configuration</div>
-                    <div class="input-group">
-                        <label>Monthly Basic salary *</label>
-                        <input type="number" name="basicSalary" placeholder="e.g. 15000" required>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Monthly Basic salary *</label>
+                            <input type="number" name="basicSalary" placeholder="e.g. 15000" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Esi/benefit Code</label>
+                            <input type="text" name="esi" placeholder="Optional">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>PF Number</label>
+                            <input type="text" name="pf-number" value="N/A">
+                        </div>
+                        <div class="input-group">
+                            <label>PF UAN Number</label>
+                            <input type="text" name="uan-number" value="N/A">
+                        </div>
                     </div>
                     <div class="input-group">
-                        <label>Esi/benefit Code</label>
-                        <input type="text" name="esi" placeholder="Optional">
+                        <label>Work Location</label>
+                        <input type="text" name="location" value="Sullia, Karnataka">
                     </div>
                     <div style="background: #FFF7ED; padding: 20px; border-radius: 16px; border: 1px solid #FFEDD5; margin-top: 20px;">
                         <p style="font-size: 13px; color: #9A3412; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px;">

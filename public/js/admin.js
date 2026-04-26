@@ -1876,6 +1876,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-pan-number', emp['pan-number'] || emp.panNumber);
                 setVal('spa-edit-basic-salary', emp.basicSalary || emp['basic-salary'] || emp['basicSalary']);
                 setVal('spa-edit-esi', emp.esi || emp.ESI);
+                setVal('spa-edit-designation', emp.designation);
+                setVal('spa-edit-department', emp.department);
+                setVal('spa-edit-joining-date', emp['joining-date'] || emp.joiningDate);
+                setVal('spa-edit-pf-number', emp['pf-number'] || emp.pfNumber);
+                setVal('spa-edit-uan-number', emp['uan-number'] || emp.uanNumber);
+                setVal('spa-edit-location', emp.location);
 
                 setVal('spa-edit-gender', emp.gender);
                 setVal('spa-edit-marital-status', emp['marital-status'] || emp.maritalStatus);
@@ -2022,11 +2028,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Work & Financials</h3>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Employment:</strong> <span style="display: block; font-size: 15px;">${data['full-time'] === 'yes' ? 'Full Time' : 'Part Time'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Designation:</strong> <span style="display: block; font-size: 15px;">${data.designation || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Department:</strong> <span style="display: block; font-size: 15px;">${data.department || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Joining Date:</strong> <span style="display: block; font-size: 15px;">${data['joining-date'] || 'N/A'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Salary:</strong> <span style="display: block; font-size: 16px; font-weight: 700; color: #16A34A;">₹${data.basicSalary || '0'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Bank Name:</strong> <span style="display: block; font-size: 15px;">${data['bank-name'] || 'N/A'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">A/C Number:</strong> <span style="display: block; font-size: 15px;">${data['account-number'] || 'N/A'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">IFSC:</strong> <span style="display: block; font-size: 15px;">${data['ifsc-code'] || 'N/A'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PAN:</strong> <span style="display: block; font-size: 15px;">${data['pan-number'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PF Number:</strong> <span style="display: block; font-size: 15px;">${data['pf-number'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PF UAN:</strong> <span style="display: block; font-size: 15px;">${data['uan-number'] || 'N/A'}</span></div>
+                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Location:</strong> <span style="display: block; font-size: 15px;">${data.location || 'N/A'}</span></div>
                 </div>
             </div>
 
