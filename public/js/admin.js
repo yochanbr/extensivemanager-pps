@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsView = document.getElementById('settings-view');
     const masterReportsView = document.getElementById('master-reports-hub-v2');
 
-    window.switchSpaView = function(targetView, activeBtn) {
+    window.switchSpaView = function (targetView, activeBtn) {
         // Fallback for Hub v2 if targetView is missing (Resiliency for Cache)
         if (!targetView && activeBtn && activeBtn.classList.contains('master-report-btn')) {
             targetView = document.getElementById('master-reports-hub-v2');
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
             thead.innerHTML = headerHtml + dayHtml;
 
             // 2. Render Rows
-            tbody.innerHTML = ''; 
+            tbody.innerHTML = '';
             if (data.grid.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
                 return;
@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.headers.forEach(h => {
                     const dayData = emp.daily[h.iso] || { status: '-', variance: 0 };
                     const numVar = parseFloat(dayData.variance);
-                    
+
                     // Status Class Mapping
                     const statusClassMap = {
                         'P': 'excel-status-p',
@@ -922,12 +922,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         'WO': 'excel-status-wo'
                     };
                     const sc = statusClassMap[dayData.status] || '';
-                    
+
                     // Variance Display
                     let varDisplay = (numVar === 0) ? '0' : (numVar > 0 ? `+${numVar}` : `${numVar}`);
                     // If no data, keep it clean
                     if (dayData.status === '-') varDisplay = '';
-                    
+
                     let varColorClass = 'grid-variance-neutral';
                     if (numVar > 0) varColorClass = 'grid-variance-pos';
                     else if (numVar < 0) varColorClass = 'grid-variance-neg';
@@ -938,7 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 trStatusHtml += `</tr>`;
                 trVarHtml += `</tr>`;
-                
+
                 tbody.innerHTML += (trStatusHtml + trVarHtml);
             });
 
@@ -1034,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- ALERT HUB ENGINE (REFINED FOR APPROVALS) ---
             const alerts = [];
-            
+
             // 1. Scan for employees with missing shift configurations
             // 2. Scan for unverified shift bills
             unverifiedReports.forEach(rep => {
@@ -1293,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isActive = emp.isActive !== false;
             const initial = (emp.name ? emp.name.charAt(0).toUpperCase() : '?');
             const empRole = emp['blood-group'] || 'Staff Member';
-            
+
             listHTML += `
                 <tr class="employee-row" style="transition: background 0.2s; border-bottom: 1px solid #F8FAFC;">
                     <td style="padding: 20px 24px;">
@@ -1355,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         `;
         container.innerHTML = listHTML;
-        
+
         if (!document.getElementById('emp-row-hover-style')) {
             const style = document.createElement('style');
             style.id = 'emp-row-hover-style';
@@ -1373,8 +1373,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderEmployeesSPA(allEmployeesForSPA);
                 return;
             }
-            const filtered = allEmployeesForSPA.filter(emp => 
-                (emp.name && emp.name.toLowerCase().includes(query)) || 
+            const filtered = allEmployeesForSPA.filter(emp =>
+                (emp.name && emp.name.toLowerCase().includes(query)) ||
                 (emp.employeeId && emp.employeeId.toLowerCase().includes(query))
             );
             renderEmployeesSPA(filtered);
@@ -1385,11 +1385,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ADD EMPLOYEE SPA SLIDE-OVER LOGIC ---
     let currentAddStep = 1;
 
-    window.openAddEmployeePanel = function() {
+    window.openAddEmployeePanel = function () {
         const panel = document.getElementById('add-employee-panel');
         const overlay = document.getElementById('add-employee-overlay');
         const form = document.getElementById('spa-add-employee-form');
-        if(form) form.reset();
+        if (form) form.reset();
         currentAddStep = 1;
         updateAddStepUI();
         if (panel && overlay) {
@@ -1400,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closeAddEmployeePanel = function() {
+    window.closeAddEmployeePanel = function () {
         const panel = document.getElementById('add-employee-panel');
         const overlay = document.getElementById('add-employee-overlay');
         if (panel && overlay) {
@@ -1417,13 +1417,13 @@ document.addEventListener('DOMContentLoaded', () => {
             d.classList.toggle('active', (i + 1) === currentAddStep);
             d.classList.toggle('completed', (i + 1) < currentAddStep);
         });
-        
+
         const prevBtn = document.getElementById('spa-btn-prev');
         const nextBtn = document.getElementById('spa-btn-next');
         const submitBtn = document.getElementById('spa-btn-submit');
-        
+
         if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'flex';
-        
+
         if (currentAddStep === 4) {
             if (nextBtn) nextBtn.style.display = 'none';
             if (submitBtn) submitBtn.style.display = 'flex';
@@ -1441,15 +1441,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const inputs = activeStep.querySelectorAll('input[required], select[required]');
             let valid = true;
             inputs.forEach(i => {
-                if(!i.value.trim()) {
+                if (!i.value.trim()) {
                     i.style.borderColor = '#EF4444';
                     valid = false;
                 } else {
                     i.style.borderColor = '#E2E8F0';
                 }
             });
-            
-            if(valid) {
+
+            if (valid) {
                 currentAddStep++;
                 updateAddStepUI();
             }
@@ -1472,7 +1472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const p1 = document.getElementById('spa-pass-1').value;
             const p2 = document.getElementById('spa-pass-2').value;
-            if(p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
+            if (p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
 
             const btn = document.getElementById('spa-btn-submit');
             const originalHtml = btn ? btn.innerHTML : 'Finish & Save';
@@ -1513,14 +1513,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(data)
                 });
                 const result = await res.json();
-                if(result.success) {
+                if (result.success) {
                     await nammaModalSystem.alert("Employee added successfully!");
                     window.closeAddEmployeePanel();
-                    if(typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
+                    if (typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
                 } else {
                     await nammaModalSystem.alert("Error: " + result.message);
                 }
-            } catch(err) {
+            } catch (err) {
                 await nammaModalSystem.alert("Server communication failed.");
             } finally {
                 if (btn) {
@@ -1734,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success && data.reports && data.reports.length > 0) {
                     // Filter for this specific employee if provided
                     const filteredReports = employeeId ? data.reports.filter(r => r.employeeId === employeeId) : data.reports;
-                    
+
                     if (filteredReports.length === 0) {
                         grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found.</p>';
                         return;
@@ -1821,9 +1821,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Global action: Edit Employee
-    
+
     // --- EDIT EMPLOYEE SPA SLIDE-OVER LOGIC ---
-    window.openEditEmployeePanel = function() {
+    window.openEditEmployeePanel = function () {
         const panel = document.getElementById('edit-employee-panel');
         const overlay = document.getElementById('edit-employee-overlay');
         if (panel && overlay) {
@@ -1832,7 +1832,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closeEditEmployeePanel = function() {
+    window.closeEditEmployeePanel = function () {
         const panel = document.getElementById('edit-employee-panel');
         const overlay = document.getElementById('edit-employee-overlay');
         if (panel && overlay) {
@@ -1893,21 +1893,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const convertTo12h = (timeStr, prefix) => {
-                    if(!timeStr) return;
+                    if (!timeStr) return;
                     try {
                         const [h24, m] = timeStr.split(':');
                         let hour = parseInt(h24);
                         let period = 'AM';
-                        if(hour >= 12) {
+                        if (hour >= 12) {
                             period = 'PM';
-                            if(hour > 12) hour -= 12;
-                        } else if(hour === 0) {
+                            if (hour > 12) hour -= 12;
+                        } else if (hour === 0) {
                             hour = 12;
                         }
                         setVal(`spa-edit-${prefix}-hour`, String(hour).padStart(2, '0'));
                         setVal(`spa-edit-${prefix}-min`, m);
                         setVal(`spa-edit-${prefix}-period`, period);
-                    } catch(e) {}
+                    } catch (e) { }
                 };
 
                 convertTo12h(emp.startTime, 'start');
@@ -1977,7 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- PDF EXPORT LOGIC ---
-    window.downloadEmployeePDF = function() {
+    window.downloadEmployeePDF = function () {
         const form = document.getElementById('spa-edit-employee-form');
         if (!form) return;
 
@@ -2760,7 +2760,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fmtHrs = (ms) => Math.floor(ms / 3600000) + 'h ' + Math.floor((ms % 3600000) / 60000) + 'm';
         const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        
+
         setTxt('kpi-total-emps', empSet.size);
         setTxt('kpi-working', currentlyWorking.size);
         setTxt('kpi-break', onBreak.size);
@@ -2930,20 +2930,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Pre-check: Does this employee already have a face model?
             const res = await fetch('/api/employees/' + employeeId);
             const emp = await res.json();
-            
+
             if (emp.faceDescriptor) {
                 const proceed = await nammaModalSystem.confirm(`Existing biometric data found for ${emp.name}. Do you want to delete the old model and register a new one?`, {
                     confirmText: "Delete and Re-scan",
                     cancelText: "Cancel",
                     theme: "danger"
                 });
-                
+
                 if (!proceed) return;
-                
+
                 // Optional: Explicitly nullify on server first to be safe, 
                 // but the capture process will overwrite it regardless.
             }
-            
+
             currentRegId = employeeId;
             const modal = document.getElementById('face-register-modal');
             if (modal) {
@@ -3019,16 +3019,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (detections) {
                 const modal = document.getElementById('face-register-modal');
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                
+
                 // Custom Smart Rendering Logic
                 const box = resizedDetections.detection.box;
                 const centerX = box.x + box.width / 2;
                 const centerY = box.y + box.height / 2;
-                
+
                 // Smart check: Is face centered in the guide?
-                const isCentered = Math.abs(centerX - displaySize.width / 2) < 70 && 
-                                  Math.abs(centerY - displaySize.height / 2) < 70;
-                
+                const isCentered = Math.abs(centerX - displaySize.width / 2) < 70 &&
+                    Math.abs(centerY - displaySize.height / 2) < 70;
+
                 if (isCentered) {
                     if (modal && !modal.classList.contains('face-ready')) {
                         modal.classList.add('face-ready');
@@ -3049,7 +3049,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     captureBtn.disabled = true;
                 }
-                
+
                 // We don't draw the detection box anymore, the guide handles it visually
             } else {
                 const modal = document.getElementById('face-register-modal');
@@ -3119,10 +3119,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // PAYSLIP SYSTEM LOGIC
     // ==========================================
 
-    window.openPayslipConfig = async function() {
+    window.openPayslipConfig = async function () {
         const modal = document.getElementById('payslip-config-modal');
         const select = document.getElementById('payslip-employee-select');
-        
+
         if (!modal || !select) return;
 
         // Reset and Load Employees
@@ -3133,10 +3133,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/employees');
             const data = await res.json();
-            
+
             // Fix: Handle array response correctly
             const employees = Array.isArray(data) ? data : (data.employees || []);
-            
+
             if (employees.length > 0) {
                 select.innerHTML = '<option value="">Choose Employee...</option>';
                 employees.forEach(emp => {
@@ -3155,23 +3155,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Always reset to step 1
         window.backToPayslipStep1();
-        
+
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('payslip-month-input').value = monthStr;
     };
 
-    window.toPayslipStep2 = async function() {
+    window.toPayslipStep2 = async function () {
         const employeeId = document.getElementById('payslip-employee-select').value;
         const month = document.getElementById('payslip-month-input').value;
         if (!employeeId || !month) return nammaModalSystem.alert('Choose employee and month first.');
-        
+
         // AUTO-PREFILL FROM EMPLOYEE DATA
         try {
             const res = await fetch(`/api/employees/${employeeId}`);
             const data = await res.json();
             const emp = data.employee || data;
-            
+
             if (emp) {
                 if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
                 if (emp.esi) document.getElementById('payslip-esi-input').value = emp.esi;
@@ -3185,12 +3185,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('payslip-step-2').style.display = 'block';
     };
 
-    window.backToPayslipStep1 = function() {
+    window.backToPayslipStep1 = function () {
         document.getElementById('payslip-step-1').style.display = 'block';
         document.getElementById('payslip-step-2').style.display = 'none';
     };
 
-    window.closePayslipConfig = function() {
+    window.closePayslipConfig = function () {
         const modal = document.getElementById('payslip-config-modal');
         if (modal) {
             modal.classList.remove('show');
@@ -3198,7 +3198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.closePayslipPreview = function() {
+    window.closePayslipPreview = function () {
         const modal = document.getElementById('payslip-preview-modal');
         if (modal) {
             modal.classList.remove('show');
@@ -3206,7 +3206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.printPayslip = function() {
+    window.printPayslip = function () {
         window.print();
     };
 
@@ -3216,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const employeeId = document.getElementById('payslip-employee-select').value;
             const month = document.getElementById('payslip-month-input').value; // YYYY-MM
-            
+
             if (!employeeId || !month) return;
 
             const btn = e.target.querySelector('button');
@@ -3233,7 +3233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. Fetch Attendance for calculation
                 const attnRes = await fetch(`/api/reports/attendance-grid?month=${month}`);
                 const attnData = await attnRes.json();
-                
+
                 let workedDays = 0;
                 let lopDays = 0;
                 let stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
@@ -3263,7 +3263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 4. Render Payslip
                 const monthName = new Date(month + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
-                
+
                 const renderingArea = document.getElementById('payslip-rendering-area');
                 renderingArea.innerHTML = `
                     <div class="payslip-container">
@@ -3399,7 +3399,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if ((num = num.toString()).length > 9) return 'overflow';
         let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{1})(\d{2})$/);
-        if (!n) return ''; 
+        if (!n) return '';
         let str = '';
         str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
         str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
@@ -3439,9 +3439,9 @@ window.loadShiftSummaries = async function (date = null) {
                 const card = document.createElement('div');
                 card.className = 'shift-summary-card';
                 card.onclick = () => window.showShiftReportDetails(report.id);
-                
+
                 const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
-                
+
                 card.innerHTML = `
                     <div class="shift-card-header">
                         <div class="shift-card-user">
@@ -3513,18 +3513,18 @@ window.showShiftReportDetails = async function (reportId) {
         if (textData.success) {
             textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
             subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
-            
+
             // If verified, append the management bar
             if (textData.metadata.verified) {
                 const ver = textData.metadata.verification_data || {};
                 const hasRemarks = ver.remarks !== 'No';
-                
+
                 const mgmtBar = document.createElement('div');
                 mgmtBar.className = 'esr-rendered-section';
                 mgmtBar.style.marginTop = '24px';
                 mgmtBar.style.border = '2px solid #F1F5F9';
                 mgmtBar.style.background = '#FFFFFF';
-                
+
                 mgmtBar.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                         <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Audit Management</h4>
@@ -3554,9 +3554,9 @@ window.showShiftReportDetails = async function (reportId) {
     }
 };
 
-window.renderBeautifulEsr = function(text, metadata) {
+window.renderBeautifulEsr = function (text, metadata) {
     if (!text) return '';
-    
+
     // Helper to extract values using regex
     const extract = (pattern) => {
         const match = text.match(pattern);
@@ -3714,7 +3714,7 @@ window.printCurrentEsr = function () {
 let currentBvReportId = null;
 let currentBvStructuredData = null;
 
-window.openBillVerification = function(reportId) {
+window.openBillVerification = function (reportId) {
     currentBvReportId = reportId;
     const overlay = document.getElementById('bill-verification-overlay');
     const loading = document.getElementById('bv-loading');
@@ -3740,7 +3740,7 @@ window.openBillVerification = function(reportId) {
         });
 };
 
-window.closeBillVerification = function() {
+window.closeBillVerification = function () {
     const overlay = document.getElementById('bill-verification-overlay');
     overlay.classList.remove('show');
     // Reset form
@@ -3755,31 +3755,31 @@ window.closeBillVerification = function() {
     document.getElementById('bv-manual-text').value = '';
 };
 
-window.toBvStep2 = function() {
+window.toBvStep2 = function () {
     document.getElementById('bv-step-1').style.display = 'none';
     document.getElementById('bv-step-2').style.display = 'block';
 };
 
-window.backToBvStep1 = function() {
+window.backToBvStep1 = function () {
     document.getElementById('bv-step-1').style.display = 'block';
     document.getElementById('bv-step-2').style.display = 'none';
 };
 
-window.handleBvTypeChange = function() {
+window.handleBvTypeChange = function () {
     const type = document.getElementById('bv-type').value;
     const errorGroup = document.getElementById('bv-bill-error-group');
     const manualGroup = document.getElementById('bv-manual-text-group');
 
     errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
     manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
-    
+
     if (type !== 'Bill Error') {
         document.getElementById('bv-subtype').value = '';
         document.getElementById('bv-differences-group').style.display = 'none';
     }
 };
 
-window.handleBvSubtypeChange = function() {
+window.handleBvSubtypeChange = function () {
     const subtype = document.getElementById('bv-subtype').value;
     const diffGroup = document.getElementById('bv-differences-group');
     const upiRow = document.getElementById('bv-diff-upi-row');
@@ -3815,7 +3815,7 @@ window.handleBvSubtypeChange = function() {
     }
 };
 
-window.saveBillVerification = async function(remarkChoice) {
+window.saveBillVerification = async function (remarkChoice) {
     let payload = {
         reportId: currentBvReportId,
         remarks: remarkChoice
@@ -3825,11 +3825,11 @@ window.saveBillVerification = async function(remarkChoice) {
         payload.type = document.getElementById('bv-type').value;
         payload.subType = document.getElementById('bv-subtype').value;
         payload.manualText = document.getElementById('bv-manual-text').value;
-        
+
         payload.differences = {
             cash: parseFloat(document.getElementById('bv-diff-cash').value) || 0
         };
-        
+
         const pinelabEl = document.getElementById('bv-diff-pinelab');
         if (pinelabEl) payload.differences.pinelab = parseFloat(pinelabEl.value) || 0;
         const paytmEl = document.getElementById('bv-diff-paytm');
@@ -3858,143 +3858,143 @@ window.saveBillVerification = async function(remarkChoice) {
     } catch (err) {
         await nammaModalSystem.alert("Failed to connect to server.");
     }
-// --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
-window.deleteBillVerification = async function(reportId) {
-    const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
-        confirmText: "Yes, Delete",
-        cancelText: "Keep it",
-        theme: "danger"
-    });
-    if (!proceed) return;
-
-    try {
-        const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
-        const result = await res.json();
-        if (result.success) {
-            await nammaModalSystem.alert("Verification deleted successfully.");
-            window.closeEsrDetailModal();
-            window.loadBillVerificationReports();
-        } else {
-            await nammaModalSystem.alert("Error deleting verification: " + result.message);
-        }
-    } catch (err) {
-        await nammaModalSystem.alert("Failed to connect to server.");
-    }
-};
-
-window.solveBillRemarks = async function(reportId) {
-    const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
-        confirmText: "Mark Solved",
-        cancelText: "Cancel"
-    });
-    if (!proceed) return;
-
-    try {
-        // Fetch existing data first to preserve differences
-        const res1 = await fetch(`/api/esr-reports/${reportId}`);
-        const data1 = await res1.json();
-        const existing = data1.metadata.verification_data || {};
-
-        const payload = {
-            reportId,
-            remarks: "No",
-            type: existing.type || "Other",
-            subType: existing.subType || "",
-            differences: existing.differences || {},
-            manualText: existing.manualText || "Marked as solved by Admin"
-        };
-
-        const res2 = await fetch('/api/admin/verify-bill', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+    // --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
+    window.deleteBillVerification = async function (reportId) {
+        const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
+            confirmText: "Yes, Delete",
+            cancelText: "Keep it",
+            theme: "danger"
         });
-        const result = await res2.json();
-        if (result.success) {
-            await nammaModalSystem.alert("Audit solved successfully.");
-            window.showReportDetails(reportId); // Refresh the modal
-            window.loadBillVerificationReports(); // Refresh the table
-        }
-    } catch (err) {
-        await nammaModalSystem.alert("Failed to solve remarks.");
-    }
-};
+        if (!proceed) return;
 
-window.editBillVerification = async function(reportId) {
-    // 1. Close the current detail modal
-    window.closeEsrDetailModal();
-    
-    // 2. Open the verification overlay
-    window.openBillVerification(reportId);
-    
-    // 3. Pre-fill existing data
-    try {
-        const res = await fetch(`/api/esr-reports/${reportId}`);
-        const data = await res.json();
-        if (data.metadata && data.metadata.verification_data) {
-            const v = data.metadata.verification_data;
-            setTimeout(() => {
-                document.getElementById('bv-type').value = v.type || '';
-                window.handleBvTypeChange();
-                document.getElementById('bv-subtype').value = v.subType || '';
-                window.handleBvSubtypeChange();
-                if (v.differences) {
-                    if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
-                    if (v.differences.pinelab) {
-                        const pl = document.getElementById('bv-diff-pinelab');
-                        if (pl) pl.value = v.differences.pinelab;
+        try {
+            const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                await nammaModalSystem.alert("Verification deleted successfully.");
+                window.closeEsrDetailModal();
+                window.loadBillVerificationReports();
+            } else {
+                await nammaModalSystem.alert("Error deleting verification: " + result.message);
+            }
+        } catch (err) {
+            await nammaModalSystem.alert("Failed to connect to server.");
+        }
+    };
+
+    window.solveBillRemarks = async function (reportId) {
+        const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
+            confirmText: "Mark Solved",
+            cancelText: "Cancel"
+        });
+        if (!proceed) return;
+
+        try {
+            // Fetch existing data first to preserve differences
+            const res1 = await fetch(`/api/esr-reports/${reportId}`);
+            const data1 = await res1.json();
+            const existing = data1.metadata.verification_data || {};
+
+            const payload = {
+                reportId,
+                remarks: "No",
+                type: existing.type || "Other",
+                subType: existing.subType || "",
+                differences: existing.differences || {},
+                manualText: existing.manualText || "Marked as solved by Admin"
+            };
+
+            const res2 = await fetch('/api/admin/verify-bill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res2.json();
+            if (result.success) {
+                await nammaModalSystem.alert("Audit solved successfully.");
+                window.showReportDetails(reportId); // Refresh the modal
+                window.loadBillVerificationReports(); // Refresh the table
+            }
+        } catch (err) {
+            await nammaModalSystem.alert("Failed to solve remarks.");
+        }
+    };
+
+    window.editBillVerification = async function (reportId) {
+        // 1. Close the current detail modal
+        window.closeEsrDetailModal();
+
+        // 2. Open the verification overlay
+        window.openBillVerification(reportId);
+
+        // 3. Pre-fill existing data
+        try {
+            const res = await fetch(`/api/esr-reports/${reportId}`);
+            const data = await res.json();
+            if (data.metadata && data.metadata.verification_data) {
+                const v = data.metadata.verification_data;
+                setTimeout(() => {
+                    document.getElementById('bv-type').value = v.type || '';
+                    window.handleBvTypeChange();
+                    document.getElementById('bv-subtype').value = v.subType || '';
+                    window.handleBvSubtypeChange();
+                    if (v.differences) {
+                        if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
+                        if (v.differences.pinelab) {
+                            const pl = document.getElementById('bv-diff-pinelab');
+                            if (pl) pl.value = v.differences.pinelab;
+                        }
+                        if (v.differences.paytm) {
+                            const pt = document.getElementById('bv-diff-paytm');
+                            if (pt) pt.value = v.differences.paytm;
+                        }
+                        if (v.differences.upi_general) {
+                            const ug = document.getElementById('bv-diff-upi-gen');
+                            if (ug) ug.value = v.differences.upi_general;
+                        }
                     }
-                    if (v.differences.paytm) {
-                        const pt = document.getElementById('bv-diff-paytm');
-                        if (pt) pt.value = v.differences.paytm;
-                    }
-                    if (v.differences.upi_general) {
-                        const ug = document.getElementById('bv-diff-upi-gen');
-                        if (ug) ug.value = v.differences.upi_general;
-                    }
-                }
-                document.getElementById('bv-manual-text').value = v.manualText || '';
-            }, 500); // Wait for openBillVerification fetch to finish
+                    document.getElementById('bv-manual-text').value = v.manualText || '';
+                }, 500); // Wait for openBillVerification fetch to finish
+            }
+        } catch (e) {
+            console.error("Error pre-filling edit form", e);
         }
-    } catch (e) {
-        console.error("Error pre-filling edit form", e);
-    }
-};
+    };
 
-const BV_SAVE_PARITY = true;
+    const BV_SAVE_PARITY = true;
 
-// --- BILL REPORTING Logic ---
-window.loadBillVerificationReports = async function() {
-    try {
-        const res = await fetch('/api/admin/bill-verification-reports');
-        const data = await res.json();
-        const tbody = document.getElementById('bill-reports-tbody');
-        if (!tbody) return;
+    // --- BILL REPORTING Logic ---
+    window.loadBillVerificationReports = async function () {
+        try {
+            const res = await fetch('/api/admin/bill-verification-reports');
+            const data = await res.json();
+            const tbody = document.getElementById('bill-reports-tbody');
+            if (!tbody) return;
 
-        // Upgrade to modern-table styling
-        const table = tbody.closest('table');
-        if (table) {
-            table.className = 'modern-table';
-            table.style.marginTop = '0';
-        }
+            // Upgrade to modern-table styling
+            const table = tbody.closest('table');
+            if (table) {
+                table.className = 'modern-table';
+                table.style.marginTop = '0';
+            }
 
-        if (!data.success || data.history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
-            return;
-        }
+            if (!data.success || data.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
+                return;
+            }
 
-        tbody.innerHTML = data.history.map(rep => {
-            const ver = rep.verification_data || {};
-            const diffs = ver.differences || {};
-            let diffStr = [];
-            if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
-            if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
-            if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
-            if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
+            tbody.innerHTML = data.history.map(rep => {
+                const ver = rep.verification_data || {};
+                const diffs = ver.differences || {};
+                let diffStr = [];
+                if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
+                if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
+                if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
+                if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
 
-            const hasRemarks = ver.remarks !== 'No';
+                const hasRemarks = ver.remarks !== 'No';
 
-            return `
+                return `
                 <tr>
                     <td>
                         <div style="font-weight:800; color:#0f172a; font-size:14px;">${rep.employeeName}</div>
@@ -4015,7 +4015,7 @@ window.loadBillVerificationReports = async function() {
                     </td>
                     <td>
                         <div style="font-weight:700; font-size:13px; color:#0f172a;">${ver.verifiedBy || '-'}</div>
-                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString([], {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short'}) : ''}</div>
+                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : ''}</div>
                     </td>
                     <td>
                         <button class="action-btn secondary" onclick="window.viewShiftReport('${rep.id}')" style="width:36px; height:36px; padding:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border:none; transition: all 0.2s ease;">
@@ -4024,36 +4024,36 @@ window.loadBillVerificationReports = async function() {
                     </td>
                 </tr>
             `;
-        }).join('');
+            }).join('');
 
-    } catch (err) {
-        console.error(err);
-    }
-};
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-window.showBillReportingView = function() {
-    const billView = document.getElementById('bill-report-view');
-    const masterBtn = document.querySelector('.master-report-btn');
-    
-    if (billView) {
-        // Use central SPA switcher to hide others correctly
-        window.switchSpaView(billView, masterBtn);
-        window.loadBillVerificationReports();
-    }
-};
+    window.showBillReportingView = function () {
+        const billView = document.getElementById('bill-report-view');
+        const masterBtn = document.querySelector('.master-report-btn');
 
-window.backToStudioHub = function() {
-    const hub = document.getElementById('master-reports-hub-v2');
-    const masterBtn = document.querySelector('.master-report-btn');
-    if (hub) {
-        window.switchSpaView(hub, masterBtn);
-    }
-};
+        if (billView) {
+            // Use central SPA switcher to hide others correctly
+            window.switchSpaView(billView, masterBtn);
+            window.loadBillVerificationReports();
+        }
+    };
 
-window.viewShiftReport = function (id) {
-    if (typeof window.showReportDetails === 'function') {
-        window.showReportDetails(id);
-    }
-};
+    window.backToStudioHub = function () {
+        const hub = document.getElementById('master-reports-hub-v2');
+        const masterBtn = document.querySelector('.master-report-btn');
+        if (hub) {
+            window.switchSpaView(hub, masterBtn);
+        }
+    };
+
+    window.viewShiftReport = function (id) {
+        if (typeof window.showReportDetails === 'function') {
+            window.showReportDetails(id);
+        }
+    };
 
 });
