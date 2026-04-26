@@ -2630,8 +2630,8 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
             const isNameMatch = empName && rName === empName;
             const isIdMatch = (employeeId && rId === employeeId.toLowerCase()) || (empUsername && rId === empUsername);
 
-            if (isNameMatch || isIdMatch) {
-                const diffs = data.verification_data.differences || {};
+            if ((isNameMatch || isIdMatch) && data.verification_data && data.verification_data.differences) {
+                const diffs = data.verification_data.differences;
                 Object.values(diffs).forEach(val => {
                     const num = parseFloat(val);
                     if (!isNaN(num)) totalDiff += num;
