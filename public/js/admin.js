@@ -1367,7 +1367,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentAddStep = 1;
 
     window.openAddEmployeePanel = function() {
-        console.log("SPA: openAddEmployeePanel INVOKED");
         const panel = document.getElementById('add-employee-panel');
         const overlay = document.getElementById('add-employee-overlay');
         const form = document.getElementById('spa-add-employee-form');
@@ -1378,7 +1377,6 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.classList.add('show');
             panel.classList.add('show');
         } else {
-            alert("CRITICAL ERROR: Side panel elements missing from DOM!");
             console.error("SPA ERROR: Add Employee Panel not found in DOM");
         }
     };
@@ -1494,15 +1492,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Event Delegation for Add Employee Button (Robust against re-renders)
+    // Event Delegation for Add Employee Button
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('#spa-add-employee-btn');
         if (btn) {
-            console.log("SPA: #spa-add-employee-btn CLICKED");
             if (typeof window.openAddEmployeePanel === 'function') {
                 window.openAddEmployeePanel();
-            } else {
-                alert("SPA ERROR: window.openAddEmployeePanel is not a function!");
             }
         }
     });
