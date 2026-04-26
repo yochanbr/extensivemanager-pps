@@ -3408,40 +3408,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return str.trim();
     }
 
-window.addEventListener('error', function (e) {
-    const tbody = document.getElementById('attendance-logs-tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
-});
+    window.addEventListener('error', function (e) {
+        const tbody = document.getElementById('attendance-logs-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
+    });
 
 
 
-// --- SHIFT SUMMARY DASHBOARD LOGIC ---
-window.loadShiftSummaries = async function (date = null) {
-    const grid = document.getElementById('shift-summary-grid');
-    if (!grid) return;
+    // --- SHIFT SUMMARY DASHBOARD LOGIC ---
+    window.loadShiftSummaries = async function (date = null) {
+        const grid = document.getElementById('shift-summary-grid');
+        if (!grid) return;
 
-    grid.innerHTML = `
+        grid.innerHTML = `
         <div class="loading-placeholder" style="grid-column: 1/-1; text-align: center; padding: 100px;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary-accent); margin-bottom: 16px;"></i>
             <p style="color: #64748b;">Fetching cloud reports...</p>
         </div>
     `;
 
-    try {
-        const url = date ? `/api/shift-summary?date=${date}` : '/api/shift-summary';
-        const response = await fetch(url);
-        const data = await response.json();
+        try {
+            const url = date ? `/api/shift-summary?date=${date}` : '/api/shift-summary';
+            const response = await fetch(url);
+            const data = await response.json();
 
-        if (data.success && data.reports && data.reports.length > 0) {
-            grid.innerHTML = '';
-            data.reports.forEach(report => {
-                const card = document.createElement('div');
-                card.className = 'shift-summary-card';
-                card.onclick = () => window.showShiftReportDetails(report.id);
+            if (data.success && data.reports && data.reports.length > 0) {
+                grid.innerHTML = '';
+                data.reports.forEach(report => {
+                    const card = document.createElement('div');
+                    card.className = 'shift-summary-card';
+                    card.onclick = () => window.showShiftReportDetails(report.id);
 
-                const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
+                    const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
 
-                card.innerHTML = `
+                    card.innerHTML = `
                     <div class="shift-card-header">
                         <div class="shift-card-user">
                             <div class="shift-user-avatar">${avatarInitials}</div>
@@ -3475,56 +3475,56 @@ window.loadShiftSummaries = async function (date = null) {
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
-            });
-        } else {
-            grid.innerHTML = `
+                    grid.appendChild(card);
+                });
+            } else {
+                grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 100px; background: rgba(255,255,255,0.5); border-radius: 20px; border: 1px dashed #cbd5e1;">
                     <i class="fas fa-folder-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 16px;"></i>
                     <p style="color: #64748b;">No shift reports found for this period.</p>
                 </div>
             `;
+            }
+        } catch (error) {
+            console.error('Error loading summaries:', error);
+            grid.innerHTML = '<p style="color:red; text-align:center; grid-column:1/-1;">Error loading reports from cloud.</p>';
         }
-    } catch (error) {
-        console.error('Error loading summaries:', error);
-        grid.innerHTML = '<p style="color:red; text-align:center; grid-column:1/-1;">Error loading reports from cloud.</p>';
-    }
-};
+    };
 
-window.showShiftReportDetails = async function (reportId) {
-    const modal = document.getElementById('esr-detail-modal');
-    const textArea = document.getElementById('esr-detail-text');
-    const imageArea = document.getElementById('esr-detail-image');
-    const subtitle = document.getElementById('esr-detail-subtitle');
+    window.showShiftReportDetails = async function (reportId) {
+        const modal = document.getElementById('esr-detail-modal');
+        const textArea = document.getElementById('esr-detail-text');
+        const imageArea = document.getElementById('esr-detail-image');
+        const subtitle = document.getElementById('esr-detail-subtitle');
 
-    if (!modal) return;
+        if (!modal) return;
 
-    // Reset and Show Modal
-    textArea.innerHTML = 'Decrypting secure report data...';
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
+        // Reset and Show Modal
+        textArea.innerHTML = 'Decrypting secure report data...';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
 
-    try {
-        // Fetch Text Report
-        const textResponse = await fetch(`/api/esr-reports/${reportId}`);
-        const textData = await textResponse.json();
+        try {
+            // Fetch Text Report
+            const textResponse = await fetch(`/api/esr-reports/${reportId}`);
+            const textData = await textResponse.json();
 
-        if (textData.success) {
-            textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
-            subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
+            if (textData.success) {
+                textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
+                subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
 
-            // If verified, append the management bar
-            if (textData.metadata.verified) {
-                const ver = textData.metadata.verification_data || {};
-                const hasRemarks = ver.remarks !== 'No';
+                // If verified, append the management bar
+                if (textData.metadata.verified) {
+                    const ver = textData.metadata.verification_data || {};
+                    const hasRemarks = ver.remarks !== 'No';
 
-                const mgmtBar = document.createElement('div');
-                mgmtBar.className = 'esr-rendered-section';
-                mgmtBar.style.marginTop = '24px';
-                mgmtBar.style.border = '2px solid #F1F5F9';
-                mgmtBar.style.background = '#FFFFFF';
+                    const mgmtBar = document.createElement('div');
+                    mgmtBar.className = 'esr-rendered-section';
+                    mgmtBar.style.marginTop = '24px';
+                    mgmtBar.style.border = '2px solid #F1F5F9';
+                    mgmtBar.style.background = '#FFFFFF';
 
-                mgmtBar.innerHTML = `
+                    mgmtBar.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                         <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Audit Management</h4>
                         <span class="pill ${hasRemarks ? 'absent' : 'working'}">${hasRemarks ? 'REMARKS PENDING' : 'AUDIT SOLVED'}</span>
@@ -3542,43 +3542,43 @@ window.showShiftReportDetails = async function (reportId) {
                         </button>
                     </div>
                 `;
-                textArea.appendChild(mgmtBar);
+                    textArea.appendChild(mgmtBar);
+                }
+            } else {
+                textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
             }
-        } else {
-            textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
+        } catch (error) {
+            console.error('Error showing report details:', error);
+            textArea.textContent = 'Critical error during decryption. Please check network.';
         }
-    } catch (error) {
-        console.error('Error showing report details:', error);
-        textArea.textContent = 'Critical error during decryption. Please check network.';
-    }
-};
-
-window.renderBeautifulEsr = function (text, metadata) {
-    if (!text) return '';
-
-    // Helper to extract values using regex
-    const extract = (pattern) => {
-        const match = text.match(pattern);
-        return match ? match[1].trim() : '0';
     };
 
-    const details = {
-        name: metadata.employeeName || text.match(/Report for (.*)/)?.[1] || 'Guest',
-        start: extract(/- Start: (.*)/),
-        end: extract(/- End: (.*)/),
-        id: metadata.shift_id || extract(/- ID: (.*)/),
-        upiPinelab: extract(/- UPI Pinelab: ₹(.*)/),
-        cardPinelab: extract(/- Card Pinelab: ₹(.*)/),
-        upiPaytm: extract(/- UPI Paytm: ₹(.*)/),
-        cardPaytm: extract(/- Card Paytm: ₹(.*)/),
-        cash: extract(/- Cash: ₹(.*)/),
-        retail: extract(/- Retail Credit: ₹(.*)/),
-        added: extract(/- Added: (.*?),/),
-        edited: extract(/Edited: (.*?),/),
-        deleted: extract(/Deleted: (.*)/)
-    };
+    window.renderBeautifulEsr = function (text, metadata) {
+        if (!text) return '';
 
-    return `
+        // Helper to extract values using regex
+        const extract = (pattern) => {
+            const match = text.match(pattern);
+            return match ? match[1].trim() : '0';
+        };
+
+        const details = {
+            name: metadata.employeeName || text.match(/Report for (.*)/)?.[1] || 'Guest',
+            start: extract(/- Start: (.*)/),
+            end: extract(/- End: (.*)/),
+            id: metadata.shift_id || extract(/- ID: (.*)/),
+            upiPinelab: extract(/- UPI Pinelab: ₹(.*)/),
+            cardPinelab: extract(/- Card Pinelab: ₹(.*)/),
+            upiPaytm: extract(/- UPI Paytm: ₹(.*)/),
+            cardPaytm: extract(/- Card Paytm: ₹(.*)/),
+            cash: extract(/- Cash: ₹(.*)/),
+            retail: extract(/- Retail Credit: ₹(.*)/),
+            added: extract(/- Added: (.*?),/),
+            edited: extract(/Edited: (.*?),/),
+            deleted: extract(/Deleted: (.*)/)
+        };
+
+        return `
         <div class="esr-rendered-container">
             <div class="esr-rendered-section">
                 <h4><i class="fas fa-info-circle"></i> Shift Details</h4>
@@ -3643,20 +3643,20 @@ window.renderBeautifulEsr = function (text, metadata) {
             </div>
         </div>
     `;
-};
+    };
 
-window.closeEsrDetailModal = function () {
-    const modal = document.getElementById('esr-detail-modal');
-    if (modal) {
-        modal.classList.remove('show');
-        setTimeout(() => modal.style.display = 'none', 300);
-    }
-};
+    window.closeEsrDetailModal = function () {
+        const modal = document.getElementById('esr-detail-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    };
 
-window.printCurrentEsr = function () {
-    const reportHtml = document.getElementById('esr-detail-text').innerHTML;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+    window.printCurrentEsr = function () {
+        const reportHtml = document.getElementById('esr-detail-text').innerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
         <html>
             <head>
                 <title>Shift Report - ${formatIST(new Date()).split(',')[0]}</title>
@@ -3703,297 +3703,299 @@ window.printCurrentEsr = function () {
             </body>
         </html>
     `);
-    printWindow.document.close();
-    setTimeout(() => {
-        printWindow.print();
-    }, 500);
-};
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    };
 
-// --- BILL VERIFICATION LOGIC ---
-let currentBvReportId = null;
-let currentBvStructuredData = null;
+    // --- BILL VERIFICATION LOGIC ---
+    let currentBvReportId = null;
+    let currentBvStructuredData = null;
 
-window.openBillVerification = function (reportId) {
-    currentBvReportId = reportId;
-    const overlay = document.getElementById('bill-verification-overlay');
-    const loading = document.getElementById('bv-loading');
-    const step1 = document.getElementById('bv-step-1');
-    const step2 = document.getElementById('bv-step-2');
+    window.openBillVerification = function (reportId) {
+        currentBvReportId = reportId;
+        const overlay = document.getElementById('bill-verification-overlay');
+        const loading = document.getElementById('bv-loading');
+        const step1 = document.getElementById('bv-step-1');
+        const step2 = document.getElementById('bv-step-2');
 
-    overlay.classList.add('show');
-    loading.style.display = 'block';
-    step1.style.display = 'none';
-    step2.style.display = 'none';
+        overlay.classList.add('show');
+        loading.style.display = 'block';
+        step1.style.display = 'none';
+        step2.style.display = 'none';
 
-    // Fetch report to get structured data (for Pinelab/Paytem detection)
-    fetch('/api/esr-reports/' + reportId)
-        .then(res => res.json())
-        .then(data => {
-            loading.style.display = 'none';
-            step1.style.display = 'block';
-            currentBvStructuredData = data.structured_data || {};
-        })
-        .catch(() => {
-            loading.style.display = 'none';
-            step1.style.display = 'block';
-        });
-};
+        // Fetch report to get structured data (for Pinelab/Paytem detection)
+        fetch('/api/esr-reports/' + reportId)
+            .then(res => res.json())
+            .then(data => {
+                loading.style.display = 'none';
+                step1.style.display = 'block';
+                currentBvStructuredData = data.structured_data || {};
+            })
+            .catch(() => {
+                loading.style.display = 'none';
+                step1.style.display = 'block';
+            });
+    };
 
-window.closeBillVerification = function () {
-    const overlay = document.getElementById('bill-verification-overlay');
-    overlay.classList.remove('show');
-    // Reset form
-    document.getElementById('bv-step-1').style.display = 'block';
-    document.getElementById('bv-step-2').style.display = 'none';
-    document.getElementById('bv-type').value = '';
-    document.getElementById('bv-subtype').value = '';
-    document.getElementById('bv-bill-error-group').style.display = 'none';
-    document.getElementById('bv-differences-group').style.display = 'none';
-    document.getElementById('bv-manual-text-group').style.display = 'none';
-    document.getElementById('bv-diff-cash').value = '';
-    document.getElementById('bv-manual-text').value = '';
-};
-
-window.toBvStep2 = function () {
-    document.getElementById('bv-step-1').style.display = 'none';
-    document.getElementById('bv-step-2').style.display = 'block';
-};
-
-window.backToBvStep1 = function () {
-    document.getElementById('bv-step-1').style.display = 'block';
-    document.getElementById('bv-step-2').style.display = 'none';
-};
-
-window.handleBvTypeChange = function () {
-    const type = document.getElementById('bv-type').value;
-    const errorGroup = document.getElementById('bv-bill-error-group');
-    const manualGroup = document.getElementById('bv-manual-text-group');
-
-    errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
-    manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
-
-    if (type !== 'Bill Error') {
+    window.closeBillVerification = function () {
+        const overlay = document.getElementById('bill-verification-overlay');
+        overlay.classList.remove('show');
+        // Reset form
+        document.getElementById('bv-step-1').style.display = 'block';
+        document.getElementById('bv-step-2').style.display = 'none';
+        document.getElementById('bv-type').value = '';
         document.getElementById('bv-subtype').value = '';
+        document.getElementById('bv-bill-error-group').style.display = 'none';
         document.getElementById('bv-differences-group').style.display = 'none';
-    }
-};
+        document.getElementById('bv-manual-text-group').style.display = 'none';
+        document.getElementById('bv-diff-cash').value = '';
+        document.getElementById('bv-manual-text').value = '';
+    };
 
-window.handleBvSubtypeChange = function () {
-    const subtype = document.getElementById('bv-subtype').value;
-    const diffGroup = document.getElementById('bv-differences-group');
-    const upiRow = document.getElementById('bv-diff-upi-row');
+    window.toBvStep2 = function () {
+        document.getElementById('bv-step-1').style.display = 'none';
+        document.getElementById('bv-step-2').style.display = 'block';
+    };
 
-    if (subtype === 'Bill difference issue') {
-        diffGroup.style.display = 'block';
-        // Inject dynamic UPI inputs based on ESR
-        let upiHtml = '';
-        if (currentBvStructuredData) {
-            if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
-                upiHtml += `<div class="input-group">
+    window.backToBvStep1 = function () {
+        document.getElementById('bv-step-1').style.display = 'block';
+        document.getElementById('bv-step-2').style.display = 'none';
+    };
+
+    window.handleBvTypeChange = function () {
+        const type = document.getElementById('bv-type').value;
+        const errorGroup = document.getElementById('bv-bill-error-group');
+        const manualGroup = document.getElementById('bv-manual-text-group');
+
+        errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
+        manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
+
+        if (type !== 'Bill Error') {
+            document.getElementById('bv-subtype').value = '';
+            document.getElementById('bv-differences-group').style.display = 'none';
+        }
+    };
+
+    window.handleBvSubtypeChange = function () {
+        const subtype = document.getElementById('bv-subtype').value;
+        const diffGroup = document.getElementById('bv-differences-group');
+        const upiRow = document.getElementById('bv-diff-upi-row');
+
+        if (subtype === 'Bill difference issue') {
+            diffGroup.style.display = 'block';
+            // Inject dynamic UPI inputs based on ESR
+            let upiHtml = '';
+            if (currentBvStructuredData) {
+                if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
+                    upiHtml += `<div class="input-group">
                     <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Pinelab)</label>
                     <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
                 </div>`;
-            }
-            if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
-                upiHtml += `<div class="input-group">
+                }
+                if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
+                    upiHtml += `<div class="input-group">
                     <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Paytm)</label>
                     <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
                 </div>`;
+                }
             }
-        }
-        // Fallback if no specific data detected
-        if (!upiHtml) {
-            upiHtml = `<div class="input-group">
+            // Fallback if no specific data detected
+            if (!upiHtml) {
+                upiHtml = `<div class="input-group">
                 <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (General)</label>
                 <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
             </div>`;
+            }
+            upiRow.innerHTML = upiHtml;
+        } else {
+            diffGroup.style.display = 'none';
         }
-        upiRow.innerHTML = upiHtml;
-    } else {
-        diffGroup.style.display = 'none';
-    }
-};
-
-window.saveBillVerification = async function (remarkChoice) {
-    let payload = {
-        reportId: currentBvReportId,
-        remarks: remarkChoice
     };
 
-    if (remarkChoice === 'Yes') {
-        payload.type = document.getElementById('bv-type').value;
-        payload.subType = document.getElementById('bv-subtype').value;
-        payload.manualText = document.getElementById('bv-manual-text').value;
-
-        payload.differences = {
-            cash: parseFloat(document.getElementById('bv-diff-cash').value) || 0
+    window.saveBillVerification = async function (remarkChoice) {
+        let payload = {
+            reportId: currentBvReportId,
+            remarks: remarkChoice
         };
 
-        const pinelabEl = document.getElementById('bv-diff-pinelab');
-        if (pinelabEl) payload.differences.pinelab = parseFloat(pinelabEl.value) || 0;
-        const paytmEl = document.getElementById('bv-diff-paytm');
-        if (paytmEl) payload.differences.paytm = parseFloat(paytmEl.value) || 0;
-        const upiGenEl = document.getElementById('bv-diff-upi-gen');
-        if (upiGenEl) payload.differences.upi_general = parseFloat(upiGenEl.value) || 0;
-    }
+        if (remarkChoice === 'Yes') {
+            payload.type = document.getElementById('bv-type').value;
+            payload.subType = document.getElementById('bv-subtype').value;
+            payload.manualText = document.getElementById('bv-manual-text').value;
 
-    try {
-        const res = await fetch('/api/admin/verify-bill', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.success) {
-            await nammaModalSystem.alert("Bill verification saved successfully!");
-            window.closeBillVerification();
-            window.loadDashboardData(); // Refresh notifications
-            if (document.getElementById('bill-report-view').style.display === 'block') {
-                window.loadBillVerificationReports();
-            }
-        } else {
-            await nammaModalSystem.alert("Error: " + result.message);
+            payload.differences = {
+                cash: parseFloat(document.getElementById('bv-diff-cash').value) || 0
+            };
+
+            const pinelabEl = document.getElementById('bv-diff-pinelab');
+            if (pinelabEl) payload.differences.pinelab = parseFloat(pinelabEl.value) || 0;
+            const paytmEl = document.getElementById('bv-diff-paytm');
+            if (paytmEl) payload.differences.paytm = parseFloat(paytmEl.value) || 0;
+            const upiGenEl = document.getElementById('bv-diff-upi-gen');
+            if (upiGenEl) payload.differences.upi_general = parseFloat(upiGenEl.value) || 0;
         }
-    } catch (err) {
-        await nammaModalSystem.alert("Failed to connect to server.");
-    }
-    // --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
-    window.deleteBillVerification = async function (reportId) {
-        const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
-            confirmText: "Yes, Delete",
-            cancelText: "Keep it",
-            theme: "danger"
-        });
-        if (!proceed) return;
 
         try {
-            const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
+            const res = await fetch('/api/admin/verify-bill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
             const result = await res.json();
             if (result.success) {
-                await nammaModalSystem.alert("Verification deleted successfully.");
-                window.closeEsrDetailModal();
-                window.loadBillVerificationReports();
+                await nammaModalSystem.alert("Bill verification saved successfully!");
+                window.closeBillVerification();
+                window.loadDashboardData(); // Refresh notifications
+                if (document.getElementById('bill-report-view').style.display === 'block') {
+                    window.loadBillVerificationReports();
+                }
             } else {
-                await nammaModalSystem.alert("Error deleting verification: " + result.message);
+                await nammaModalSystem.alert("Error: " + result.message);
             }
         } catch (err) {
             await nammaModalSystem.alert("Failed to connect to server.");
         }
     };
 
-    window.solveBillRemarks = async function (reportId) {
-        const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
-            confirmText: "Mark Solved",
-            cancelText: "Cancel"
-        });
-        if (!proceed) return;
-
-        try {
-            // Fetch existing data first to preserve differences
-            const res1 = await fetch(`/api/esr-reports/${reportId}`);
-            const data1 = await res1.json();
-            const existing = data1.metadata.verification_data || {};
-
-            const payload = {
-                reportId,
-                remarks: "No",
-                type: existing.type || "Other",
-                subType: existing.subType || "",
-                differences: existing.differences || {},
-                manualText: existing.manualText || "Marked as solved by Admin"
-            };
-
-            const res2 = await fetch('/api/admin/verify-bill', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+    // --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
+        window.deleteBillVerification = async function (reportId) {
+            const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
+                confirmText: "Yes, Delete",
+                cancelText: "Keep it",
+                theme: "danger"
             });
-            const result = await res2.json();
-            if (result.success) {
-                await nammaModalSystem.alert("Audit solved successfully.");
-                window.showReportDetails(reportId); // Refresh the modal
-                window.loadBillVerificationReports(); // Refresh the table
+            if (!proceed) return;
+
+            try {
+                const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await nammaModalSystem.alert("Verification deleted successfully.");
+                    window.closeEsrDetailModal();
+                    window.loadBillVerificationReports();
+                } else {
+                    await nammaModalSystem.alert("Error deleting verification: " + result.message);
+                }
+            } catch (err) {
+                await nammaModalSystem.alert("Failed to connect to server.");
             }
-        } catch (err) {
-            await nammaModalSystem.alert("Failed to solve remarks.");
-        }
-    };
+        };
 
-    window.editBillVerification = async function (reportId) {
-        // 1. Close the current detail modal
-        window.closeEsrDetailModal();
+        window.solveBillRemarks = async function (reportId) {
+            const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
+                confirmText: "Mark Solved",
+                cancelText: "Cancel"
+            });
+            if (!proceed) return;
 
-        // 2. Open the verification overlay
-        window.openBillVerification(reportId);
+            try {
+                // Fetch existing data first to preserve differences
+                const res1 = await fetch(`/api/esr-reports/${reportId}`);
+                const data1 = await res1.json();
+                const existing = data1.metadata.verification_data || {};
 
-        // 3. Pre-fill existing data
-        try {
-            const res = await fetch(`/api/esr-reports/${reportId}`);
-            const data = await res.json();
-            if (data.metadata && data.metadata.verification_data) {
-                const v = data.metadata.verification_data;
-                setTimeout(() => {
-                    document.getElementById('bv-type').value = v.type || '';
-                    window.handleBvTypeChange();
-                    document.getElementById('bv-subtype').value = v.subType || '';
-                    window.handleBvSubtypeChange();
-                    if (v.differences) {
-                        if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
-                        if (v.differences.pinelab) {
-                            const pl = document.getElementById('bv-diff-pinelab');
-                            if (pl) pl.value = v.differences.pinelab;
+                const payload = {
+                    reportId,
+                    remarks: "No",
+                    type: existing.type || "Other",
+                    subType: existing.subType || "",
+                    differences: existing.differences || {},
+                    manualText: existing.manualText || "Marked as solved by Admin"
+                };
+
+                const res2 = await fetch('/api/admin/verify-bill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res2.json();
+                if (result.success) {
+                    await nammaModalSystem.alert("Audit solved successfully.");
+                    window.showReportDetails(reportId); // Refresh the modal
+                    window.loadBillVerificationReports(); // Refresh the table
+                }
+            } catch (err) {
+                await nammaModalSystem.alert("Failed to solve remarks.");
+            }
+        };
+
+        window.editBillVerification = async function (reportId) {
+            // 1. Close the current detail modal
+            window.closeEsrDetailModal();
+
+            // 2. Open the verification overlay
+            window.openBillVerification(reportId);
+
+            // 3. Pre-fill existing data
+            try {
+                const res = await fetch(`/api/esr-reports/${reportId}`);
+                const data = await res.json();
+                if (data.metadata && data.metadata.verification_data) {
+                    const v = data.metadata.verification_data;
+                    setTimeout(() => {
+                        document.getElementById('bv-type').value = v.type || '';
+                        window.handleBvTypeChange();
+                        document.getElementById('bv-subtype').value = v.subType || '';
+                        window.handleBvSubtypeChange();
+                        if (v.differences) {
+                            if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
+                            if (v.differences.pinelab) {
+                                const pl = document.getElementById('bv-diff-pinelab');
+                                if (pl) pl.value = v.differences.pinelab;
+                            }
+                            if (v.differences.paytm) {
+                                const pt = document.getElementById('bv-diff-paytm');
+                                if (pt) pt.value = v.differences.paytm;
+                            }
+                            if (v.differences.upi_general) {
+                                const ug = document.getElementById('bv-diff-upi-gen');
+                                if (ug) ug.value = v.differences.upi_general;
+                            }
                         }
-                        if (v.differences.paytm) {
-                            const pt = document.getElementById('bv-diff-paytm');
-                            if (pt) pt.value = v.differences.paytm;
-                        }
-                        if (v.differences.upi_general) {
-                            const ug = document.getElementById('bv-diff-upi-gen');
-                            if (ug) ug.value = v.differences.upi_general;
-                        }
-                    }
-                    document.getElementById('bv-manual-text').value = v.manualText || '';
-                }, 500); // Wait for openBillVerification fetch to finish
+                        document.getElementById('bv-manual-text').value = v.manualText || '';
+                    }, 500); // Wait for openBillVerification fetch to finish
+                }
+            } catch (e) {
+                console.error("Error pre-filling edit form", e);
             }
-        } catch (e) {
-            console.error("Error pre-filling edit form", e);
-        }
-    };
+        };
 
-    const BV_SAVE_PARITY = true;
+        const BV_SAVE_PARITY = true;
 
-    // --- BILL REPORTING Logic ---
-    window.loadBillVerificationReports = async function () {
-        try {
-            const res = await fetch('/api/admin/bill-verification-reports');
-            const data = await res.json();
-            const tbody = document.getElementById('bill-reports-tbody');
-            if (!tbody) return;
+        // --- BILL REPORTING Logic ---
+        window.loadBillVerificationReports = async function () {
+            try {
+                const res = await fetch('/api/admin/bill-verification-reports');
+                const data = await res.json();
+                const tbody = document.getElementById('bill-reports-tbody');
+                if (!tbody) return;
 
-            // Upgrade to modern-table styling
-            const table = tbody.closest('table');
-            if (table) {
-                table.className = 'modern-table';
-                table.style.marginTop = '0';
-            }
+                // Upgrade to modern-table styling
+                const table = tbody.closest('table');
+                if (table) {
+                    table.className = 'modern-table';
+                    table.style.marginTop = '0';
+                }
 
-            if (!data.success || data.history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
-                return;
-            }
+                if (!data.success || data.history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
+                    return;
+                }
 
-            tbody.innerHTML = data.history.map(rep => {
-                const ver = rep.verification_data || {};
-                const diffs = ver.differences || {};
-                let diffStr = [];
-                if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
-                if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
-                if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
-                if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
+                tbody.innerHTML = data.history.map(rep => {
+                    const ver = rep.verification_data || {};
+                    const diffs = ver.differences || {};
+                    let diffStr = [];
+                    if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
+                    if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
+                    if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
+                    if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
 
-                const hasRemarks = ver.remarks !== 'No';
+                    const hasRemarks = ver.remarks !== 'No';
 
-                return `
+                    return `
                 <tr>
                     <td>
                         <div style="font-weight:800; color:#0f172a; font-size:14px;">${rep.employeeName}</div>
@@ -4023,36 +4025,36 @@ window.saveBillVerification = async function (remarkChoice) {
                     </td>
                 </tr>
             `;
-            }).join('');
+                }).join('');
 
-        } catch (err) {
-            console.error(err);
-        }
-    };
+            } catch (err) {
+                console.error(err);
+            }
+        };
 
-    window.showBillReportingView = function () {
-        const billView = document.getElementById('bill-report-view');
-        const masterBtn = document.querySelector('.master-report-btn');
+        window.showBillReportingView = function () {
+            const billView = document.getElementById('bill-report-view');
+            const masterBtn = document.querySelector('.master-report-btn');
 
-        if (billView) {
-            // Use central SPA switcher to hide others correctly
-            window.switchSpaView(billView, masterBtn);
-            window.loadBillVerificationReports();
-        }
-    };
+            if (billView) {
+                // Use central SPA switcher to hide others correctly
+                window.switchSpaView(billView, masterBtn);
+                window.loadBillVerificationReports();
+            }
+        };
 
-    window.backToStudioHub = function () {
-        const hub = document.getElementById('master-reports-hub-v2');
-        const masterBtn = document.querySelector('.master-report-btn');
-        if (hub) {
-            window.switchSpaView(hub, masterBtn);
-        }
-    };
+        window.backToStudioHub = function () {
+            const hub = document.getElementById('master-reports-hub-v2');
+            const masterBtn = document.querySelector('.master-report-btn');
+            if (hub) {
+                window.switchSpaView(hub, masterBtn);
+            }
+        };
 
-    window.viewShiftReport = function (id) {
-        if (typeof window.showReportDetails === 'function') {
-            window.showReportDetails(id);
-        }
-    };
+        window.viewShiftReport = function (id) {
+            if (typeof window.showReportDetails === 'function') {
+                window.showReportDetails(id);
+            }
+        };
 
-});
+    });
