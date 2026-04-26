@@ -3913,7 +3913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await res2.json();
                 if (result.success) {
                     await nammaModalSystem.alert("Audit solved successfully.");
-                    window.showReportDetails(reportId); // Refresh the modal
+                    window.showShiftReportDetails(reportId); // Refresh the modal
                     window.loadBillVerificationReports(); // Refresh the table
                 }
             } catch (err) {
@@ -4052,8 +4052,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         window.viewShiftReport = function (id) {
-            if (typeof window.showReportDetails === 'function') {
-                window.showReportDetails(id);
+            if (typeof window.showShiftReportDetails === 'function') {
+                window.showShiftReportDetails(id);
             }
         };
 
