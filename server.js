@@ -483,8 +483,9 @@ app.get('/api/employees', async (req, res) => {
     const snapshot = await db.employees().get();
     const employees = snapshot.docs.map(doc => {
         const data = doc.data();
+        data.id = doc.id;
         // Decrypt sensitive fields
-        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number', 'designation', 'department', 'pfNumber', 'uanNumber', 'location'].forEach(field => {
             if (data[field]) data[field] = decrypt(data[field]);
         });
         return data;
@@ -2603,22 +2604,25 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         if (!employeeId || !month) return res.status(400).json({ success: false, message: 'Missing employeeId or month' });
 
         // 1. Fetch all ESR reports for this employee in this month
-        const snapshot = await db.esr_reports()
-            .where('employee_id', '==', employeeId)
-            .get();
-
         let totalDiff = 0;
-        snapshot.docs.forEach(doc => {
+        const processReport = (doc) => {
             const data = doc.data();
             if (data.date && data.date.startsWith(month) && data.verified && data.verification_data) {
                 const diffs = data.verification_data.differences || {};
-                // Sum up all differences (Cash + UPIs)
                 totalDiff += (parseFloat(diffs.cash) || 0) + 
                              (parseFloat(diffs.pinelab) || 0) + 
                              (parseFloat(diffs.paytm) || 0) + 
                              (parseFloat(diffs.upi_general) || 0);
             }
-        });
+        };
+
+        const [snap1, snap2] = await Promise.all([
+            db.esr_reports().where('employee_id', '==', employeeId).get(),
+            db.esr_reports().where('employeeId', '==', employeeId).get()
+        ]);
+        
+        snap1.docs.forEach(processReport);
+        snap2.docs.forEach(processReport);
 
         // 2. Fetch Attendance for worked days (Daily Sessions)
         const sessSnapshot = await db.daily_sessions()
