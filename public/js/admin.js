@@ -1367,6 +1367,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentAddStep = 1;
 
     window.openAddEmployeePanel = function() {
+        console.log("SPA: openAddEmployeePanel INVOKED");
         const panel = document.getElementById('add-employee-panel');
         const overlay = document.getElementById('add-employee-overlay');
         const form = document.getElementById('spa-add-employee-form');
@@ -1376,6 +1377,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (panel && overlay) {
             overlay.classList.add('show');
             panel.classList.add('show');
+        } else {
+            alert("CRITICAL ERROR: Side panel elements missing from DOM!");
+            console.error("SPA ERROR: Add Employee Panel not found in DOM");
         }
     };
 
@@ -1397,85 +1401,111 @@ document.addEventListener('DOMContentLoaded', () => {
             d.classList.toggle('completed', (i + 1) < currentAddStep);
         });
         
-        document.getElementById('spa-btn-prev').style.display = currentAddStep === 1 ? 'none' : 'flex';
-        if (currentAddStep === 4) {
-            document.getElementById('spa-btn-next').style.display = 'none';
-            document.getElementById('spa-btn-submit').style.display = 'flex';
-        } else {
-            document.getElementById('spa-btn-next').style.display = 'flex';
-            document.getElementById('spa-btn-submit').style.display = 'none';
-        }
-    }
-
-    document.getElementById('spa-btn-next').addEventListener('click', () => {
-        // Basic validation
-        const activeStep = document.getElementById(`spa-step-${currentAddStep}`);
-        const inputs = activeStep.querySelectorAll('input[required], select[required]');
-        let valid = true;
-        inputs.forEach(i => {
-            if(!i.value.trim()) {
-                i.style.borderColor = '#EF4444';
-                valid = false;
-            } else {
-                i.style.borderColor = '#E2E8F0';
-            }
-        });
+        const prevBtn = document.getElementById('spa-btn-prev');
+        const nextBtn = document.getElementById('spa-btn-next');
+        const submitBtn = document.getElementById('spa-btn-submit');
         
-        if(valid) {
-            currentAddStep++;
-            updateAddStepUI();
+        if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'flex';
+        
+        if (currentAddStep === 4) {
+            if (nextBtn) nextBtn.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = 'flex';
+        } else {
+            if (nextBtn) nextBtn.style.display = 'flex';
+            if (submitBtn) submitBtn.style.display = 'none';
         }
-    });
+    }
 
-    document.getElementById('spa-btn-prev').addEventListener('click', () => {
-        currentAddStep--;
-        updateAddStepUI();
-    });
-
-    document.getElementById('spa-add-employee-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const p1 = document.getElementById('spa-pass-1').value;
-        const p2 = document.getElementById('spa-pass-2').value;
-        if(p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
-
-        const btn = document.getElementById('spa-btn-submit');
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
-        data['working-days'] = formData.getAll('working-days').join(',');
-        data.isActive = true;
-
-        try {
-            const res = await fetch('/api/employees', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+    const nextStepBtn = document.getElementById('spa-btn-next');
+    if (nextStepBtn) {
+        nextStepBtn.addEventListener('click', () => {
+            const activeStep = document.getElementById(`spa-step-${currentAddStep}`);
+            if (!activeStep) return;
+            const inputs = activeStep.querySelectorAll('input[required], select[required]');
+            let valid = true;
+            inputs.forEach(i => {
+                if(!i.value.trim()) {
+                    i.style.borderColor = '#EF4444';
+                    valid = false;
+                } else {
+                    i.style.borderColor = '#E2E8F0';
+                }
             });
-            const result = await res.json();
-            if(result.success) {
-                await nammaModalSystem.alert("Employee added successfully!");
-                window.closeAddEmployeePanel();
-                if(typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
-            } else {
-                await nammaModalSystem.alert("Error: " + result.message);
+            
+            if(valid) {
+                currentAddStep++;
+                updateAddStepUI();
             }
-        } catch(err) {
-            await nammaModalSystem.alert("Server communication failed.");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-        }
-    });
-
-    const spaAddEmployeeBtn = document.getElementById('spa-add-employee-btn');
-    if (spaAddEmployeeBtn) {
-        spaAddEmployeeBtn.addEventListener('click', () => {
-            window.openAddEmployeePanel();
         });
     }
+
+    const prevStepBtn = document.getElementById('spa-btn-prev');
+    if (prevStepBtn) {
+        prevStepBtn.addEventListener('click', () => {
+            if (currentAddStep > 1) {
+                currentAddStep--;
+                updateAddStepUI();
+            }
+        });
+    }
+
+    const spaAddForm = document.getElementById('spa-add-employee-form');
+    if (spaAddForm) {
+        spaAddForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const p1 = document.getElementById('spa-pass-1').value;
+            const p2 = document.getElementById('spa-pass-2').value;
+            if(p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
+
+            const btn = document.getElementById('spa-btn-submit');
+            const originalHtml = btn ? btn.innerHTML : 'Finish & Save';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data['working-days'] = formData.getAll('working-days').join(',');
+            data.isActive = true;
+
+            try {
+                const res = await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(result.success) {
+                    await nammaModalSystem.alert("Employee added successfully!");
+                    window.closeAddEmployeePanel();
+                    if(typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
+                } else {
+                    await nammaModalSystem.alert("Error: " + result.message);
+                }
+            } catch(err) {
+                await nammaModalSystem.alert("Server communication failed.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        });
+    }
+
+    // Event Delegation for Add Employee Button (Robust against re-renders)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#spa-add-employee-btn');
+        if (btn) {
+            console.log("SPA: #spa-add-employee-btn CLICKED");
+            if (typeof window.openAddEmployeePanel === 'function') {
+                window.openAddEmployeePanel();
+            } else {
+                alert("SPA ERROR: window.openAddEmployeePanel is not a function!");
+            }
+        }
+    });
 
     // Global action: Toggle Employee Status
     window.spaToggleEmployeeStatus = async function (id, isCurrentlyActive) {
@@ -2970,7 +3000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.selectedLogIds.add(logId);
         window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
     };
-    console.log("Admin Dashboard v5.2.1 Hub Alpha Loaded");
+    console.log("Admin Dashboard v5.5.0 ULTRA - New Staff System Ready");
 
     // ==========================================
     // PAYSLIP SYSTEM LOGIC

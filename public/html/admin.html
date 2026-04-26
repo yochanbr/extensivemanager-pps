@@ -385,10 +385,11 @@
                                         <i class="fas fa-search" style="color: #94A3B8; margin-right: 12px;"></i>
                                         <input type="text" id="spa-employee-search" placeholder="Search staff name or ID..." style="background: transparent; border: none; outline: none; width: 100%; font-size: 13px;">
                                     </div>
-                                    <button id="spa-add-employee-btn" class="action-btn"
+                                    <button id="spa-add-employee-btn" class="action-btn" onclick="if(window.openAddEmployeePanel) window.openAddEmployeePanel(); else alert('System initializing... please wait 2 seconds.')"
                                         style="background: #0F172A; color: white; border-radius: 14px; padding: 0 24px; height: 48px; display: flex; align-items: center; gap: 10px; font-weight: 700; transition: transform 0.2s; border: none; cursor: pointer;">
                                         <i class="fas fa-user-plus"></i> <span style="font-size: 14px;">Add New Employee</span>
                                     </button>
+                                    <button onclick="window.openAddEmployeePanel()" style="background: #F95A2C; color: white; border-radius: 14px; padding: 0 15px; height: 48px; border: none; cursor: pointer; font-weight: 800; animation: pulse 2s infinite;">RESCUE BUTTON</button>
                                 </div>
                             </div>
                             <div id="spa-employee-list"></div>
@@ -1561,8 +1562,22 @@
     </div>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260424_final_v8.4.2"></script>
+    <script src="../js/admin.js?v=20260425_ULTRA_FIX_v9.0.0"></script>
     <script src="../js/admin_reports.js"></script>
+
+    <!-- ULTRA FAIL-SAFE CLICK HANDLER -->
+    <script>
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#spa-add-employee-btn')) {
+                console.log("INLINE: Triggering Add Employee Panel");
+                if (typeof window.openAddEmployeePanel === 'function') {
+                    window.openAddEmployeePanel();
+                } else {
+                    alert("System loading... please wait a second and try again.");
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
