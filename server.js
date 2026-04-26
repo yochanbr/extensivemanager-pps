@@ -2606,37 +2606,36 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         // 1. Fetch all ESR reports for this employee in this month
         let totalDiff = 0;
         
-        // Fetch current employee name for fallback matching
+        // Fetch current employee details for matching
         const empDoc = await db.employees().doc(employeeId).get();
-        const empName = empDoc.exists ? empDoc.data().name : null;
+        const empData = empDoc.exists ? empDoc.data() : {};
+        const empName = (empData.name || '').toLowerCase();
+        const empUsername = (empData.username || '').toLowerCase();
 
-        const processReport = (doc) => {
+        // fetch ALL verified reports. We filter by month and employee in memory for absolute reliability.
+        // Usually there are only a few hundred verified reports per month, so this is very fast.
+        const snapshot = await db.esr_reports().where('verified', '==', true).get();
+        
+        snapshot.docs.forEach(doc => {
             const data = doc.data();
-            const dateStr = data.date || '';
-            const isMatch = dateStr.includes(month);
+            const reportDate = data.date || '';
             
-            if (isMatch && data.verified && data.verification_data) {
+            // 1. Check Month Match (YYYY-MM)
+            if (!reportDate.includes(month)) return;
+
+            // 2. Check Employee Match (Case Insensitive Name OR ID)
+            const rName = (data.employeeName || '').toLowerCase();
+            const rId = (data.employee_id || data.employeeId || '').toLowerCase();
+            
+            const isNameMatch = empName && rName === empName;
+            const isIdMatch = (employeeId && rId === employeeId.toLowerCase()) || (empUsername && rId === empUsername);
+
+            if (isNameMatch || isIdMatch) {
                 const diffs = data.verification_data.differences || {};
-                // Sum UP ALL numeric values in the differences object as a robust fallback
                 Object.values(diffs).forEach(val => {
                     const num = parseFloat(val);
                     if (!isNaN(num)) totalDiff += num;
                 });
-            }
-        };
-
-        const [snap1, snap2, snap3] = await Promise.all([
-            db.esr_reports().where('employee_id', '==', employeeId).get(),
-            db.esr_reports().where('employeeId', '==', employeeId).get(),
-            empName ? db.esr_reports().where('employeeName', '==', empName).get() : Promise.resolve({ docs: [] })
-        ]);
-        
-        // Collect all unique doc IDs to avoid double counting
-        const processedDocs = new Set();
-        [...snap1.docs, ...snap2.docs, ...snap3.docs].forEach(doc => {
-            if (!processedDocs.has(doc.id)) {
-                processReport(doc);
-                processedDocs.add(doc.id);
             }
         });
 
