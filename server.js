@@ -2595,6 +2595,59 @@ app.delete('/api/admin/verify-bill/:reportId', verifyAdmin, async (req, res) => 
 });
 
 /**
+ * Endpoint: Reconcile Payroll (Auto-calculate differences and attendance for payslip)
+ */
+app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
+    try {
+        const { employeeId, month } = req.query; // month: YYYY-MM
+        if (!employeeId || !month) return res.status(400).json({ success: false, message: 'Missing employeeId or month' });
+
+        // 1. Fetch all ESR reports for this employee in this month
+        const snapshot = await db.esr_reports()
+            .where('employee_id', '==', employeeId)
+            .get();
+
+        let totalDiff = 0;
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.date && data.date.startsWith(month) && data.verified && data.verification_data) {
+                const diffs = data.verification_data.differences || {};
+                // Sum up all differences (Cash + UPIs)
+                totalDiff += (parseFloat(diffs.cash) || 0) + 
+                             (parseFloat(diffs.pinelab) || 0) + 
+                             (parseFloat(diffs.paytm) || 0) + 
+                             (parseFloat(diffs.upi_general) || 0);
+            }
+        });
+
+        // 2. Fetch Attendance for worked days (Daily Sessions)
+        const sessSnapshot = await db.daily_sessions()
+            .where('employeeId', '==', employeeId)
+            .where('date', '>=', `${month}-01`)
+            .where('date', '<=', `${month}-31`)
+            .get();
+        
+        const uniqueDates = new Set();
+        sessSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.status === 'completed' || data.checkOut) {
+                 uniqueDates.add(data.date);
+            }
+        });
+
+        res.json({
+            success: true,
+            billingDifference: totalDiff,
+            workedDays: uniqueDates.size,
+            employeeId,
+            month
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
  * Endpoint: Get Bill Verification Reports (Studio)
  */
 app.get('/api/admin/bill-verification-reports', verifyAdmin, async (req, res) => {

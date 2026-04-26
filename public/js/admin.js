@@ -3166,8 +3166,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const month = document.getElementById('payslip-month-input').value;
         if (!employeeId || !month) return nammaModalSystem.alert('Choose employee and month first.');
 
-        // AUTO-PREFILL FROM EMPLOYEE DATA
+        // AUTO-PREFILL FROM EMPLOYEE DATA AND RECONCILE REPORTS
         try {
+            // 1. Employee Profile (Salary, Location, ESI)
             const res = await fetch(`/api/employees/${employeeId}`);
             const data = await res.json();
             const emp = data.employee || data;
@@ -3175,8 +3176,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (emp) {
                 if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
                 if (emp.esi) document.getElementById('payslip-esi-input').value = emp.esi;
-                if (emp.location) document.getElementById('payslip-location-input').value = emp.location;
+                if (emp.location) document.getElementById('payslip-location-input').value = emp.location || 'SULLIA, KARNATAKA';
             }
+
+            // 2. Reconcile Billing and Attendance
+            const reconRes = await fetch(`/api/admin/payroll-reconcile?employeeId=${employeeId}&month=${month}`);
+            const reconData = await reconRes.json();
+            
+            if (reconData.success) {
+                // Pre-fill billing difference
+                document.getElementById('payslip-billing-diff-input').value = reconData.billingDifference || 0;
+                
+                // We'll also store workedDays for the final generation if needed
+                // But for now, we just pre-fill the editable fields.
+                // Leave balance is manual for now as requested (keep space)
+                document.getElementById('payslip-leave-balance').value = 2; // Default
+            }
+
         } catch (err) {
             console.warn('Failed to pre-fill from employee profile:', err);
         }
