@@ -588,6 +588,38 @@
                     </div>
                     </div>
 
+                    <!-- BILL REPORT VIEW (Studio Tab) -->
+                    <div id="bill-report-view" style="display:none;">
+                        <div class="section-header" style="margin-bottom:32px;">
+                            <div>
+                                <h2 style="font-size:32px; font-weight:800; color:#0F172A; letter-spacing:-0.03em;">Bill Verification Reports</h2>
+                                <p style="color:#64748b; font-size:15px; margin-top:4px;">Audit staffing bill remarks and currency differences.</p>
+                            </div>
+                            <button class="action-btn secondary" onclick="window.backToStudioHub()">
+                                <i class="fas fa-arrow-left"></i> Back to Studio
+                            </button>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="status-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Shift Date</th>
+                                        <th>Remarks Status</th>
+                                        <th>Type</th>
+                                        <th>Differences</th>
+                                        <th>Verified By</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bill-reports-tbody">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- Attendance Timeline -->
                     <!-- Attendance Timeline Command Center -->
                     <div id="attendance-view" style="display: none;">
@@ -1706,37 +1738,6 @@
         </div>
     </div>
 
-    <!-- BILL REPORT VIEW (Studio Tab) -->
-    <div id="bill-report-view" style="display:none;">
-        <div class="section-header" style="margin-bottom:32px;">
-            <div>
-                <h2 style="font-size:32px; font-weight:800; color:#0F172A; letter-spacing:-0.03em;">Bill Verification Reports</h2>
-                <p style="color:#64748b; font-size:15px; margin-top:4px;">Audit staffing bill remarks and currency differences.</p>
-            </div>
-            <button class="action-btn secondary" onclick="window.backToStudioHub()">
-                <i class="fas fa-arrow-left"></i> Back to Studio
-            </button>
-        </div>
-        
-        <div class="table-wrapper">
-            <table class="status-table">
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Shift Date</th>
-                        <th>Remarks Status</th>
-                        <th>Type</th>
-                        <th>Differences</th>
-                        <th>Verified By</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="bill-reports-tbody">
-                    <!-- Data will be loaded here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
 
     <script src="../js/script.js"></script>
     <script src="../js/admin.js?v=20260426_FINAL_PRODUCTION_v10.0.0"></script>

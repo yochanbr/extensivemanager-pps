@@ -629,7 +629,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('shift-summary-view'),
             document.getElementById('attendance-view'),
             document.getElementById('settings-view'),
-            document.getElementById('master-reports-hub-v2')
+            document.getElementById('master-reports-hub-v2'),
+            document.getElementById('bill-report-view')
         ];
 
         const masterBtn = document.querySelector('.master-report-btn');
@@ -3896,33 +3897,22 @@ window.loadBillVerificationReports = async function() {
 };
 
 window.showBillReportingView = function() {
-    // Hide all Studio sub-views
-    document.querySelectorAll('#master-reports-hub-v2 ~ div').forEach(div => {
-        if (div) div.style.display = 'none';
-    });
-    
-    const attMatrix = document.getElementById('attendance-matrix-view');
-    if (attMatrix) attMatrix.style.display = 'none';
-    
-    const hub = document.getElementById('master-reports-hub-v2');
-    if (hub) hub.style.display = 'none';
-    
     const billView = document.getElementById('bill-report-view');
+    const masterBtn = document.querySelector('.master-report-btn');
+    
     if (billView) {
-        billView.style.display = 'block';
+        // Use central SPA switcher to hide others correctly
+        switchSpaView(billView, masterBtn);
         window.loadBillVerificationReports();
     }
 };
 
 window.backToStudioHub = function() {
-    const attMatrix = document.getElementById('attendance-matrix-view');
-    if (attMatrix) attMatrix.style.display = 'none';
-    
-    const billView = document.getElementById('bill-report-view');
-    if (billView) billView.style.display = 'none';
-    
     const hub = document.getElementById('master-reports-hub-v2');
-    if (hub) hub.style.display = 'block';
+    const masterBtn = document.querySelector('.master-report-btn');
+    if (hub) {
+        switchSpaView(hub, masterBtn);
+    }
 };
 
 window.viewShiftReport = function(id) {
