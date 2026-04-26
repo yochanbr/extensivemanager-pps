@@ -2680,8 +2680,16 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         const totalDaysInMonth = new Date(year, m, 0).getDate();
         const paidOffsAllowed = 4; // Constant as requested
         
-        const standardDayMinutes = 480; // 8 hours baseline
-        const requiredMinutes = (totalDaysInMonth - paidOffsAllowed) * standardDayMinutes;
+        // DYNAMIC SHIFT DURATION based on employee record
+        const startStr = empData['start-time'] || '09:00';
+        const endStr = empData['end-time'] || '18:00';
+        const [sH, sM] = startStr.split(':').map(Number);
+        const [eH, eM] = endStr.split(':').map(Number);
+        let shiftMinutes = (eH * 60 + eM) - (sH * 60 + sM);
+        if (shiftMinutes < 0) shiftMinutes += 1440; // Over-night shift support
+        if (shiftMinutes <= 0) shiftMinutes = 480;   // Hard fallback to 8 hours if data is missing
+        
+        const requiredMinutes = (totalDaysInMonth - paidOffsAllowed) * shiftMinutes;
         
         // Loss of minutes = Standard required - total worked
         const lostMinutes = Math.max(0, requiredMinutes - totalWorkedMinutes);
@@ -2690,8 +2698,8 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         const lopRateHour = parseFloat(empData.lopPerHour) || 0;
         
         // Exact calculation: how many full days lost and how many extra hours lost
-        const lopDays = Math.floor(lostMinutes / standardDayMinutes);
-        const lopRemainingMinutes = lostMinutes % standardDayMinutes;
+        const lopDays = Math.floor(lostMinutes / shiftMinutes);
+        const lopRemainingMinutes = lostMinutes % shiftMinutes;
         const lopHours = lopRemainingMinutes / 60;
 
         const lopAmount = (lopDays * lopRateDay) + (lopHours * lopRateHour);
@@ -2699,13 +2707,14 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         res.json({
             success: true,
             billingDifference: totalDiff,
-            workedDays: (totalWorkedMinutes / standardDayMinutes).toFixed(1), // Display exactly how many "8-hour days" were worked
+            workedDays: (totalWorkedMinutes / shiftMinutes).toFixed(1), // Display relative to THEIR standard day
             attendanceDays: uniqueDates.size, // Number of physical days present
-            lopDays: (lostMinutes / standardDayMinutes).toFixed(1), // Total lost days equivalent
+            lopDays: (lostMinutes / shiftMinutes).toFixed(1), // Total lost days equivalent
             lopAmount: lopAmount,
             totalWorkedMinutes,
             employeeId,
-            month
+            month,
+            shiftDurationMinutes: shiftMinutes // Informational
         });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
