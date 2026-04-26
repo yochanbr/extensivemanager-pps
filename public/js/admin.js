@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsView = document.getElementById('settings-view');
     const masterReportsView = document.getElementById('master-reports-hub-v2');
 
-    function switchSpaView(targetView, activeBtn) {
+    window.switchSpaView = function(targetView, activeBtn) {
         // Fallback for Hub v2 if targetView is missing (Resiliency for Cache)
         if (!targetView && activeBtn && activeBtn.classList.contains('master-report-btn')) {
             targetView = document.getElementById('master-reports-hub-v2');
@@ -3902,7 +3902,7 @@ window.showBillReportingView = function() {
     
     if (billView) {
         // Use central SPA switcher to hide others correctly
-        switchSpaView(billView, masterBtn);
+        window.switchSpaView(billView, masterBtn);
         window.loadBillVerificationReports();
     }
 };
@@ -3911,7 +3911,7 @@ window.backToStudioHub = function() {
     const hub = document.getElementById('master-reports-hub-v2');
     const masterBtn = document.querySelector('.master-report-btn');
     if (hub) {
-        switchSpaView(hub, masterBtn);
+        window.switchSpaView(hub, masterBtn);
     }
 };
 
