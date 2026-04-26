@@ -2607,7 +2607,11 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         let totalDiff = 0;
         const processReport = (doc) => {
             const data = doc.data();
-            if (data.date && data.date.startsWith(month) && data.verified && data.verification_data) {
+            // Match month (YYYY-MM) against date string (any format containing it)
+            const dateStr = data.date || '';
+            const isMatch = dateStr.includes(month); // e.g. "2026-04-26" includes "2026-04"
+            
+            if (isMatch && data.verified && data.verification_data) {
                 const diffs = data.verification_data.differences || {};
                 totalDiff += (parseFloat(diffs.cash) || 0) + 
                              (parseFloat(diffs.pinelab) || 0) + 
