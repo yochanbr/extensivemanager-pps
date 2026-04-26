@@ -4050,8 +4050,10 @@ window.backToStudioHub = function() {
     }
 };
 
-window.viewShiftReport = function(id) {
-    if(typeof window.showReportDetails === 'function') {
+window.viewShiftReport = function (id) {
+    if (typeof window.showReportDetails === 'function') {
         window.showReportDetails(id);
     }
 };
+
+});
