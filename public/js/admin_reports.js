@@ -399,32 +399,6 @@
                         actionsTd.appendChild(revertBtn);
                     }
 
-                    // 2. Edit reason / details button
-                    const editBtn = document.createElement('button');
-                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Reason';
-                    editBtn.className = 'modern-btn secondary';
-                    editBtn.style.padding = '6px 10px';
-                    editBtn.style.fontSize = '12px';
-                    editBtn.style.marginRight = '8px';
-                    editBtn.addEventListener('click', async () => {
-                        const currentReason = item.reason || '';
-                        const newReason = prompt('Enter the new audit reason:', currentReason);
-                        if (newReason === null) return;
-                        
-                        const res = await fetch(`/api/audit_history/edit/${item.id}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reason: newReason })
-                        });
-                        if (res.ok) {
-                            await nammaModalSystem.alert('Reason updated successfully!');
-                            reasonTd.textContent = newReason;
-                        } else {
-                            await nammaModalSystem.alert('Failed to update reason.');
-                        }
-                    });
-                    actionsTd.appendChild(editBtn);
-
                     // 3. Delete Permanently button
                     const dltBtn = document.createElement('button');
                     dltBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanent';
