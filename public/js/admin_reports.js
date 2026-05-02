@@ -283,7 +283,7 @@
                 const table = document.createElement('table');
                 table.className = 'modern-table';
 
-                const headers = ['Timestamp', 'Action', 'Type', 'Reason', 'Details', 'Admin Actions'];
+                const headers = ['Timestamp', 'Action', 'Type', 'Reason', 'Admin Actions'];
                 const headerRow = document.createElement('tr');
                 headers.forEach(header => {
                     const th = document.createElement('th');
@@ -323,34 +323,43 @@
                     reasonTd.textContent = item.reason || '-';
                     tr.appendChild(reasonTd);
 
-                    // Details
-                    const detailsTd = document.createElement('td');
-                    let summaryText = '';
-                    if (item.action === 'delete' && item.originalRecord) {
-                        const rec = item.originalRecord;
-                        if (item.type === 'extra') summaryText = `Item: ${rec.itemName || '-'}, Amount: ${rec.extraAmount || '-'}`;
-                        else if (item.type === 'delivery') summaryText = `Bill: ${rec.billNumber || '-'}, Amount: ${rec.amount || '-'}`;
-                        else if (item.type === 'bill_paid') summaryText = `Vendor: ${rec.vendorSupplier || '-'}, Paid: ${rec.amountPaid || '-'}`;
-                        else if (item.type === 'issue') summaryText = `Bill: ${rec.billNumber || '-'}, Issue: ${rec.issueDescription || '-'}`;
-                        else if (item.type === 'retail_credit') summaryText = `Phone: ${rec.phoneNumber || '-'}, Amount: ${rec.amount || '-'}`;
-                        else summaryText = JSON.stringify(rec);
-                    } else if (item.action === 'edit' && item.originalRecord) {
-                        const rec = item.originalRecord;
-                        const nRec = item.newRecord || {};
-                        if (item.type === 'extra') summaryText = `Old: ${rec.itemName || rec.extraAmount || '-'} => New: ${nRec.itemName || rec.itemName || '-'}, ${nRec.extraAmount || rec.extraAmount || '-'}`;
-                        else if (item.type === 'delivery') summaryText = `Old: ${rec.amount || rec.billNumber || '-'} => New: ${nRec.amount || rec.amount || '-'}`;
-                        else if (item.type === 'bill_paid') summaryText = `Old: ${rec.amountPaid || '-'} => New: ${nRec.amountPaid || rec.amountPaid || '-'}`;
-                        else if (item.type === 'issue') summaryText = `Old: ${rec.issueDescription || '-'} => New: ${nRec.issueDescription || rec.issueDescription || '-'}`;
-                        else if (item.type === 'retail_credit') summaryText = `Old: ${rec.amount || '-'} => New: ${nRec.amount || rec.amount || '-'}`;
-                        else summaryText = JSON.stringify(rec);
-                    } else {
-                        summaryText = item.originalRecord ? JSON.stringify(item.originalRecord) : '-';
-                    }
-                    detailsTd.textContent = summaryText;
-                    tr.appendChild(detailsTd);
-
                     // Actions
                     const actionsTd = document.createElement('td');
+
+                    // 0. View Details button
+                    const viewDetailsBtn = document.createElement('button');
+                    viewDetailsBtn.innerHTML = '<i class="fas fa-eye"></i> View Details';
+                    viewDetailsBtn.className = 'modern-btn secondary';
+                    viewDetailsBtn.style.padding = '6px 10px';
+                    viewDetailsBtn.style.fontSize = '12px';
+                    viewDetailsBtn.style.marginRight = '8px';
+                    viewDetailsBtn.addEventListener('click', async () => {
+                        let detailsHtml = '<div style="text-align: left; line-height: 1.6; padding: 8px;">';
+                        
+                        // What was before
+                        if (item.originalRecord) {
+                            detailsHtml += `<h4 style="margin: 0 0 8px; color: #1E293B;"><i class="fas fa-history" style="color:#64748B;"></i> Original Data (Before)</h4>`;
+                            detailsHtml += `<pre style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0; overflow-x: auto; margin: 0 0 16px; font-size: 13px;">${JSON.stringify(item.originalRecord, null, 2)}</pre>`;
+                        } else {
+                            detailsHtml += `<p style="color: #64748B;">No before data recorded.</p>`;
+                        }
+
+                        // What changed
+                        if (item.action === 'edit' && item.newRecord) {
+                            detailsHtml += `<h4 style="margin: 0 0 8px; color: #1E293B;"><i class="fas fa-edit" style="color:#10B981;"></i> Changed/Updated Values</h4>`;
+                            detailsHtml += `<pre style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0; overflow-x: auto; margin: 0; font-size: 13px;">${JSON.stringify(item.newRecord, null, 2)}</pre>`;
+                        } else if (item.action === 'delete') {
+                            detailsHtml += `<h4 style="margin: 0 0 8px; color: #EF4444;"><i class="fas fa-trash-alt"></i> Action Details</h4>`;
+                            detailsHtml += `<p style="margin: 0; padding: 12px; background: #FEF2F2; color: #991B1B; border: 1px solid #FEE2E2; border-radius: 8px;">This record was completely deleted.</p>`;
+                        } else {
+                            detailsHtml += `<p style="color: #64748B;">No modified data recorded.</p>`;
+                        }
+
+                        detailsHtml += '</div>';
+
+                        await nammaModalSystem.alert(detailsHtml);
+                    });
+                    actionsTd.appendChild(viewDetailsBtn);
 
                     // 1. Revert/Restore button
                     if (item.action === 'edit' || item.action === 'delete') {
