@@ -47,7 +47,13 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
     z-index: 100;
-    overflow: hidden;
+    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 .sidebar-header {
