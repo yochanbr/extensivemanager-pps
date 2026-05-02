@@ -142,23 +142,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (data.employeeId) {
                             localStorage.setItem('employeeId', data.employeeId);
+                            window.location.href = data.redirectUrl;
                         } else {
                             // Fallback: Fetch employee ID and store it
-                            fetch('/api/employees')
-                                .then(res => res.json())
-                                .then(employees => {
+                            try {
+                                const empRes = await fetch('/api/employees');
+                                if (empRes.ok) {
+                                    const employees = await empRes.json();
                                     const employee = employees.find(emp => emp.username === username);
                                     if (employee) {
                                         localStorage.setItem('employeeId', employee.id);
                                     }
-                                    window.location.href = data.redirectUrl;
-                                })
-                                .catch(error => {
-                                    console.error('Error fetching employee ID:', error);
-                                    window.location.href = data.redirectUrl;
-                                });
+                                }
+                            } catch (error) {
+                                console.error('Error fetching employee ID:', error);
+                            }
+                            window.location.href = data.redirectUrl;
                         }
-                        window.location.href = data.redirectUrl;
                     }
                 } else if (data.requiresAdminApproval) {
                     // Show OTP input for admin approval

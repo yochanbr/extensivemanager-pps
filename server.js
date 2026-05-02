@@ -557,9 +557,9 @@ app.post('/login', loginLimiter, ensureDb, async (req, res) => {
         await createSession({ id: employee.id, role: 'employee' }, req, res);
 
         if (hasActiveShift) {
-            res.json({ success: true, redirectUrl: '/employee' });
+            res.json({ success: true, redirectUrl: '/employee', employeeId: employee.id });
         } else {
-            res.json({ success: true, redirectUrl: '/counter_selection' });
+            res.json({ success: true, redirectUrl: '/counter_selection', employeeId: employee.id });
         }
     } catch (error) {
         console.error('Error during login:', error);
