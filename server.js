@@ -2185,6 +2185,7 @@ app.post('/api/attendance/scan', async (req, res) => {
                 };
                 await db.daily_sessions().add(newSession);
                 await logAttendance(empId, empName, requiresApproval || 'CLOCK_IN', timestamp);
+                const isLate = requiresApproval === 'LATE_ARRIVAL';
                 return {
                     success: true,
                     message: isLate ? `Welcome ${empName}. Tagged as Late Arrival (Pending Approval).` : `Welcome ${empName}!`,
