@@ -557,6 +557,8 @@ function checkBrightness(video) {
 }
 
 window.isFaceRegisterOpen = false;
+const dismissedRequestIds = new Set();
+
 window.openFaceRegisterModal = async function() {
     window.isFaceRegisterOpen = true;
     const modal = document.getElementById('face-register-modal');
@@ -634,6 +636,11 @@ window.openFaceRegisterModal = async function() {
 
 window.closeFaceRegisterModal = function() {
     window.isFaceRegisterOpen = false;
+    // Track which request IDs are currently shown so we don't immediately reopen
+    const select = document.getElementById('reg-emp-select');
+    if (select && select.value) {
+        dismissedRequestIds.add(select.value);
+    }
     const modal = document.getElementById('face-register-modal');
     if (!modal) return;
     modal.classList.remove('visible');
@@ -743,13 +750,21 @@ setInterval(async () => {
         if (res.ok) {
             const requests = await res.json();
             if (requests && requests.length > 0) {
-                // Auto-open
-                const select = document.getElementById('reg-emp-select');
-                if (select) {
-                    select.value = requests[0].employeeId;
+                // Clear any dismissed IDs that are no longer in the server list
+                const serverIds = new Set(requests.map(r => r.employeeId));
+                for (const id of dismissedRequestIds) {
+                    if (!serverIds.has(id)) dismissedRequestIds.delete(id);
                 }
-                showToast(`Face registration request received for ${requests[0].employeeName}`, 'info');
-                await openFaceRegisterModal();
+
+                // Find the first request the user hasn't dismissed
+                const pending = requests.find(r => !dismissedRequestIds.has(r.employeeId));
+                if (pending) {
+                    showToast(`Face registration request received for ${pending.employeeName}`, 'info');
+                    await openFaceRegisterModal();
+                }
+            } else {
+                // No requests left — clear all dismissed IDs
+                dismissedRequestIds.clear();
             }
         }
     } catch (e) {
