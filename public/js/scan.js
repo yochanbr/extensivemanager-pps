@@ -556,3 +556,122 @@ function checkBrightness(video) {
     if (badge) badge.classList.toggle('show', total / 1600 < 45);
 }
 
+// ─── Face Register Modal Handlers ─────────────────────────────────────────
+window.openFaceRegisterModal = async function() {
+    const modal = document.getElementById('face-register-modal');
+    if (!modal) return;
+
+    // Load employees dropdown
+    const select = document.getElementById('reg-emp-select');
+    if (select) {
+        select.innerHTML = '<option value="" style="background: #121520; color: white;">Choose an employee...</option>';
+        try {
+            const res = await fetch('/api/employees');
+            if (res.ok) {
+                const employees = await res.json();
+                employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = `${emp.name} (${emp.username || emp.id})`;
+                    opt.style.background = '#121520';
+                    opt.style.color = 'white';
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error('Failed to load employees for face registration:', e);
+        }
+    }
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.closeFaceRegisterModal = function() {
+    const modal = document.getElementById('face-register-modal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+};
+
+window.captureFaceAndRegister = async function() {
+    const empId = document.getElementById('reg-emp-select').value;
+    if (!empId) {
+        showToast('Please select an employee.', 'error');
+        return;
+    }
+
+    const video = document.getElementById('scan-video');
+    if (!video || video.paused || video.ended) {
+        showToast('Camera is not active. Please ensure permissions are enabled.', 'error');
+        return;
+    }
+
+    showToast('Capturing face... Keep still', 'info');
+    
+    try {
+        const detections = await faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detections) {
+            showToast('Face not detected. Ensure your face is clearly visible.', 'error');
+            return;
+        }
+
+        // Send descriptor to backend
+        const descArray = Array.from(detections.descriptor);
+        const res = await fetch(`/api/employees/${empId}/face`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': getCookie('xsrf-token')
+            },
+            body: JSON.stringify({ descriptor: descArray })
+        });
+
+        if (res.ok) {
+            showToast('Face registered successfully!', 'success');
+            // Refresh labeled face descriptors
+            if (typeof window.reloadFaceDescriptors === 'function') {
+                await window.reloadFaceDescriptors();
+            }
+            closeFaceRegisterModal();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Registration failed.', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Error detecting face model.', 'error');
+    }
+};
+
+window.reloadFaceDescriptors = async function() {
+    try {
+        const res = await fetch('/api/employees');
+        const employees = await res.json();
+        labeledDescriptors = [];
+        employees.forEach(emp => {
+            if (emp.faceDescriptor && emp.faceDescriptor.length > 0) {
+                const desc = new Float32Array(emp.faceDescriptor);
+                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
+                    emp.id.toString(), [desc]
+                ));
+            }
+        });
+        if (labeledDescriptors.length > 0) {
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.58);
+        }
+    } catch (e) {
+        console.error('Failed to sync biometric data:', e);
+    }
+};
+
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return match[2];
+    return null;
+}
+
