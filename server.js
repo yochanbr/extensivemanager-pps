@@ -263,6 +263,9 @@ const serveProtected = (roles, filePath) => [verifyAuth(roles), (req, res) => {
 // --- GLOBAL API SECURITY & IDENTITY ENFORCEMENT ---
 app.use('/api', (req, res, next) => {
     if (req.path === '/health') return next();
+    if (req.path === '/employees' && req.method === 'GET') return next();
+    if (req.path.startsWith('/attendance/state/') && req.method === 'GET') return next();
+    if (req.path === '/attendance/scan' && req.method === 'POST') return next();
     
     // Authenticate all API requests automatically
     verifyEmployee(req, res, () => {
@@ -559,7 +562,9 @@ app.get('/', (req, res) => {
 
 // Secure dynamic routing for HTML files
 app.get('/admin', serveProtected(['admin'], 'public/html/admin.html'));
-app.get('/scan', serveProtected(['employee', 'admin'], 'public/html/scan.html'));
+app.get('/scan', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/scan.html'));
+});
 app.get('/employee', serveProtected(['employee', 'admin'], 'public/html/employee.html'));
 app.get('/counter_selection', serveProtected(['employee', 'admin'], 'public/html/counter_selection.html'));
 app.get('/add_employee', serveProtected(['admin'], 'public/html/add_employee.html'));
