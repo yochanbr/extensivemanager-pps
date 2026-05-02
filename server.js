@@ -364,7 +364,7 @@ app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 
 // Prevent direct access to .html files since we serve them securely
 app.use((req, res, next) => {
-    if (req.path.endsWith('.html')) return res.redirect('/');
+    if (req.path.endsWith('.html') && !req.path.endsWith('scan.html')) return res.redirect('/');
     next();
 });
 app.use(express.static(path.join(__dirname, 'public/html')));
