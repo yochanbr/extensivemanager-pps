@@ -658,37 +658,61 @@ window.closeFaceRegisterModal = function() {
 window.captureFaceAndRegister = async function() {
     const empId = document.getElementById('reg-emp-select').value;
     if (!empId) {
-        showToast('Please select an employee.', 'error');
+        showToast('Please select an employee first.', 'error');
         return;
     }
 
     const video = document.getElementById('scan-video');
 
-    // Ensure camera is active; start it if not
+    // Close the modal so the camera is visible
+    const modal = document.getElementById('face-register-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+        window.isFaceRegisterOpen = false;
+    }
+
+    // Ensure camera is running
     if (!video || !video.srcObject) {
         showToast('Starting camera...', 'info');
         try {
             await startCamera();
-            // Brief wait for camera to initialise
-            await new Promise(res => setTimeout(res, 1200));
         } catch (e) {
             showToast('Camera access required. Please allow camera permissions.', 'error');
             return;
         }
     }
 
-    showToast('Capturing face... Keep still', 'info');
-    
+    // Show countdown on the scan prompt so user can position their face
+    const promptMain = document.querySelector('.prompt-main');
+    const promptSub = document.querySelector('.prompt-sub');
+    const origMain = promptMain ? promptMain.textContent : '';
+    const origSub = promptSub ? promptSub.textContent : '';
+
+    for (let i = 3; i >= 1; i--) {
+        if (promptMain) promptMain.textContent = `Hold still... ${i}`;
+        if (promptSub) promptSub.textContent = 'Capturing your face for registration';
+        await new Promise(res => setTimeout(res, 900));
+    }
+    if (promptMain) promptMain.textContent = 'Capturing now...';
+    if (promptSub) promptSub.textContent = 'Keep your face steady';
+
     try {
         const detections = await faceapi
             .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
 
+        // Restore prompt
+        if (promptMain) promptMain.textContent = origMain;
+        if (promptSub) promptSub.textContent = origSub;
+
         if (!detections) {
-            showToast('Face not detected. Ensure your face is clearly visible.', 'error');
+            showToast('Face not detected. Ensure your face is clearly visible and try again.', 'error');
             return;
         }
+
+        showToast('Face captured! Saving...', 'info');
 
         // Send descriptor to backend
         const descArray = Array.from(detections.descriptor);
@@ -702,25 +726,30 @@ window.captureFaceAndRegister = async function() {
         });
 
         if (res.ok) {
-            // Delete matching face request from admin if it exists
+            // Clear the pending face request
             await fetch(`/api/admin/face-requests/${empId}`, {
                 method: 'DELETE',
                 headers: { 'X-XSRF-TOKEN': getCookie('xsrf-token') }
             }).catch(e => console.error(e));
 
+            // Also remove from dismissed so it won't block future requests
+            dismissedRequestIds.delete(empId);
+            currentPendingRequestIds = currentPendingRequestIds.filter(id => id !== empId);
+
+            SFX.success();
             showToast('Face registered successfully!', 'success');
-            // Refresh labeled face descriptors
             if (typeof window.reloadFaceDescriptors === 'function') {
                 await window.reloadFaceDescriptors();
             }
-            closeFaceRegisterModal();
         } else {
             const err = await res.json();
             showToast(err.message || 'Registration failed.', 'error');
         }
     } catch (e) {
         console.error(e);
-        showToast('Error detecting face model.', 'error');
+        if (promptMain) promptMain.textContent = origMain;
+        if (promptSub) promptSub.textContent = origSub;
+        showToast('Error detecting face. Try again.', 'error');
     }
 };
 
