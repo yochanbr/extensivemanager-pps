@@ -293,7 +293,8 @@ const db = {
     esr_reports: () => firestore.collection('esr_reports'),
     esr_jpgs: () => firestore.collection('esr_jpgs'),
     leave_swaps: () => firestore.collection('leave_swaps'),
-    auth_sessions: () => firestore.collection('auth_sessions')
+    auth_sessions: () => firestore.collection('auth_sessions'),
+    face_requests: () => firestore.collection('face_requests')
 };
 
 
@@ -2121,6 +2122,42 @@ app.post('/api/employees/:id/face', async (req, res) => {
 
     await doc.ref.update({ faceDescriptor: descriptor });
     res.json({ success: true, message: 'Face registered successfully!' });
+});
+
+// Face Registration Requests API
+app.post('/api/admin/face-requests', verifyAdmin, async (req, res) => {
+    try {
+        const { employeeId, employeeName } = req.body;
+        if (!employeeId) return res.status(400).json({ success: false, message: 'Missing employeeId' });
+        await db.face_requests().doc(employeeId).set({
+            employeeId,
+            employeeName: employeeName || 'Unknown',
+            createdAt: new Date().toISOString()
+        });
+        res.json({ success: true, message: 'Face registration request sent to scanner.' });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+app.get('/api/admin/face-requests', async (req, res) => {
+    try {
+        const snapshot = await db.face_requests().get();
+        const requests = [];
+        snapshot.forEach(doc => requests.push(doc.data()));
+        res.json(requests);
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+app.delete('/api/admin/face-requests/:id', async (req, res) => {
+    try {
+        await db.face_requests().doc(req.params.id).delete();
+        res.json({ success: true, message: 'Request cleared.' });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
 });
 
 /**

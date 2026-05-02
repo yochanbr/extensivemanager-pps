@@ -147,6 +147,14 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 320px; margin: 0 auto 24px auto;">
+                <!-- Pending Face Registration Requests -->
+                <div id="pending-requests-section" style="display: none; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.1em;">Requests from Admin</label>
+                    <div id="pending-requests-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 12px;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <label style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.1em;">Select Employee</label>
                     <select id="reg-emp-select" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 12px; padding: 12px 16px; font-size: 14px; outline: none; transition: background 0.2s; width: 100%;">

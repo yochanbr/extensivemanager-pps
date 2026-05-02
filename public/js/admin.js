@@ -2962,9 +2962,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!proceed) return;
+            }
 
-                // Optional: Explicitly nullify on server first to be safe, 
-                // but the capture process will overwrite it regardless.
+            const sendRequest = await nammaModalSystem.confirm(`Send face registration request for ${emp.name} to the scanner page?`, {
+                confirmText: "Send to Scanner",
+                cancelText: "Register Locally Here",
+                theme: "default"
+            });
+
+            if (sendRequest) {
+                const xsrf = document.cookie.match(new RegExp('(^| )xsrf-token=([^;]+)'))?.[2];
+                const reqRes = await fetch('/api/admin/face-requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': xsrf
+                    },
+                    body: JSON.stringify({ employeeId, employeeName: emp.name })
+                });
+                if (reqRes.ok) {
+                    await nammaModalSystem.alert(`Face registration request successfully sent to scanner for ${emp.name}. You can complete it on the scanner page under 'Face Register'.`);
+                    return;
+                }
             }
 
             currentRegId = employeeId;

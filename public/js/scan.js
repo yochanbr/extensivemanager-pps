@@ -583,6 +583,50 @@ window.openFaceRegisterModal = async function() {
         }
     }
 
+    // Load pending registration requests
+    const reqSection = document.getElementById('pending-requests-section');
+    const reqList = document.getElementById('pending-requests-list');
+    if (reqSection && reqList) {
+        try {
+            const res = await fetch('/api/admin/face-requests');
+            if (res.ok) {
+                const requests = await res.json();
+                if (requests && requests.length > 0) {
+                    reqSection.style.display = 'flex';
+                    reqList.innerHTML = '';
+                    requests.forEach(r => {
+                        const div = document.createElement('div');
+                        div.style.display = 'flex';
+                        div.style.justifyContent = 'space-between';
+                        div.style.alignItems = 'center';
+                        div.style.background = 'rgba(255,255,255,0.08)';
+                        div.style.border = '1px solid rgba(255,255,255,0.1)';
+                        div.style.borderRadius = '8px';
+                        div.style.padding = '8px 12px';
+                        div.style.cursor = 'pointer';
+                        div.style.transition = 'all 0.2s';
+                        div.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-size: 13px; font-weight: 700; color: white;">${r.employeeName}</span>
+                                <span style="font-size: 11px; color: #94a3b8;">Click to accept & register</span>
+                            </div>
+                            <div style="color: #10b981; font-size: 14px;"><i class="fas fa-arrow-right"></i></div>
+                        `;
+                        div.onclick = () => {
+                            if (select) select.value = r.employeeId;
+                            showToast(`Selected request for ${r.employeeName}`, 'info');
+                        };
+                        reqList.appendChild(div);
+                    });
+                } else {
+                    reqSection.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load face requests:', e);
+        }
+    }
+
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 };
@@ -632,6 +676,12 @@ window.captureFaceAndRegister = async function() {
         });
 
         if (res.ok) {
+            // Delete matching face request from admin if it exists
+            await fetch(`/api/admin/face-requests/${empId}`, {
+                method: 'DELETE',
+                headers: { 'X-XSRF-TOKEN': getCookie('xsrf-token') }
+            }).catch(e => console.error(e));
+
             showToast('Face registered successfully!', 'success');
             // Refresh labeled face descriptors
             if (typeof window.reloadFaceDescriptors === 'function') {
