@@ -263,7 +263,7 @@ const serveProtected = (roles, filePath) => [verifyAuth(roles), (req, res) => {
 // --- GLOBAL API SECURITY & IDENTITY ENFORCEMENT ---
 app.use('/api', (req, res, next) => {
     if (req.path === '/health') return next();
-    if (req.path === '/employees' && req.method === 'GET') return next();
+    if (req.path.startsWith('/employees') && req.method === 'GET') return next();
     if (req.path.startsWith('/attendance/state/') && req.method === 'GET') return next();
     if (req.path === '/attendance/scan' && req.method === 'POST') return next();
     
