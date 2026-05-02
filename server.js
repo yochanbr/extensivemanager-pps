@@ -461,101 +461,106 @@ app.post('/api/auth/refresh', refreshLimiter, async (req, res) => {
 
 // Handle login requests
 app.post('/login', loginLimiter, ensureDb, async (req, res) => {
-    const { username, password } = req.body;
+    try {
+        const { username, password } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ success: false, message: 'Username and password are required.' });
-    }
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Username and password are required.' });
+        }
 
-    const trimmedUsername = username.trim();
+        const trimmedUsername = username.trim();
 
-    // 1. Check Admin Credentials against secure env variables
-    if (trimmedUsername === ADMIN_USER && bcrypt.compareSync(password, ADMIN_PASS_HASH)) {
-        await createSession({ id: 'admin', role: 'admin' }, req, res);
-        return res.json({ success: true, redirectUrl: '/admin' });
-    }
+        // 1. Check Admin Credentials against secure env variables
+        if (trimmedUsername === ADMIN_USER && bcrypt.compareSync(password, ADMIN_PASS_HASH)) {
+            await createSession({ id: 'admin', role: 'admin' }, req, res);
+            return res.json({ success: true, redirectUrl: '/admin' });
+        }
 
 
-    // 3. Find Employee (Username is primary key or we query by field)
-    // In our migration, we used employee.id as document ID, but we should search by username
-    const empQuery = await db.employees().where('username', '==', trimmedUsername).get();
+        // 3. Find Employee (Username is primary key or we query by field)
+        // In our migration, we used employee.id as document ID, but we should search by username
+        const empQuery = await db.employees().where('username', '==', trimmedUsername).get();
 
-    if (empQuery.empty) {
-        return res.status(401).json({
-            success: false,
-            message: `No account found with username "${trimmedUsername}".`,
-            code: 'USER_NOT_FOUND'
-        });
-    }
+        if (empQuery.empty) {
+            return res.status(401).json({
+                success: false,
+                message: `No account found with username "${trimmedUsername}".`,
+                code: 'USER_NOT_FOUND'
+            });
+        }
 
-    const employeeDoc = empQuery.docs[0];
-    let employee = employeeDoc.data();
+        const employeeDoc = empQuery.docs[0];
+        let employee = employeeDoc.data();
 
-    // 4. Decrypt sensitive fields for comparison
-    employee.password = decrypt(employee.password);
+        // 4. Decrypt sensitive fields for comparison
+        employee.password = decrypt(employee.password);
 
-    if (employee.isActive === false) {
-        return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
-    }
+        if (employee.isActive === false) {
+            return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
+        }
 
-    // Password check (bcrypt is handled before encryption in our logic usually)
-    const validPassword = bcrypt.compareSync(password, employee.password);
+        // Password check (bcrypt is handled before encryption in our logic usually)
+        const validPassword = bcrypt.compareSync(password, employee.password);
 
-    if (!validPassword) {
-        return res.status(401).json({ success: false, message: 'Incorrect password.', code: 'INVALID_PASSWORD' });
-    }
+        if (!validPassword) {
+            return res.status(401).json({ success: false, message: 'Incorrect password.', code: 'INVALID_PASSWORD' });
+        }
 
-    // Initialize counter_selections if missing
-    if (!employee.counter_selections) {
-        employee.counter_selections = [];
-        await employeeDoc.ref.update({ counter_selections: [] });
-    }
+        // Initialize counter_selections if missing
+        if (!employee.counter_selections) {
+            employee.counter_selections = [];
+            await employeeDoc.ref.update({ counter_selections: [] });
+        }
 
-    const today = new Date().toISOString().split('T')[0];
-    const sessionSnapshot = await db.daily_sessions()
-        .where('employeeId', '==', employee.id)
-        .where('date', '==', today)
-        .get();
+        const today = new Date().toISOString().split('T')[0];
+        const sessionSnapshot = await db.daily_sessions()
+            .where('employeeId', '==', employee.id)
+            .where('date', '==', today)
+            .get();
 
-    const sessions = sessionSnapshot.docs.map(d => d.data());
-    // Sort to get the most recent session first
-    sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+        const sessions = sessionSnapshot.docs.map(d => d.data());
+        // Sort to get the most recent session first
+        sessions.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
 
-    const activeSession = sessions.find(s => s.status === 'active');
+        const activeSession = sessions.find(s => s.status === 'active');
 
-    if (!activeSession) {
-        const lastSession = sessions.length > 0 ? sessions[0] : null;
-        
-        let msg = 'Access Denied: You must be Checked-In to enter the portal.';
-        if (lastSession && lastSession.status === 'on_break') {
-            msg = 'Access Denied: You are currently ON BREAK. Please end your break on the scan page first.';
-        } else if (lastSession && lastSession.status === 'completed') {
-            msg = 'Access Denied: Your shift for today is already completed.';
+        if (!activeSession) {
+            const lastSession = sessions.length > 0 ? sessions[0] : null;
+            
+            let msg = 'Access Denied: You must be Checked-In to enter the portal.';
+            if (lastSession && lastSession.status === 'on_break') {
+                msg = 'Access Denied: You are currently ON BREAK. Please end your break on the scan page first.';
+            } else if (lastSession && lastSession.status === 'completed') {
+                msg = 'Access Denied: Your shift for today is already completed.';
+            } else {
+                msg = 'Access Denied: You have not Checked-In yet. Please scan your face to start your shift first.';
+            }
+
+            return res.status(401).json({
+                success: false,
+                message: msg,
+                code: 'NOT_WORKING'
+            });
+        }
+
+        let hasActiveShift = false;
+        if (employee.counter_selections && employee.counter_selections.length > 0) {
+            const lastShift = employee.counter_selections[employee.counter_selections.length - 1];
+            if (!lastShift.shiftEndTime && lastShift.shiftStartTime && lastShift.shiftStartTime.startsWith(today)) {
+                hasActiveShift = true;
+            }
+        }
+
+        await createSession({ id: employee.id, role: 'employee' }, req, res);
+
+        if (hasActiveShift) {
+            res.json({ success: true, redirectUrl: '/employee' });
         } else {
-            msg = 'Access Denied: You have not Checked-In yet. Please scan your face to start your shift first.';
+            res.json({ success: true, redirectUrl: '/counter_selection' });
         }
-
-        return res.status(401).json({
-            success: false,
-            message: msg,
-            code: 'NOT_WORKING'
-        });
-    }
-
-    let hasActiveShift = false;
-    if (employee.counter_selections && employee.counter_selections.length > 0) {
-        const lastShift = employee.counter_selections[employee.counter_selections.length - 1];
-        if (!lastShift.shiftEndTime && lastShift.shiftStartTime && lastShift.shiftStartTime.startsWith(today)) {
-            hasActiveShift = true;
-        }
-    }
-
-    await createSession({ id: employee.id, role: 'employee' }, req, res);
-
-    if (hasActiveShift) {
-        res.json({ success: true, redirectUrl: '/employee' });
-    } else {
-        res.json({ success: true, redirectUrl: '/counter_selection' });
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).json({ success: false, message: 'Internal server error during login.' });
     }
 });
 
