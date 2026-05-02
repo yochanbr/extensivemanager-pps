@@ -283,7 +283,7 @@
                 const table = document.createElement('table');
                 table.className = 'modern-table';
 
-                const headers = ['Timestamp', 'Action', 'Type', 'Reason', 'Admin Actions'];
+                const headers = ['Timestamp', 'Action', 'Type', 'Data Summary', 'Reason', 'Admin Actions'];
                 const headerRow = document.createElement('tr');
                 headers.forEach(header => {
                     const th = document.createElement('th');
@@ -317,6 +317,23 @@
                     const typeTd = document.createElement('td');
                     typeTd.textContent = (item.type || '').replace('_', ' ').toUpperCase();
                     tr.appendChild(typeTd);
+
+                    // Data Summary
+                    const summaryTd = document.createElement('td');
+                    let summaryText = '';
+                    if (item.originalRecord) {
+                        const rec = item.originalRecord;
+                        if (item.type === 'extra') summaryText = `Item: ${rec.itemName || '-'}`;
+                        else if (item.type === 'delivery') summaryText = `Bill: ${rec.billNumber || '-'}`;
+                        else if (item.type === 'bill_paid') summaryText = `Vendor: ${rec.vendorSupplier || '-'}`;
+                        else if (item.type === 'issue') summaryText = `Issue: ${rec.issueDescription || '-'}`;
+                        else if (item.type === 'retail_credit') summaryText = `Phone: ${rec.phoneNumber || '-'}`;
+                        else summaryText = '-';
+                    } else {
+                        summaryText = '-';
+                    }
+                    summaryTd.textContent = summaryText;
+                    tr.appendChild(summaryTd);
 
                     // Reason
                     const reasonTd = document.createElement('td');
