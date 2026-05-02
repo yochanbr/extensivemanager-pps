@@ -2718,6 +2718,7 @@ body {
     padding: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #1e293b;
+    box-sizing: border-box;
 }
 
 .esr-rendered-section {
@@ -2727,6 +2728,7 @@ body {
     padding: 24px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    box-sizing: border-box;
 }
 
 .esr-rendered-section h4 {
@@ -2812,7 +2814,10 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
     border: 1px solid #f1f5f9;
+    box-sizing: border-box;
 }
 
 .esr-metric-item {
@@ -2852,6 +2857,13 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+}
+
+@media (max-width: 680px) {
+    .esr-grid-details,
+    .esr-grid-collections {
+        grid-template-columns: 1fr;
+    }
 }
 
 .esr-image-snapshot {
