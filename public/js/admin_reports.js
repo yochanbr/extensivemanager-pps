@@ -334,25 +334,39 @@
                     viewDetailsBtn.style.fontSize = '12px';
                     viewDetailsBtn.style.marginRight = '8px';
                     viewDetailsBtn.addEventListener('click', async () => {
+                        const formatRecord = (record) => {
+                            if (!record) return '<p style="color: #64748B;">No data available.</p>';
+                            let html = '<ul style="list-style-type: none; padding: 12px; margin: 0; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; font-size: 13px;">';
+                            for (const key of Object.keys(record)) {
+                                if (['id', 'type', 'employeeId'].includes(key)) continue;
+                                const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                let val = record[key];
+                                if (key === 'timestamp' || key === 'date' || key === 'shiftStartTime' || key === 'shiftEndTimestamp') {
+                                    val = formatDateTime(val);
+                                }
+                                html += `<li style="margin-bottom: 8px; color: #475569;"><strong style="color:#1E293B;">${formattedKey}:</strong> ${val !== undefined && val !== null ? val : '-'}</li>`;
+                            }
+                            html += '</ul>';
+                            return html;
+                        };
+
                         let detailsHtml = '<div style="text-align: left; line-height: 1.6; padding: 8px;">';
                         
                         // What was before
                         if (item.originalRecord) {
                             detailsHtml += `<h4 style="margin: 0 0 8px; color: #1E293B;"><i class="fas fa-history" style="color:#64748B;"></i> Original Data (Before)</h4>`;
-                            detailsHtml += `<pre style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0; overflow-x: auto; margin: 0 0 16px; font-size: 13px;">${JSON.stringify(item.originalRecord, null, 2)}</pre>`;
+                            detailsHtml += formatRecord(item.originalRecord);
                         } else {
                             detailsHtml += `<p style="color: #64748B;">No before data recorded.</p>`;
                         }
 
                         // What changed
                         if (item.action === 'edit' && item.newRecord) {
-                            detailsHtml += `<h4 style="margin: 0 0 8px; color: #1E293B;"><i class="fas fa-edit" style="color:#10B981;"></i> Changed/Updated Values</h4>`;
-                            detailsHtml += `<pre style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0; overflow-x: auto; margin: 0; font-size: 13px;">${JSON.stringify(item.newRecord, null, 2)}</pre>`;
+                            detailsHtml += `<h4 style="margin: 16px 0 8px; color: #1E293B;"><i class="fas fa-edit" style="color:#10B981;"></i> Changed/Updated Values</h4>`;
+                            detailsHtml += formatRecord(item.newRecord);
                         } else if (item.action === 'delete') {
-                            detailsHtml += `<h4 style="margin: 0 0 8px; color: #EF4444;"><i class="fas fa-trash-alt"></i> Action Details</h4>`;
+                            detailsHtml += `<h4 style="margin: 16px 0 8px; color: #EF4444;"><i class="fas fa-trash-alt"></i> Action Details</h4>`;
                             detailsHtml += `<p style="margin: 0; padding: 12px; background: #FEF2F2; color: #991B1B; border: 1px solid #FEE2E2; border-radius: 8px;">This record was completely deleted.</p>`;
-                        } else {
-                            detailsHtml += `<p style="color: #64748B;">No modified data recorded.</p>`;
                         }
 
                         detailsHtml += '</div>';
