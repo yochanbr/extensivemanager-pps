@@ -758,7 +758,7 @@ setInterval(async () => {
 }, 4000);
 
 // Send scanner heartbeat every 5 seconds
-setInterval(async () => {
+const sendScannerHeartbeat = async () => {
     try {
         await fetch('/api/scanner/heartbeat', {
             method: 'POST'
@@ -766,5 +766,10 @@ setInterval(async () => {
     } catch (e) {
         console.error('Failed to send heartbeat:', e);
     }
-}, 5000);
+};
+
+// Send immediately on load
+sendScannerHeartbeat();
+
+setInterval(sendScannerHeartbeat, 5000);
 

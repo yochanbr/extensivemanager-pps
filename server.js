@@ -2181,8 +2181,8 @@ app.get('/api/scanner/heartbeat', async (req, res) => {
         const data = doc.data();
         const lastActive = new Date(data.lastActive);
         const now = new Date();
-        const diffSeconds = (now - lastActive) / 1000;
-        res.json({ active: diffSeconds <= 15 });
+        const diffSeconds = Math.abs((now - lastActive) / 1000);
+        res.json({ active: diffSeconds <= 120 });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }
