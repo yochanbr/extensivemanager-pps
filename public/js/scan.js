@@ -602,18 +602,19 @@ window.openFaceRegisterModal = async function() {
                         div.style.display = 'flex';
                         div.style.justifyContent = 'space-between';
                         div.style.alignItems = 'center';
-                        div.style.background = 'rgba(255,255,255,0.08)';
-                        div.style.border = '1px solid rgba(255,255,255,0.1)';
-                        div.style.borderRadius = '8px';
-                        div.style.padding = '8px 12px';
+                        div.style.background = 'white';
+                        div.style.border = '1px solid rgba(59,130,246,0.2)';
+                        div.style.borderRadius = '10px';
+                        div.style.padding = '10px 14px';
                         div.style.cursor = 'pointer';
                         div.style.transition = 'all 0.2s';
+                        div.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
                         div.innerHTML = `
                             <div style="display: flex; flex-direction: column; gap: 2px;">
-                                <span style="font-size: 13px; font-weight: 700; color: white;">${r.employeeName}</span>
-                                <span style="font-size: 11px; color: #94a3b8;">Click to accept & register</span>
+                                <span style="font-size: 13px; font-weight: 700; color: #0F172A;">${r.employeeName}</span>
+                                <span style="font-size: 11px; color: #64748B;">Tap to select &amp; register</span>
                             </div>
-                            <div style="color: #10b981; font-size: 14px;"><i class="fas fa-arrow-right"></i></div>
+                            <div style="color: #10B981; font-size: 14px;"><i class="fas fa-arrow-right"></i></div>
                         `;
                         div.onclick = () => {
                             if (select) select.value = r.employeeId;
