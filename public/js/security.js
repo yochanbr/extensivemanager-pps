@@ -34,6 +34,9 @@
         
         // 2. Intercept 401 Unauthorized for Transparent Token Refresh
         if (response.status === 401 && typeof resource === 'string' && !resource.includes('/login') && !resource.includes('/api/auth/refresh')) {
+            if (window.location.pathname.includes('scan.html')) {
+                return response;
+            }
             if (isRefreshing) {
                 return new Promise((resolve) => {
                     refreshQueue.push(() => resolve(window.fetch(resource, config)));
