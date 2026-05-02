@@ -86,7 +86,7 @@
                 return;
             }
 
-            const fetchTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit', 'counter_data'];
+            const fetchTypes = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit', 'counter_data', 'audit_history'];
             const queryParts = [`employeeId=${employeeId}`];
             
             if (params.date) queryParts.push(`date=${params.date}`);
@@ -198,7 +198,7 @@
             buttonContainer.style.gap = '12px';
             buttonContainer.style.marginBottom = '24px';
 
-            const types = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit', 'counter_data'];
+            const types = ['extra', 'delivery', 'bill_paid', 'issue', 'retail_credit', 'counter_data', 'audit_history'];
             types.forEach(type => {
                 const button = document.createElement('button');
                 button.className = 'modern-btn secondary';
@@ -207,6 +207,8 @@
                 
                 if(type === 'counter_data') {
                     button.innerHTML = `<i class="fas fa-calculator" style="margin-right:10px; color:#F95A2C;"></i> counter Data`;
+                } else if(type === 'audit_history') {
+                    button.innerHTML = `<i class="fas fa-history" style="margin-right:10px; color:#10B981;"></i> Audit History`;
                 } else {
                     const icons = {
                         extra: 'fa-plus-circle',
@@ -276,6 +278,158 @@
             dataTableContainer.appendChild(headerActions);
 
             let filteredData = [...data]; // Copy of data for filtering
+
+            if (title === 'audit_history') {
+                const table = document.createElement('table');
+                table.className = 'modern-table';
+
+                const headers = ['Timestamp', 'Action', 'Type', 'Reason', 'Details', 'Admin Actions'];
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                table.appendChild(headerRow);
+
+                filteredData.forEach(item => {
+                    const tr = document.createElement('tr');
+
+                    // Timestamp
+                    const tsTd = document.createElement('td');
+                    tsTd.textContent = formatDateTime(item.timestamp);
+                    tr.appendChild(tsTd);
+
+                    // Action
+                    const actTd = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = `pill ${item.action === 'delete' ? 'absent' : 'working'}`;
+                    badge.style.padding = '4px 8px';
+                    badge.style.borderRadius = '6px';
+                    badge.style.color = '#fff';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.backgroundColor = item.action === 'delete' ? '#EF4444' : '#10B981';
+                    badge.textContent = item.action.toUpperCase();
+                    actTd.appendChild(badge);
+                    tr.appendChild(actTd);
+
+                    // Type
+                    const typeTd = document.createElement('td');
+                    typeTd.textContent = (item.type || '').replace('_', ' ').toUpperCase();
+                    tr.appendChild(typeTd);
+
+                    // Reason
+                    const reasonTd = document.createElement('td');
+                    reasonTd.textContent = item.reason || '-';
+                    tr.appendChild(reasonTd);
+
+                    // Details
+                    const detailsTd = document.createElement('td');
+                    let summaryText = '';
+                    if (item.action === 'delete' && item.originalRecord) {
+                        const rec = item.originalRecord;
+                        if (item.type === 'extra') summaryText = `Item: ${rec.itemName || '-'}, Amount: ${rec.extraAmount || '-'}`;
+                        else if (item.type === 'delivery') summaryText = `Bill: ${rec.billNumber || '-'}, Amount: ${rec.amount || '-'}`;
+                        else if (item.type === 'bill_paid') summaryText = `Vendor: ${rec.vendorSupplier || '-'}, Paid: ${rec.amountPaid || '-'}`;
+                        else if (item.type === 'issue') summaryText = `Bill: ${rec.billNumber || '-'}, Issue: ${rec.issueDescription || '-'}`;
+                        else if (item.type === 'retail_credit') summaryText = `Phone: ${rec.phoneNumber || '-'}, Amount: ${rec.amount || '-'}`;
+                        else summaryText = JSON.stringify(rec);
+                    } else if (item.action === 'edit' && item.originalRecord) {
+                        const rec = item.originalRecord;
+                        const nRec = item.newRecord || {};
+                        if (item.type === 'extra') summaryText = `Old: ${rec.itemName || rec.extraAmount || '-'} => New: ${nRec.itemName || rec.itemName || '-'}, ${nRec.extraAmount || rec.extraAmount || '-'}`;
+                        else if (item.type === 'delivery') summaryText = `Old: ${rec.amount || rec.billNumber || '-'} => New: ${nRec.amount || rec.amount || '-'}`;
+                        else if (item.type === 'bill_paid') summaryText = `Old: ${rec.amountPaid || '-'} => New: ${nRec.amountPaid || rec.amountPaid || '-'}`;
+                        else if (item.type === 'issue') summaryText = `Old: ${rec.issueDescription || '-'} => New: ${nRec.issueDescription || rec.issueDescription || '-'}`;
+                        else if (item.type === 'retail_credit') summaryText = `Old: ${rec.amount || '-'} => New: ${nRec.amount || rec.amount || '-'}`;
+                        else summaryText = JSON.stringify(rec);
+                    } else {
+                        summaryText = item.originalRecord ? JSON.stringify(item.originalRecord) : '-';
+                    }
+                    detailsTd.textContent = summaryText;
+                    tr.appendChild(detailsTd);
+
+                    // Actions
+                    const actionsTd = document.createElement('td');
+
+                    // 1. Revert/Restore button
+                    if (item.action === 'edit' || item.action === 'delete') {
+                        const revertBtn = document.createElement('button');
+                        revertBtn.innerHTML = `<i class="fas fa-undo"></i> ${item.action === 'delete' ? 'Restore' : 'Revert'}`;
+                        revertBtn.className = 'modern-btn secondary';
+                        revertBtn.style.padding = '6px 10px';
+                        revertBtn.style.fontSize = '12px';
+                        revertBtn.style.marginRight = '8px';
+                        revertBtn.addEventListener('click', async () => {
+                            const confirmed = await nammaModalSystem.confirm(`Are you sure you want to ${item.action === 'delete' ? 'restore this deleted record' : 'revert these changes'}?`);
+                            if (!confirmed) return;
+
+                            const url = item.action === 'delete' ? `/api/restore/${item.id}` : `/api/revert-edit/${item.id}`;
+                            const res = await fetch(url, { method: 'POST' });
+                            if (res.ok) {
+                                await nammaModalSystem.alert(`Successfully ${item.action === 'delete' ? 'restored' : 'reverted'}!`);
+                                tr.remove();
+                            } else {
+                                await nammaModalSystem.alert(`Failed to ${item.action === 'delete' ? 'restore' : 'revert'}.`);
+                            }
+                        });
+                        actionsTd.appendChild(revertBtn);
+                    }
+
+                    // 2. Edit reason / details button
+                    const editBtn = document.createElement('button');
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Reason';
+                    editBtn.className = 'modern-btn secondary';
+                    editBtn.style.padding = '6px 10px';
+                    editBtn.style.fontSize = '12px';
+                    editBtn.style.marginRight = '8px';
+                    editBtn.addEventListener('click', async () => {
+                        const currentReason = item.reason || '';
+                        const newReason = prompt('Enter the new audit reason:', currentReason);
+                        if (newReason === null) return;
+                        
+                        const res = await fetch(`/api/audit_history/edit/${item.id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason: newReason })
+                        });
+                        if (res.ok) {
+                            await nammaModalSystem.alert('Reason updated successfully!');
+                            reasonTd.textContent = newReason;
+                        } else {
+                            await nammaModalSystem.alert('Failed to update reason.');
+                        }
+                    });
+                    actionsTd.appendChild(editBtn);
+
+                    // 3. Delete Permanently button
+                    const dltBtn = document.createElement('button');
+                    dltBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanent';
+                    dltBtn.className = 'modern-btn accent';
+                    dltBtn.style.padding = '6px 10px';
+                    dltBtn.style.fontSize = '12px';
+                    dltBtn.addEventListener('click', async () => {
+                        const confirmed = await nammaModalSystem.confirm('Are you sure you want to PERMANENTLY delete this audit log? This action cannot be undone.');
+                        if (!confirmed) return;
+
+                        const res = await fetch(`/api/audit_history/${item.id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            await nammaModalSystem.alert('Deleted permanently!');
+                            tr.remove();
+                        } else {
+                            await nammaModalSystem.alert('Failed to delete permanently.');
+                        }
+                    });
+                    actionsTd.appendChild(dltBtn);
+
+                    tr.appendChild(actionsTd);
+                    table.appendChild(tr);
+                });
+
+                dataTableContainer.appendChild(table);
+                dataTableContainer.style.display = 'block';
+                return;
+            }
 
             // Remove duplicate inner function formatDateTime inside counter_data block since global exists
             if (title === 'counter_data') {

@@ -1191,6 +1191,78 @@ app.get('/api/history', async (req, res) => {
     }
 });
 
+// Get Audit History specifically
+app.get('/api/audit_history', async (req, res) => {
+    try {
+        const { employeeId, date } = req.query;
+        if (!employeeId) return res.status(400).json({ message: 'Missing employeeId' });
+
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) return res.status(404).json({ message: 'Employee not found' });
+        const employee = doc.data();
+
+        let audit = employee.audit_history || [];
+        if (date) {
+            audit = audit.filter(item => item.timestamp && item.timestamp.startsWith(date));
+        }
+        audit.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(audit);
+    } catch (error) {
+        console.error('Error in /api/audit_history:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// Delete audit log permanently
+app.delete('/api/audit_history/:historyId', async (req, res) => {
+    try {
+        const { historyId } = req.params;
+        const snapshot = await db.employees().get();
+        for (const empDoc of snapshot.docs) {
+            let emp = empDoc.data();
+            if (emp.audit_history) {
+                const histIndex = emp.audit_history.findIndex(h => h.id === historyId);
+                if (histIndex !== -1) {
+                    const audit = [...emp.audit_history];
+                    audit.splice(histIndex, 1);
+                    await empDoc.ref.update({ audit_history: audit });
+                    return res.json({ success: true });
+                }
+            }
+        }
+        res.status(404).json({ message: 'Audit log not found' });
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).json({ message: 'Error deleting permanently' }); 
+    }
+});
+
+// Edit audit log reason / details
+app.post('/api/audit_history/edit/:historyId', async (req, res) => {
+    try {
+        const { historyId } = req.params;
+        const { reason } = req.body;
+        const snapshot = await db.employees().get();
+        for (const empDoc of snapshot.docs) {
+            let emp = empDoc.data();
+            if (emp.audit_history) {
+                const histIndex = emp.audit_history.findIndex(h => h.id === historyId);
+                if (histIndex !== -1) {
+                    const audit = [...emp.audit_history];
+                    audit[histIndex].reason = reason || 'Updated by Admin';
+                    await empDoc.ref.update({ audit_history: audit });
+                    return res.json({ success: true });
+                }
+            }
+        }
+        res.status(404).json({ message: 'Audit log not found' });
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).json({ message: 'Error editing audit log' }); 
+    }
+});
+
+
 // Formalize shift termination
 app.post('/api/end-shift', async (req, res) => {
     try {
