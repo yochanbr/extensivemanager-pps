@@ -2814,27 +2814,29 @@ document.addEventListener('DOMContentLoaded', () => {
             let actionHtml = '';
             if (a.isActionable) {
                 if (a.type === 'bill_verification') {
-                    actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">${a.actionLabel || 'VERIFY'}</button>`;
+                    actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">${a.actionLabel || 'VERIFY'}</button>`;
                 } else {
                     actionHtml = `
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">IGNORE</button>
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 10px; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700;">APPROVE</button>
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap;">IGNORE</button>
+                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">APPROVE</button>
                     `;
                 }
             } else {
-                actionHtml = `<span style="font-size: 9px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase;">INFO</span>`;
+                actionHtml = `<span style="font-size: 10px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase; white-space: nowrap;">INFO</span>`;
             }
 
             return `
-            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                    <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
+            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">
+                        <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; font-size: 14px; color: #1E293B; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.user}</div>
+                        <div style="font-size: 11.5px; color: #64748B; font-weight: 600; line-height: 1.4; word-break: break-word;">${a.desc || a.title}</div>
+                    </div>
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 13px; color: #1E293B;">${a.user}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">${a.desc || a.title}</div>
-                </div>
-                <div style="display: flex; gap: 4px;">
+                <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
                     ${actionHtml}
                 </div>
             </div>
