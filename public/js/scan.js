@@ -663,9 +663,18 @@ window.captureFaceAndRegister = async function() {
     }
 
     const video = document.getElementById('scan-video');
-    if (!video || video.paused || video.ended) {
-        showToast('Camera is not active. Please ensure permissions are enabled.', 'error');
-        return;
+
+    // Ensure camera is active; start it if not
+    if (!video || !video.srcObject) {
+        showToast('Starting camera...', 'info');
+        try {
+            await startCamera();
+            // Brief wait for camera to initialise
+            await new Promise(res => setTimeout(res, 1200));
+        } catch (e) {
+            showToast('Camera access required. Please allow camera permissions.', 'error');
+            return;
+        }
     }
 
     showToast('Capturing face... Keep still', 'info');
