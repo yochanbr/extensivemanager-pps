@@ -12,10 +12,29 @@ const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const crypto = require('crypto-js');
 const { execSync } = require('child_process');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
+app.use(cookieParser());
 const port = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1';
+
+// --- MANDATORY SECRETS CHECK ---
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS = process.env.ADMIN_PASS;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET + '_refresh';
+
+if (!ADMIN_USER || !ADMIN_PASS || !JWT_SECRET) {
+    console.error('🔥 CRITICAL: Missing mandatory security environment variables (ADMIN_USER, ADMIN_PASS, JWT_SECRET). Server crashed for safety.');
+    process.exit(1);
+}
+
+// Ensure ADMIN_PASS is hashed for safe comparisons later
+const ADMIN_PASS_HASH = bcrypt.hashSync(ADMIN_PASS, 10);
 
 // Export for Vercel (Must be early)
 if (isVercel) {
@@ -34,31 +53,22 @@ app.use((req, res, next) => {
 });
 
 
-// Lightweight In-Memory Rate Limiter
-const rateLimitStore = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 15;
+// Secure Rate Limiters
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 100,
+    message: { success: false, message: 'Too many requests. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-const apiLimiter = (req, res, next) => {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const now = Date.now();
-    const userData = rateLimitStore.get(ip) || { count: 0, firstRequest: now };
-
-    if (now - userData.firstRequest > RATE_LIMIT_WINDOW) {
-        userData.count = 1;
-        userData.firstRequest = now;
-    } else {
-        userData.count++;
-    }
-
-    rateLimitStore.set(ip, userData);
-
-    if (userData.count > MAX_REQUESTS) {
-        console.warn(`🔒 Rate limit exceeded for IP: ${ip}`);
-        return res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' });
-    }
-    next();
-};
+const loginLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 5, // 5 attempts
+    message: { success: false, message: 'Too many login attempts. Please try again after a minute.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Diagnostic route (no DB dependency)
 app.get('/api/health', (req, res) => {
@@ -151,36 +161,120 @@ const decrypt = (text) => {
     }
 };
 
-// --- AUTHENTICATION SYSTEM (JWT Alternative using Crypto-JS) ---
-const AUTH_COOKIE_NAME = 'nammamart_session';
+const refreshLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 refresh attempts per window per IP
+    message: { success: false, message: 'Too many refresh attempts.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-const generateSessionToken = (data) => {
-    const payload = JSON.stringify({ ...data, exp: Date.now() + (24 * 60 * 60 * 1000) }); // 24h expiry
-    return encrypt(payload);
-};
-
-const verifyAdmin = (req, res, next) => {
-    const cookieHeader = req.headers.cookie;
-    if (!cookieHeader) return res.status(401).json({ success: false, message: 'Unauthorized: No session found.' });
-
-    const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
-    const token = cookies[AUTH_COOKIE_NAME];
-
-    if (!token) return res.status(401).json({ success: false, message: 'Unauthorized: Session missing.' });
-
-    try {
-        const decrypted = decrypt(token);
-        const session = JSON.parse(decrypted);
-
-        if (session.role !== 'admin' || Date.now() > session.exp) {
-            return res.status(401).json({ success: false, message: 'Unauthorized: Session expired or invalid.' });
-        }
-        req.admin = session;
-        next();
-    } catch (e) {
-        return res.status(401).json({ success: false, message: 'Unauthorized: Authentication failed.' });
+// --- SECURE JWT AUTHENTICATION SYSTEM ---
+const createSession = async (user, req, res) => {
+    // 1. Session Cleanup: Limit active sessions to 5 per user
+    const activeSessionsSnap = await db.auth_sessions().where('userId', '==', user.id).where('isValid', '==', true).get();
+    if (activeSessionsSnap.size >= 5) {
+        const sessions = activeSessionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        sessions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const toDelete = sessions.length - 4;
+        const batch = firestore.batch();
+        for (let i = 0; i < toDelete; i++) batch.update(db.auth_sessions().doc(sessions[i].id), { isValid: false });
+        await batch.commit();
     }
+
+    const sessionId = shortid.generate();
+    const actualCsrfToken = shortid.generate() + shortid.generate();
+    
+    const accessToken = jwt.sign({ id: user.id, role: user.role, sessionId }, JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: user.id, role: user.role, sessionId }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const refreshTokenHash = bcrypt.hashSync(refreshToken, 10);
+    
+    await db.auth_sessions().doc(sessionId).set({
+        sessionId,
+        userId: user.id,
+        role: user.role,
+        refreshTokenHash,
+        userAgent: req.headers['user-agent'] || 'Unknown',
+        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        isValid: true
+    });
+    
+    const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' };
+    res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('xsrf-token', actualCsrfToken, { secure: process.env.NODE_ENV === 'production', sameSite: 'Strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
 };
+
+const revokeSession = async (req, res) => {
+    let sessionId = null;
+    try {
+        if (req.cookies.accessToken) sessionId = jwt.verify(req.cookies.accessToken, JWT_SECRET, { ignoreExpiration: true }).sessionId;
+        else if (req.cookies.refreshToken) sessionId = jwt.verify(req.cookies.refreshToken, JWT_REFRESH_SECRET, { ignoreExpiration: true }).sessionId;
+    } catch (e) {}
+
+    if (sessionId) await db.auth_sessions().doc(sessionId).update({ isValid: false }).catch(() => {});
+
+    const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' };
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    res.clearCookie('xsrf-token', { secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' });
+};
+
+const verifyAuth = (roles) => (req, res, next) => {
+    const isApi = req.path.startsWith('/api/');
+    
+    // CSRF Protection for state-changing requests
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        const csrfCookie = req.cookies['xsrf-token'];
+        const csrfHeader = req.headers['x-xsrf-token'];
+        if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+            return isApi ? res.status(403).json({ success: false, message: 'Forbidden: CSRF token mismatch.' }) : res.redirect('/');
+        }
+    }
+    
+    const accessToken = req.cookies.accessToken;
+    if (!accessToken) return isApi ? res.status(401).json({ success: false, message: 'Unauthorized: Session missing.' }) : res.redirect('/');
+    
+    let decoded;
+    try {
+        decoded = jwt.verify(accessToken, JWT_SECRET);
+    } catch (e) {
+        return isApi ? res.status(401).json({ success: false, message: 'Unauthorized: Access token expired or invalid.' }) : res.redirect('/');
+    }
+    
+    if (roles && !roles.includes(decoded.role)) {
+        return isApi ? res.status(403).json({ success: false, message: 'Forbidden: Insufficient privileges.' }) : res.redirect('/');
+    }
+    
+    req.user = decoded;
+    if (decoded.role === 'admin') req.admin = decoded; // Backwards compatibility
+    next();
+};
+
+const verifyAdmin = verifyAuth(['admin']);
+const verifyEmployee = verifyAuth(['employee', 'admin']);
+
+const serveProtected = (roles, filePath) => [verifyAuth(roles), (req, res) => {
+    res.sendFile(path.join(__dirname, filePath));
+}];
+
+// --- GLOBAL API SECURITY & IDENTITY ENFORCEMENT ---
+app.use('/api', (req, res, next) => {
+    if (req.path === '/health') return next();
+    
+    // Authenticate all API requests automatically
+    verifyEmployee(req, res, () => {
+        // Enforce Identity: Prevent employees from impersonating others via request payloads
+        if (req.user && req.user.role === 'employee') {
+            if (req.body && typeof req.body === 'object' && 'employeeId' in req.body) req.body.employeeId = req.user.id;
+            if (req.query && typeof req.query === 'object' && 'employeeId' in req.query) req.query.employeeId = req.user.id;
+            if (req.params && typeof req.params === 'object' && 'employeeId' in req.params) req.params.employeeId = req.user.id;
+        }
+        next();
+    });
+});
 
 // Firestore Collection Wrappers
 const db = {
@@ -191,7 +285,8 @@ const db = {
     daily_sessions: () => firestore.collection('daily_sessions'),
     esr_reports: () => firestore.collection('esr_reports'),
     esr_jpgs: () => firestore.collection('esr_jpgs'),
-    leave_swaps: () => firestore.collection('leave_swaps')
+    leave_swaps: () => firestore.collection('leave_swaps'),
+    auth_sessions: () => firestore.collection('auth_sessions')
 };
 
 
@@ -263,6 +358,12 @@ const syncToBackupRepo = async () => {
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
 app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
+
+// Prevent direct access to .html files since we serve them securely
+app.use((req, res, next) => {
+    if (req.path.endsWith('.html')) return res.redirect('/');
+    next();
+});
 app.use(express.static(path.join(__dirname, 'public/html')));
 
 // Specifically serve models directory (Crucial for Vercel/Face-API)
@@ -307,13 +408,52 @@ let updateStartTime = null;
 let testCloseDone = false;
 
 // Handle logout
-app.post('/logout', (req, res) => {
-    res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
+app.post('/logout', async (req, res) => {
+    await revokeSession(req, res);
     res.json({ success: true });
 });
 
+// Explicit Refresh Endpoint
+app.post('/api/auth/refresh', refreshLimiter, async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.status(401).json({ success: false, message: 'No refresh token provided.' });
+
+    try {
+        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+        const sessionDoc = await db.auth_sessions().doc(decoded.sessionId).get();
+
+        if (!sessionDoc.exists || !sessionDoc.data().isValid || new Date(sessionDoc.data().expiresAt) < new Date()) {
+            return res.status(401).json({ success: false, message: 'Session invalid or expired.' });
+        }
+
+        const sessionData = sessionDoc.data();
+
+        // Check hash to detect replay attacks
+        if (!bcrypt.compareSync(refreshToken, sessionData.refreshTokenHash)) {
+            console.error(`🚨 REPLAY ATTACK DETECTED: IP ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}, User: ${decoded.id}, Time: ${new Date().toISOString()}`);
+            await sessionDoc.ref.update({ isValid: false });
+            return res.status(401).json({ success: false, message: 'Security Alert: Session compromised.' });
+        }
+
+        // Issue new tokens (Rotation)
+        const newAccessToken = jwt.sign({ id: decoded.id, role: decoded.role, sessionId: decoded.sessionId }, JWT_SECRET, { expiresIn: '15m' });
+        const newRefreshToken = jwt.sign({ id: decoded.id, role: decoded.role, sessionId: decoded.sessionId }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        const newRefreshTokenHash = bcrypt.hashSync(newRefreshToken, 10);
+        
+        await sessionDoc.ref.update({ refreshTokenHash: newRefreshTokenHash });
+
+        const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' };
+        res.cookie('accessToken', newAccessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+        res.cookie('refreshToken', newRefreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+        
+        res.json({ success: true });
+    } catch (e) {
+        res.status(401).json({ success: false, message: 'Invalid refresh token.' });
+    }
+});
+
 // Handle login requests
-app.post('/login', apiLimiter, ensureDb, async (req, res) => {
+app.post('/login', loginLimiter, ensureDb, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -322,17 +462,9 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
 
     const trimmedUsername = username.trim();
 
-    // 1. Check Admin Credentials (Enforced: nammamart / admin12nammamart)
-    const settingsDoc = await db.settings().doc('config').get();
-    const adminSettings = settingsDoc.exists ? settingsDoc.data() : {};
-
-    // User requested to keep these specific credentials
-    const targetUser = 'nammamart';
-    const targetPass = 'admin12nammamart';
-
-    if (trimmedUsername === targetUser && password === targetPass) {
-        const token = generateSessionToken({ username: trimmedUsername, role: 'admin' });
-        res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
+    // 1. Check Admin Credentials against secure env variables
+    if (trimmedUsername === ADMIN_USER && bcrypt.compareSync(password, ADMIN_PASS_HASH)) {
+        await createSession({ id: 'admin', role: 'admin' }, req, res);
         return res.json({ success: true, redirectUrl: '/admin' });
     }
 
@@ -411,10 +543,12 @@ app.post('/login', apiLimiter, ensureDb, async (req, res) => {
         }
     }
 
+    await createSession({ id: employee.id, role: 'employee' }, req, res);
+
     if (hasActiveShift) {
-        res.json({ success: true, redirectUrl: '/employee', employeeId: employee.id });
+        res.json({ success: true, redirectUrl: '/employee' });
     } else {
-        res.json({ success: true, redirectUrl: '/counter_selection', employeeId: employee.id });
+        res.json({ success: true, redirectUrl: '/counter_selection' });
     }
 });
 
@@ -423,35 +557,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/html/index.html'));
 });
 
-// Serve the admin page
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/admin.html'));
-});
-
-// Serve the scan page
-app.get('/scan', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/scan.html'));
-});
-
-// Serve the employee portal
-app.get('/employee', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/employee.html'));
-});
-
-// Serve the counter selection page
-app.get('/counter_selection', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/counter_selection.html'));
-});
-
-// Serve the add employee wizard
-app.get('/add_employee', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/add_employee.html'));
-});
-
-// Serve the modernized report page
-app.get('/report', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/html/report.html'));
-});
+// Secure dynamic routing for HTML files
+app.get('/admin', serveProtected(['admin'], 'public/html/admin.html'));
+app.get('/scan', serveProtected(['employee', 'admin'], 'public/html/scan.html'));
+app.get('/employee', serveProtected(['employee', 'admin'], 'public/html/employee.html'));
+app.get('/counter_selection', serveProtected(['employee', 'admin'], 'public/html/counter_selection.html'));
+app.get('/add_employee', serveProtected(['admin'], 'public/html/add_employee.html'));
+app.get('/report', serveProtected(['admin'], 'public/html/report.html'));
 
 // Handle add employee requests
 app.post('/api/employees', verifyAdmin, async (req, res) => {
@@ -2656,9 +2768,12 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         });
 
         // 2. Fetch Attendance for worked days (Daily Sessions)
-        // Fetch all sessions for this employee and filter by month in memory to avoid composite index requirements
+        // SUPPORT BOTH INTERNAL ID AND USERNAME for robust lookup (useful for dummy data)
+        const possibleIds = [employeeId];
+        if (empData.username) possibleIds.push(empData.username);
+        
         const sessSnapshot = await db.daily_sessions()
-            .where('employeeId', '==', employeeId)
+            .where('employeeId', 'in', possibleIds)
             .get();
         
         let totalWorkedMinutes = 0;

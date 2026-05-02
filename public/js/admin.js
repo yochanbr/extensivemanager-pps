@@ -1,7 +1,6 @@
 // --- SECURITY GUARD --- //
-if (localStorage.getItem('adminLoggedIn') !== 'true') {
-    window.location.href = '/';
-}
+// Admin is securely protected by Server-Side JWT Middlewares. 
+// No client-side checks needed.
 
 // --- GLOBAL IST CONFIGURATION --- //
 const formatIST = (date) => {
@@ -13,9 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let inactivityTimer;
     const INACTIVITY_LIMIT = 60 * 1000; // 1 minute
 
-    const logoutSession = () => {
+    const logoutSession = async () => {
         console.log("🔐 Inactivity timeout triggered. Logging out...");
         localStorage.removeItem('adminLoggedIn');
+        try {
+            await fetch('/logout', { method: 'POST' });
+        } catch (e) {}
         window.location.href = '/';
     };
 
@@ -176,8 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* manageEmployeesBtn is now SPA routed */
 
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
         localStorage.removeItem('adminLoggedIn');
+        try {
+            await fetch('/logout', { method: 'POST' });
+        } catch (e) {}
         window.location.href = '/';
     });
 
@@ -2208,6 +2213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await nammaModalSystem.alert('Credentials updated successfully! Kicking off session for security...');
                     // FORCE LOGOUT
                     localStorage.removeItem('adminLoggedIn');
+                    try { await fetch('/logout', { method: 'POST' }); } catch(e) {}
                     window.location.href = '/';
                 } else {
                     await nammaModalSystem.alert(result.message || 'Verification failed');
@@ -2327,7 +2333,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await res.json();
                 if (result.success) {
                     await nammaModalSystem.alert('Settings restored to defaults! Logging out for security...');
-                    window.location.href = '/logout';
+                    await fetch('/logout', { method: 'POST' });
+                    window.location.href = '/';
                 }
             } catch (err) { await nammaModalSystem.alert('Failed to reset settings'); }
         });
@@ -3189,7 +3196,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (emp) {
                 if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
-                if (emp.esi) document.getElementById('payslip-esi-input').value = emp.esi;
+                // DO NOT pre-fill ESI code into amount field
+                document.getElementById('payslip-esi-input').value = 0; 
                 if (emp.location) document.getElementById('payslip-location-input').value = emp.location || 'SULLIA, KARNATAKA';
             }
 
