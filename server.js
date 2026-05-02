@@ -710,15 +710,10 @@ app.post('/api/counter-selection', async (req, res) => {
     }
     const employee = doc.data();
 
-    // Generate shift ID safely from settings/state
-    const stateDoc = await db.broadcast().get();
-    const shiftNumber = stateDoc.exists ? (stateDoc.data().nextShiftId || 1) : 1;
-
+    // Generate shift ID safely avoiding Firestore global counter race conditions
     const namePart = (employee.name || "EMP").replace(/\s/g, '').substr(0, 3).toUpperCase();
-    const shiftId = shiftNumber.toString().padStart(3, '0') + namePart;
-
-    // Increment global shift ID
-    await db.broadcast().update({ nextShiftId: admin.firestore.FieldValue.increment(1) });
+    const uniquePrefix = shortid.generate().replace(/[-_]/g, '').substring(0, 5).toUpperCase();
+    const shiftId = `${uniquePrefix}-${namePart}`;
 
     // Create new shift entry
     const newShift = {
