@@ -556,8 +556,9 @@ function checkBrightness(video) {
     if (badge) badge.classList.toggle('show', total / 1600 < 45);
 }
 
-// ─── Face Register Modal Handlers ─────────────────────────────────────────
+window.isFaceRegisterOpen = false;
 window.openFaceRegisterModal = async function() {
+    window.isFaceRegisterOpen = true;
     const modal = document.getElementById('face-register-modal');
     if (!modal) return;
 
@@ -632,6 +633,7 @@ window.openFaceRegisterModal = async function() {
 };
 
 window.closeFaceRegisterModal = function() {
+    window.isFaceRegisterOpen = false;
     const modal = document.getElementById('face-register-modal');
     if (!modal) return;
     modal.classList.remove('visible');
@@ -724,4 +726,34 @@ function getCookie(name) {
     if (match) return match[2];
     return null;
 }
+
+// Start polling for pending face registration requests
+setInterval(async () => {
+    if (window.isFaceRegisterOpen) return;
+    // Don't auto-open if manual scanner or other panel is active
+    const actionPanel = document.getElementById('action-panel');
+    const identityBadge = document.getElementById('identity-badge');
+    const smartFixModal = document.getElementById('smart-fix-modal');
+    if (actionPanel && actionPanel.classList.contains('visible')) return;
+    if (identityBadge && identityBadge.classList.contains('visible')) return;
+    if (smartFixModal && smartFixModal.classList.contains('visible')) return;
+
+    try {
+        const res = await fetch('/api/admin/face-requests');
+        if (res.ok) {
+            const requests = await res.json();
+            if (requests && requests.length > 0) {
+                // Auto-open
+                const select = document.getElementById('reg-emp-select');
+                if (select) {
+                    select.value = requests[0].employeeId;
+                }
+                showToast(`Face registration request received for ${requests[0].employeeName}`, 'info');
+                await openFaceRegisterModal();
+            }
+        }
+    } catch (e) {
+        console.error('Failed to poll for face requests:', e);
+    }
+}, 4000);
 
