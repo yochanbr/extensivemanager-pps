@@ -34,7 +34,7 @@
         
         // 2. Intercept 401 Unauthorized for Transparent Token Refresh
         if (response.status === 401 && typeof resource === 'string' && !resource.includes('/login') && !resource.includes('/api/auth/refresh')) {
-            if (window.location.pathname.includes('scan.html')) {
+            if (window.location.pathname.includes('scan')) {
                 return response;
             }
             if (isRefreshing) {
@@ -62,7 +62,7 @@
                 } else {
                     // Refresh failed, force redirect to login
                     refreshQueue = [];
-                    if (!window.location.pathname.includes('scan.html')) {
+                    if (!window.location.pathname.includes('scan')) {
                         window.location.href = '/';
                     }
                 }
