@@ -278,6 +278,8 @@ app.use('/api', (req, res, next) => {
     if (req.path === '/admin/face-requests' && req.method === 'GET') return next();
     // Face requests DELETE is public (scanner clears after registration)
     if (req.path.startsWith('/admin/face-requests/') && req.method === 'DELETE') return next();
+    // Face descriptor registration is public (scanner has no auth token)
+    if (req.path.match(/^\/employees\/[^/]+\/face$/) && req.method === 'POST') return next();
     
     // Authenticate all API requests automatically
     verifyEmployee(req, res, () => {
@@ -2118,19 +2120,7 @@ app.post('/api/settings/reset', verifyAdmin, (req, res) => {
  * Endpoint: Register Face Descriptor
  * Saves high-precision face model data directly to the employee record.
  */
-app.post('/api/employees/:id/face', async (req, res) => {
-    const { id } = req.params;
-    const { descriptor } = req.body;
-
-    if (!descriptor) return res.status(400).json({ success: false, message: 'No face descriptor provided.' });
-
-    const doc = await db.employees().doc(id).get();
-    if (!doc.exists) return res.status(404).json({ success: false, message: 'Employee not found.' });
-    const employee = doc.data();
-
-    await doc.ref.update({ faceDescriptor: descriptor });
-    res.json({ success: true, message: 'Face registered successfully!' });
-});
+// (Duplicate route removed — face registration is handled at line 710)
 
 // Face Registration Requests API
 app.post('/api/admin/face-requests', verifyAdmin, async (req, res) => {
