@@ -1422,7 +1422,8 @@
                 const shift = counterData[counterData.length - 1];
                 const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
                 shiftStart = shift.shiftStartTime ? new Date(shift.shiftStartTime).toLocaleTimeString('en-US', timeOptions) : 'N/A';
-                shiftEnd = shift.shiftEndTime ? new Date(shift.shiftEndTime).toLocaleTimeString('en-US', timeOptions) : 'N/A';
+                const nowTime = new Date().toLocaleTimeString('en-US', timeOptions);
+                shiftEnd = shift.shiftEndTime ? new Date(shift.shiftEndTime).toLocaleTimeString('en-US', timeOptions) : nowTime;
                 counterNumber = shift.counter || 'N/A';
                 if(counterNumber.toLowerCase().includes('counter 1') || counterNumber === '1') pineLabValue = shift.pineLabValue || '0';
                 else pineLabValue = 'N/A';
