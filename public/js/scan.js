@@ -628,13 +628,13 @@ window.openFaceRegisterModal = async function() {
     }
 
     modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
+    setTimeout(() => modal.classList.add('visible'), 10);
 };
 
 window.closeFaceRegisterModal = function() {
     const modal = document.getElementById('face-register-modal');
     if (!modal) return;
-    modal.classList.remove('show');
+    modal.classList.remove('visible');
     setTimeout(() => modal.style.display = 'none', 300);
 };
 
