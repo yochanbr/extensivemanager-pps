@@ -25,7 +25,10 @@
                     <span class="brand-sub">by Pinpoint Startups</span>
                 </div>
             </div>
-            <div class="header-right">
+            <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+                <button id="switch-camera-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onclick="switchCamera()" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    <i class="fas fa-camera-rotate"></i>
+                </button>
                 <div class="live-clock" id="live-clock">00:00:00</div>
             </div>
         </header>

@@ -157,11 +157,13 @@ async function initScanner() {
 }
 
 // ─── Camera ───────────────────────────────────────────────────────────────
+let currentFacingMode = 'user';
+
 async function startCamera() {
     const video = document.getElementById('scan-video');
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: currentFacingMode }
         });
         video.srcObject = stream;
         await new Promise(resolve => video.onloadedmetadata = resolve);
@@ -182,6 +184,13 @@ function stopCamera() {
         stream.getTracks().forEach(track => track.stop());
         video.srcObject = null;
     }
+}
+
+async function switchCamera() {
+    SFX.click();
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    stopCamera();
+    await startCamera();
 }
 
 // ─── Detection Loop ───────────────────────────────────────────────────────
