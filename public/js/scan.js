@@ -757,3 +757,14 @@ setInterval(async () => {
     }
 }, 4000);
 
+// Send scanner heartbeat every 5 seconds
+setInterval(async () => {
+    try {
+        await fetch('/api/scanner/heartbeat', {
+            method: 'POST'
+        });
+    } catch (e) {
+        console.error('Failed to send heartbeat:', e);
+    }
+}, 5000);
+

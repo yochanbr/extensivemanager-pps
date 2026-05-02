@@ -2950,6 +2950,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.openFaceRegistration = async function (employeeId) {
         try {
+            // Check if scanner page is open/active
+            const hbRes = await fetch('/api/scanner/heartbeat');
+            const hb = await hbRes.json();
+            if (!hb || !hb.active) {
+                await nammaModalSystem.alert(`The scanner page is not currently open on any device. Please make sure the scanner is open before sending a request.`, { theme: 'warning' });
+                return;
+            }
+
             // Pre-check: Does this employee already have a face model?
             const res = await fetch('/api/employees/' + employeeId);
             const emp = await res.json();

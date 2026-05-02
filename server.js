@@ -2160,6 +2160,34 @@ app.delete('/api/admin/face-requests/:id', async (req, res) => {
     }
 });
 
+// Scanner Heartbeat APIs
+app.post('/api/scanner/heartbeat', async (req, res) => {
+    try {
+        await db.settings().doc('scanner_heartbeat').set({
+            lastActive: new Date().toISOString()
+        });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+app.get('/api/scanner/heartbeat', async (req, res) => {
+    try {
+        const doc = await db.settings().doc('scanner_heartbeat').get();
+        if (!doc.exists) {
+            return res.json({ active: false });
+        }
+        const data = doc.data();
+        const lastActive = new Date(data.lastActive);
+        const now = new Date();
+        const diffSeconds = (now - lastActive) / 1000;
+        res.json({ active: diffSeconds <= 15 });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 /**
  * Endpoint: Get Employee Current State
  */
