@@ -558,6 +558,7 @@ function checkBrightness(video) {
 
 window.isFaceRegisterOpen = false;
 const dismissedRequestIds = new Set();
+let currentPendingRequestIds = [];
 
 window.openFaceRegisterModal = async function() {
     window.isFaceRegisterOpen = true;
@@ -589,12 +590,18 @@ window.openFaceRegisterModal = async function() {
     // Load pending registration requests
     const reqSection = document.getElementById('pending-requests-section');
     const reqList = document.getElementById('pending-requests-list');
+    currentPendingRequestIds = [];
     if (reqSection && reqList) {
         try {
             const res = await fetch('/api/admin/face-requests');
             if (res.ok) {
                 const requests = await res.json();
                 if (requests && requests.length > 0) {
+                    // Track all current request IDs for dismiss-on-close
+                    currentPendingRequestIds = requests.map(r => r.employeeId);
+                    // Auto-select the first request
+                    if (select) select.value = requests[0].employeeId;
+
                     reqSection.style.display = 'flex';
                     reqList.innerHTML = '';
                     requests.forEach(r => {
@@ -612,13 +619,16 @@ window.openFaceRegisterModal = async function() {
                         div.innerHTML = `
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <span style="font-size: 13px; font-weight: 700; color: #0F172A;">${r.employeeName}</span>
-                                <span style="font-size: 11px; color: #64748B;">Tap to select &amp; register</span>
+                                <span style="font-size: 11px; color: #64748B;">Tap to register</span>
                             </div>
                             <div style="color: #10B981; font-size: 14px;"><i class="fas fa-arrow-right"></i></div>
                         `;
                         div.onclick = () => {
                             if (select) select.value = r.employeeId;
-                            showToast(`Selected request for ${r.employeeName}`, 'info');
+                            // Highlight selected
+                            reqList.querySelectorAll('div').forEach(d => d.style.background = 'white');
+                            div.style.background = '#EFF6FF';
+                            showToast(`Selected: ${r.employeeName}`, 'info');
                         };
                         reqList.appendChild(div);
                     });
@@ -637,11 +647,8 @@ window.openFaceRegisterModal = async function() {
 
 window.closeFaceRegisterModal = function() {
     window.isFaceRegisterOpen = false;
-    // Track which request IDs are currently shown so we don't immediately reopen
-    const select = document.getElementById('reg-emp-select');
-    if (select && select.value) {
-        dismissedRequestIds.add(select.value);
-    }
+    // Dismiss ALL currently shown pending requests so they don't reopen
+    currentPendingRequestIds.forEach(id => dismissedRequestIds.add(id));
     const modal = document.getElementById('face-register-modal');
     if (!modal) return;
     modal.classList.remove('visible');

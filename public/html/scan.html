@@ -149,12 +149,8 @@
                     <div id="pending-requests-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 130px; overflow-y: auto; background: #EFF6FF; border: 1.5px dashed rgba(59,130,246,0.3); border-radius: 14px; padding: 10px 12px;">
                     </div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;">Select Employee</label>
-                    <select id="reg-emp-select" style="background: #F8FAFC; border: 1.5px solid var(--border); color: var(--text-1); border-radius: 14px; padding: 13px 16px; font-size: 14px; font-weight: 500; outline: none; width: 100%; cursor: pointer;">
-                        <option value="">Choose an employee...</option>
-                    </select>
-                </div>
+                <!-- Hidden select used by JS to track selected employee -->
+                <select id="reg-emp-select" style="display: none;"><option value="">Choose an employee...</option></select>
                 <button onclick="captureFaceAndRegister()" style="background: #10B981; color: white; border-radius: 14px; height: 52px; border: none; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; width: 100%; box-shadow: 0 6px 20px rgba(16,185,129,0.25);">
                     <i class="fas fa-camera"></i>
                     <span>Capture &amp; Register</span>
