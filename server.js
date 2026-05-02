@@ -19,6 +19,8 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 app.set('trust proxy', 1);
 app.use(cookieParser());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 const port = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1';
 
@@ -270,6 +272,12 @@ app.use('/api', (req, res, next) => {
     if (req.path.startsWith('/employees') && req.method === 'GET') return next();
     if (req.path.startsWith('/attendance/state/') && req.method === 'GET') return next();
     if (req.path === '/attendance/scan' && req.method === 'POST') return next();
+    // Scanner heartbeat is public (kiosk has no auth token)
+    if (req.path === '/scanner/heartbeat') return next();
+    // Face requests GET is public (scanner needs to poll without auth)
+    if (req.path === '/admin/face-requests' && req.method === 'GET') return next();
+    // Face requests DELETE is public (scanner clears after registration)
+    if (req.path.startsWith('/admin/face-requests/') && req.method === 'DELETE') return next();
     
     // Authenticate all API requests automatically
     verifyEmployee(req, res, () => {
