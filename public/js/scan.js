@@ -758,10 +758,18 @@ setInterval(async () => {
 }, 4000);
 
 // Send scanner heartbeat every 5 seconds
+let scannerDeviceId = localStorage.getItem('scanner_device_id');
+if (!scannerDeviceId) {
+    scannerDeviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('scanner_device_id', scannerDeviceId);
+}
+
 const sendScannerHeartbeat = async () => {
     try {
         await fetch('/api/scanner/heartbeat', {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId: scannerDeviceId })
         });
     } catch (e) {
         console.error('Failed to send heartbeat:', e);

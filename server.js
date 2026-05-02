@@ -2163,7 +2163,10 @@ app.delete('/api/admin/face-requests/:id', async (req, res) => {
 // Scanner Heartbeat APIs
 app.post('/api/scanner/heartbeat', async (req, res) => {
     try {
-        await db.settings().doc('scanner_heartbeat').set({
+        const { deviceId } = req.body;
+        const id = deviceId || 'default';
+        await db.settings().doc(`scanner_device_${id}`).set({
+            deviceId: id,
             lastActive: new Date().toISOString()
         });
         res.json({ success: true });
@@ -2174,15 +2177,23 @@ app.post('/api/scanner/heartbeat', async (req, res) => {
 
 app.get('/api/scanner/heartbeat', async (req, res) => {
     try {
-        const doc = await db.settings().doc('scanner_heartbeat').get();
-        if (!doc.exists) {
-            return res.json({ active: false });
-        }
-        const data = doc.data();
-        const lastActive = new Date(data.lastActive);
+        const snapshot = await db.settings().get();
+        let activeCount = 0;
         const now = new Date();
-        const diffSeconds = Math.abs((now - lastActive) / 1000);
-        res.json({ active: diffSeconds <= 120 });
+
+        snapshot.forEach(doc => {
+            if (doc.id.startsWith('scanner_device_')) {
+                const data = doc.data();
+                if (data.lastActive) {
+                    const diffSeconds = Math.abs((now - new Date(data.lastActive)) / 1000);
+                    if (diffSeconds <= 900) {
+                        activeCount++;
+                    }
+                }
+            }
+        });
+
+        res.json({ active: activeCount > 0, count: activeCount });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }
