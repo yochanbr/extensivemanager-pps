@@ -741,6 +741,8 @@ window.captureFaceAndRegister = async function() {
             if (typeof window.reloadFaceDescriptors === 'function') {
                 await window.reloadFaceDescriptors();
             }
+            // Return to normal scanner view after 2.5s
+            setTimeout(() => resetScanner(), 2500);
         } else {
             const err = await res.json();
             showToast(err.message || 'Registration failed.', 'error');
