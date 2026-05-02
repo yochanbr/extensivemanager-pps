@@ -59,7 +59,9 @@
                 } else {
                     // Refresh failed, force redirect to login
                     refreshQueue = [];
-                    window.location.href = '/';
+                    if (!window.location.pathname.includes('scan.html')) {
+                        window.location.href = '/';
+                    }
                 }
             } catch (e) {
                 refreshQueue = [];
