@@ -2549,7 +2549,7 @@ app.post('/api/admin/verify-bill', verifyAdmin, async (req, res) => {
                 differences: differences || {},
                 manualText: manualText || '',
                 verifiedAt: new Date().toISOString(),
-                verifiedBy: req.admin.username
+                verifiedBy: (req.admin && req.admin.id) || (req.user && req.user.id) || 'admin'
             }
         });
 
