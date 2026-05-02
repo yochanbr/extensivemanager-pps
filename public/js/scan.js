@@ -664,13 +664,20 @@ window.captureFaceAndRegister = async function() {
 
     const video = document.getElementById('scan-video');
 
-    // Close the modal so the camera is visible
+    // Close the modal and mark ALL pending requests as dismissed
+    // so the polling doesn't reopen the modal while we're capturing
+    currentPendingRequestIds.forEach(id => dismissedRequestIds.add(id));
+    window.isFaceRegisterOpen = false;
+
     const modal = document.getElementById('face-register-modal');
     if (modal) {
         modal.classList.remove('visible');
         setTimeout(() => modal.style.display = 'none', 300);
-        window.isFaceRegisterOpen = false;
     }
+
+    // Hide Verify Identity button during registration
+    const triggerArea = document.getElementById('trigger-area');
+    if (triggerArea) triggerArea.style.display = 'none';
 
     // Ensure camera is running
     if (!video || !video.srcObject) {
@@ -679,6 +686,7 @@ window.captureFaceAndRegister = async function() {
             await startCamera();
         } catch (e) {
             showToast('Camera access required. Please allow camera permissions.', 'error');
+            if (triggerArea) triggerArea.style.display = '';
             return;
         }
     }
@@ -741,16 +749,21 @@ window.captureFaceAndRegister = async function() {
             if (typeof window.reloadFaceDescriptors === 'function') {
                 await window.reloadFaceDescriptors();
             }
-            // Return to normal scanner view after 2.5s
-            setTimeout(() => resetScanner(), 2500);
+            // Return to normal scanner view after 2.5s (restores button too)
+            setTimeout(() => {
+                if (triggerArea) triggerArea.style.display = '';
+                resetScanner();
+            }, 2500);
         } else {
             const err = await res.json();
+            if (triggerArea) triggerArea.style.display = '';
             showToast(err.message || 'Registration failed.', 'error');
         }
     } catch (e) {
         console.error(e);
         if (promptMain) promptMain.textContent = origMain;
         if (promptSub) promptSub.textContent = origSub;
+        if (triggerArea) triggerArea.style.display = '';
         showToast('Error detecting face. Try again.', 'error');
     }
 };
