@@ -2308,15 +2308,26 @@ app.get('/api/attendance/state/:employeeId', async (req, res) => {
 /**
  * Endpoint: Attendance Scan (Kiosk Mode)
  */
+const processingScans = new Set();
+
 app.post('/api/attendance/scan', async (req, res) => {
+    const employeeId = req.body.employeeId;
+    
+    // Server-side lock to completely prevent rapid double-click race conditions
+    if (processingScans.has(employeeId)) {
+        return res.status(429).json({ success: false, message: 'Processing your previous scan, please wait a moment.' });
+    }
+    processingScans.add(employeeId);
+
     try {
-        const { employeeId, actionType } = req.body;
+        const { actionType } = req.body;
         const doc = await db.employees().doc(employeeId).get();
         if (!doc.exists) return res.status(404).json({ success: false, message: 'Identity not recognized.' });
         const emp = doc.data();
         if (emp.isActive === false) {
             return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
         }
+
 
         const processAction = async (empId, empName, action) => {
             const now = new Date();
@@ -2484,6 +2495,8 @@ app.post('/api/attendance/scan', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/attendance/scan:', error);
         res.status(500).json({ success: false, message: 'Server error processing scan' });
+    } finally {
+        processingScans.delete(employeeId);
     }
 });
 

@@ -462,6 +462,12 @@ async function submitAttendance(actionType) {
         btn.style.pointerEvents = 'none';
     }
 
+    if (window.isScanning) {
+        showToast('Processing... please wait.', 'info');
+        return;
+    }
+    window.isScanning = true;
+
     try {
         const res = await fetch('/api/attendance/scan', {
             method: 'POST',
@@ -509,6 +515,10 @@ async function submitAttendance(actionType) {
             btn.style.opacity = '';
             btn.style.pointerEvents = '';
         }
+    } finally {
+        setTimeout(() => {
+            window.isScanning = false;
+        }, 3000); // 3-second cooldown
     }
 }
 
