@@ -244,8 +244,12 @@ const verifyAuth = (roles) => (req, res, next) => {
         return isApi ? res.status(401).json({ success: false, message: 'Unauthorized: Access token expired or invalid.' }) : res.redirect('/');
     }
     
-    if (roles && !roles.includes(decoded.role)) {
-        return isApi ? res.status(403).json({ success: false, message: 'Forbidden: Insufficient privileges.' }) : res.redirect('/');
+    if (roles && !roles.includes(decoded.role) && decoded.role !== 'admin') {
+        const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' };
+        res.clearCookie('accessToken', cookieOpts);
+        res.clearCookie('refreshToken', cookieOpts);
+        res.clearCookie('xsrf-token', { secure: process.env.NODE_ENV === 'production', sameSite: 'Strict' });
+        return isApi ? res.status(401).json({ success: false, message: 'Unauthorized: Session missing or invalid role.' }) : res.redirect('/');
     }
     
     req.user = decoded;
