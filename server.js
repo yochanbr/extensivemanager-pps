@@ -281,6 +281,10 @@ app.use('/api', (req, res, next) => {
     // Face descriptor registration is public (scanner has no auth token)
     if (req.path.match(/^\/employees\/[^/]+\/face$/) && req.method === 'POST') return next();
     
+    // Password Reset APIs are public
+    if (req.path === '/request-reset-otp' && req.method === 'POST') return next();
+    if (req.path === '/reset-admin-password' && req.method === 'POST') return next();
+    
     // Authenticate all API requests automatically
     verifyEmployee(req, res, () => {
         // Enforce Identity: Prevent employees from impersonating others via request payloads
