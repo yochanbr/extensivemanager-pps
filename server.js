@@ -9,6 +9,7 @@ process.env.TZ = 'Asia/Kolkata';
 const shortid = require('shortid');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const compression = require('compression');
 const admin = require('firebase-admin');
 const crypto = require('crypto-js');
 const { execSync } = require('child_process');
@@ -18,6 +19,9 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 app.set('trust proxy', 1);
+
+// --- MIDDLEWARE ---
+app.use(compression());
 app.use(cookieParser());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
