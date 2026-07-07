@@ -1754,12 +1754,17 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
         const empSnap = await db.employees().get();
         const employees = empSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 2. Get all daily_sessions
-        const sessionSnap = await db.daily_sessions().get();
+        // 2. Get daily_sessions within date range
+        const startIso = startDate.toISOString().split('T')[0];
+        const endIso = endDate.toISOString().split('T')[0];
+        const sessionSnap = await db.daily_sessions()
+            .where('date', '>=', startIso)
+            .where('date', '<=', endIso)
+            .get();
         const rawSessions = sessionSnap.docs.map(doc => doc.data());
 
-        // 3. Get all leaves
-        const leaveSnap = await db.leave_swaps().get();
+        // 3. Get all leaves (limited to 500 to prevent OOM)
+        const leaveSnap = await db.leave_swaps().limit(500).get();
         const rawLeaves = leaveSnap.docs.map(doc => doc.data());
 
         // Prepare Headers
@@ -2884,14 +2889,14 @@ app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
  * Endpoint: Recalculate Sessions
  */
 app.post('/api/attendance/sessions/recalculate', verifyAdmin, async (req, res) => {
-    // 1. Clear daily_sessions
-    const snapshot = await db.daily_sessions().get();
+    // 1. Clear daily_sessions (Limit to 500 to avoid batch limits)
+    const snapshot = await db.daily_sessions().limit(500).get();
     const batch = firestore.batch();
     snapshot.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
 
-    // 2. Load all logs chronologically
-    const logsSnapshot = await db.attendance_logs().orderBy('timestamp', 'asc').get();
+    // 2. Load recent logs chronologically (limit to 2000 to prevent memory crash)
+    const logsSnapshot = await db.attendance_logs().orderBy('timestamp', 'asc').limit(2000).get();
     const activeSessions = {};
 
     for (const logDoc of logsSnapshot.docs) {
@@ -2990,7 +2995,7 @@ async function generateAndSaveESR(employeeId, employeeName, shiftStartTime, endS
 // DEBUG: Check reports count
 app.get('/api/debug/reports-count', async (req, res) => {
     try {
-        const snap = await db.esr_reports().get();
+        const snap = await db.esr_reports().limit(100).get();
         const docs = snap.docs.map(d => d.data());
         res.json({ count: snap.size, samples: docs });
     } catch(e) { res.json({ error: e.message }); }
@@ -2999,7 +3004,7 @@ app.get('/api/debug/reports-count', async (req, res) => {
 // Support for Leave/Swap logic remains distinct
 app.get('/api/leave-swaps', async (req, res) => {
     try {
-        const snapshot = await db.leave_swaps().orderBy('timestamp', 'desc').get();
+        const snapshot = await db.leave_swaps().orderBy('timestamp', 'desc').limit(200).get();
         const swaps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.json(swaps);
     } catch (e) { res.status(500).json([]); }
