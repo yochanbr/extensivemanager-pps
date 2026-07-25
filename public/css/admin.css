@@ -3503,10 +3503,8 @@ body {
 }
 .step-line.completed { background: #10B981 !important; }
 
-/* Step number labels inside dots */
-.step-dot[data-step]::before {
-    content: attr(data-step);
-}
+/* Step number labels - text content is in the HTML, ::before removed to prevent doubling */
+
 
 /* 5. Step panels - consistent animation */
 .spa-step {

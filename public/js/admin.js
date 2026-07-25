@@ -4371,3 +4371,76 @@ window.updateAddStepUI = function() {
     if(_baseUpdateAdd) _baseUpdateAdd();
     if(window._updateAddStepUIEnhanced) window._updateAddStepUIEnhanced();
 };
+// =============================================
+// FIX: Scope spa-step selectors per panel
+// =============================================
+
+// Override updateAddStepUI to scope ONLY to add-employee-form
+window.updateAddStepUI = function() {
+    const form = document.getElementById('spa-add-employee-form');
+    if (!form) return;
+
+    // Show/hide steps scoped to add form only
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentAddStep);
+    });
+
+    // Stepper dots in add panel
+    const addPanel = document.getElementById('add-employee-panel');
+    if (addPanel) {
+        addPanel.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentAddStep) d.classList.add('active');
+            else if (stepNum < currentAddStep) d.classList.add('completed');
+        });
+        for (let i = 1; i <= 3; i++) {
+            const line = document.getElementById('add-line-' + i);
+            if (line) line.classList.toggle('completed', currentAddStep > i);
+        }
+    }
+
+    // Buttons
+    const prevBtn = document.getElementById('spa-btn-prev');
+    const nextBtn = document.getElementById('spa-btn-next');
+    const submitBtn = document.getElementById('spa-btn-submit');
+    if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'inline-flex';
+    if (currentAddStep === 4) {
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+    } else {
+        if (nextBtn) nextBtn.style.display = 'inline-flex';
+        if (submitBtn) submitBtn.style.display = 'none';
+    }
+};
+
+// Override updateEditStepUI to scope ONLY to edit-employee-form  
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if (!form) return;
+
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentEditStep);
+    });
+
+    const stepper = document.getElementById('edit-stepper');
+    if (stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentEditStep) d.classList.add('active');
+            else if (stepNum < currentEditStep) d.classList.add('completed');
+        });
+        const line1 = document.getElementById('edit-line-1');
+        const line2 = document.getElementById('edit-line-2');
+        if (line1) line1.classList.toggle('completed', currentEditStep > 1);
+        if (line2) line2.classList.toggle('completed', currentEditStep > 2);
+    }
+
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+    if (prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
+    if (nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
+    if (saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
+};
