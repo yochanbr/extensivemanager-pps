@@ -1883,8 +1883,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-lop-per-day', emp.lopPerDay || '');
                 setVal('spa-edit-lop-per-hour', emp.lopPerHour || '');
                 setVal('spa-edit-esi', emp.esi || emp.ESI);
-                setVal('spa-edit-designation', emp.designation);
-                setVal('spa-edit-department', emp.department);
+
                 setVal('spa-edit-joining-date', emp['joining-date'] || emp.joiningDate);
                 setVal('spa-edit-pf-number', emp['pf-number'] || emp.pfNumber);
                 setVal('spa-edit-uan-number', emp['uan-number'] || emp.uanNumber);
@@ -2035,8 +2034,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Work & Financials</h3>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Employment:</strong> <span style="display: block; font-size: 15px;">${data['full-time'] === 'yes' ? 'Full Time' : 'Part Time'}</span></div>
-                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Designation:</strong> <span style="display: block; font-size: 15px;">${data.designation || 'N/A'}</span></div>
-                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Department:</strong> <span style="display: block; font-size: 15px;">${data.department || 'N/A'}</span></div>
+
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Joining Date:</strong> <span style="display: block; font-size: 15px;">${data['joining-date'] || 'N/A'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Salary:</strong> <span style="display: block; font-size: 16px; font-weight: 700; color: #16A34A;">₹${data.basicSalary || '0'}</span></div>
                     <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Bank Name:</strong> <span style="display: block; font-size: 15px;">${data['bank-name'] || 'N/A'}</span></div>
@@ -2510,6 +2508,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!data.success) return;
 
                 const logs = data.logs || [];
+                
+                // Fix: Ensure employees are loaded so shift times can be mapped correctly
+                if (allEmployeesForSPA.length === 0) {
+                    try {
+                        const empRes = await fetch('/api/employees');
+                        allEmployeesForSPA = await empRes.json();
+                    } catch(e) { console.error('Failed to load employees for sessions', e); }
+                }
+
                 window.calculateAdminSummary(logs); // Update KPI cards
 
                 // Build sessions map per employee per day
@@ -2541,7 +2548,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (action === 'BREAK_END' && m.currentBreakStart) {
                         m.totalBreakMs += (t - m.currentBreakStart);
                         m.currentBreakStart = null;
-                    } else if (action.includes('CLOCK_OUT') || action.includes('CHECK_OUT') || action === 'OUT') {
+                    } else if (action && (action.includes('CLOCK_OUT') || action.includes('CHECK_OUT') || action === 'OUT')) {
+                        if (m.currentBreakStart) {
+                            m.totalBreakMs += (t - m.currentBreakStart);
+                            m.currentBreakStart = null;
+                        }
                         m.checkOutTs = t; // always update to latest checkout
                     }
                     m.lastEventTs = t;
@@ -2598,12 +2609,25 @@ document.addEventListener('DOMContentLoaded', () => {
             // Required work hours (standard minus net)
             const workHrMin = Math.min(netWorkMin, REQUIRED_MINUTES);
 
-            // Late time: minutes after 9 AM the employee checked in
+            // Late time: dynamically calculated based on employee's shift
             let lateMin = 0;
             if (s.checkInTs) {
                 const checkInDate = new Date(s.checkInTs);
                 const shiftStart = new Date(checkInDate);
-                shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
+                
+                let startHour = SHIFT_START_HOUR;
+                let startMin = 0;
+                
+                // Dynamically fetch employee's shift start time
+                const emp = (allEmployeesForSPA || []).find(e => e.id === s.empId);
+                const shiftStartStr = emp ? (emp['start-time'] || emp.startTime) : null;
+                if (shiftStartStr) {
+                    const [h, m] = shiftStartStr.split(':').map(Number);
+                    startHour = h;
+                    startMin = m;
+                }
+
+                shiftStart.setHours(startHour, startMin, 0, 0);
                 lateMin = Math.max(0, toMin(checkInDate - shiftStart));
             }
 
@@ -2758,7 +2782,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (log.action && (log.action.includes('CLOCK_IN') || log.action === 'EARLY_ARRIVAL' || log.action === 'LATE_ARRIVAL')) m.currentCheckIn = t;
             else if (log.action === 'BREAK_START') m.currentBreakStart = t;
             else if (log.action === 'BREAK_END' && m.currentBreakStart) { m.totalBreakMs += (t - m.currentBreakStart); m.currentBreakStart = null; }
-            else if (log.action && log.action.includes('CLOCK_OUT') && m.currentCheckIn) { m.totalWorkMs += (t - m.currentCheckIn); m.currentCheckIn = null; }
+            else if (log.action && log.action.includes('CLOCK_OUT') && m.currentCheckIn) { 
+                if (m.currentBreakStart) {
+                    m.totalBreakMs += (t - m.currentBreakStart);
+                    m.currentBreakStart = null;
+                }
+                m.totalWorkMs += (t - m.currentCheckIn); 
+                m.currentCheckIn = null; 
+            }
         });
 
         const nowMs = Date.now();
@@ -3370,14 +3401,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="payslip-value">${stdDays}</td>
                                 </tr>
                                 <tr>
-                                    <td class="payslip-label">Designation</td>
-                                    <td class="payslip-value">${employee.designation || 'Customer Representative'}</td>
+                                    <td class="payslip-label"></td>
+                                    <td class="payslip-value"></td>
                                     <td class="payslip-label">Worked Days</td>
                                     <td class="payslip-value">${workedDays}</td>
                                 </tr>
                                 <tr>
-                                    <td class="payslip-label">Department</td>
-                                    <td class="payslip-value">${employee.department || 'Operations'}</td>
+                                    <td class="payslip-label"></td>
+                                    <td class="payslip-value"></td>
                                     <td class="payslip-label">LOP Days</td>
                                     <td class="payslip-value">${lopDays}</td>
                                 </tr>

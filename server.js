@@ -601,27 +601,42 @@ app.get('/report', serveProtected(['admin'], 'public/html/report.html'));
 
 // Handle add employee requests
 app.post('/api/employees', verifyAdmin, async (req, res) => {
-    const employeeData = req.body;
+    try {
+        const employeeData = req.body;
 
-    // Set username to employee-id
-    employeeData.username = employeeData['employee-id'];
-    delete employeeData['employee-id'];
+        if (!employeeData['employee-id'] || !employeeData.password) {
+            return res.status(400).json({ success: false, message: 'Employee ID and password are required.' });
+        }
 
-    // Encrypt the password BEFORE encryption wrapper
-    const salt = bcrypt.genSaltSync(10);
-    employeeData.password = bcrypt.hashSync(employeeData.password, salt);
+        // Set username to employee-id
+        employeeData.username = employeeData['employee-id'];
+        delete employeeData['employee-id'];
 
-    employeeData.id = shortid.generate();
-    employeeData.shiftEnded = false;
-    employeeData.counter_selections = [];
+        // Check for existing employee with same username
+        const existing = await db.employees().where('username', '==', employeeData.username).get();
+        if (!existing.empty) {
+            return res.status(400).json({ success: false, message: 'Employee with this ID already exists.' });
+        }
 
-    // Encrypt sensitive fields before Firestore
-    ['password', 'phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
-        if (employeeData[field]) employeeData[field] = encrypt(employeeData[field]);
-    });
+        // Encrypt the password BEFORE encryption wrapper
+        const salt = bcrypt.genSaltSync(10);
+        employeeData.password = bcrypt.hashSync(employeeData.password, salt);
 
-    await db.employees().doc(employeeData.id).set(employeeData);
-    res.json({ success: true, message: 'Employee added successfully.' });
+        employeeData.id = shortid.generate();
+        employeeData.shiftEnded = false;
+        employeeData.counter_selections = [];
+
+        // Encrypt sensitive fields before Firestore
+        ['password', 'phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+            if (employeeData[field]) employeeData[field] = encrypt(employeeData[field]);
+        });
+
+        await db.employees().doc(employeeData.id).set(employeeData);
+        res.json({ success: true, message: 'Employee added successfully.' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: 'Internal server error while creating employee.' });
+    }
 });
 
 // Get all employees
@@ -631,8 +646,15 @@ app.get('/api/employees', async (req, res) => {
         const data = doc.data();
         data.id = doc.id;
         // Decrypt sensitive fields
-        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number', 'designation', 'department', 'pfNumber', 'uanNumber', 'location'].forEach(field => {
-            if (data[field]) data[field] = decrypt(data[field]);
+        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+            if (data[field]) {
+                try {
+                    data[field] = decrypt(data[field]);
+                } catch(e) {
+                    // Fallback if data was saved unencrypted before this fix
+                    data[field] = data[field];
+                }
+            }
         });
         return data;
     });
@@ -718,20 +740,33 @@ app.put('/api/employees/:id', verifyAdmin, async (req, res) => {
 
 // Register or update an employee's face descriptor
 app.post('/api/employees/:id/face', async (req, res) => {
-    const employeeId = req.params.id;
-    const { descriptor } = req.body;
+    try {
+        const employeeId = req.params.id;
+        const { descriptor } = req.body;
 
-    if (!descriptor || !Array.isArray(descriptor)) {
-        return res.status(400).json({ success: false, message: 'Invalid face descriptor data provided.' });
+        if (!descriptor || !Array.isArray(descriptor)) {
+            return res.status(400).json({ success: false, message: 'Invalid face descriptor data provided.' });
+        }
+
+        const doc = await db.employees().doc(employeeId).get();
+        if (!doc.exists) {
+            return res.status(404).json({ success: false, message: 'Employee not found.' });
+        }
+
+        await doc.ref.update({ faceDescriptor: descriptor });
+        
+        // Cleanup face request queue automatically
+        try {
+            await db.face_requests().doc(employeeId).delete();
+        } catch(e) {
+            console.log('No pending face request to delete for', employeeId);
+        }
+
+        res.json({ success: true, message: 'Face descriptor recorded successfully.' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: 'Internal server error while saving face data.' });
     }
-
-    const doc = await db.employees().doc(employeeId).get();
-    if (!doc.exists) {
-        return res.status(404).json({ success: false, message: 'Employee not found.' });
-    }
-
-    await doc.ref.update({ faceDescriptor: descriptor });
-    res.json({ success: true, message: 'Face descriptor recorded successfully.' });
 });
 
 // Handle counter selection data submission (FIXED SHIFT START)
@@ -2404,13 +2439,30 @@ app.post('/api/attendance/scan', async (req, res) => {
                     }
                 }
 
-                const actualWorkMs = (new Date(timestamp) - new Date(session.checkIn)) - ((session.totalBreakMinutes || 0) * 60000);
+                let breakMins = session.totalBreakMinutes || 0;
+                let finalBreakHistory = session.breakHistory || [];
+                
+                // If clocking out while on break, end the break automatically
+                if (currentState === 'ON_BREAK') {
+                    const history = [...finalBreakHistory];
+                    const lastBreak = history[history.length - 1];
+                    if (lastBreak && !lastBreak.end) {
+                        lastBreak.end = timestamp;
+                        const diff = (new Date(timestamp) - new Date(lastBreak.start)) / 60000;
+                        breakMins += Math.floor(diff);
+                        finalBreakHistory = history;
+                    }
+                }
+
+                const actualWorkMs = (new Date(timestamp) - new Date(session.checkIn)) - (breakMins * 60000);
                 const actualWorkMinutes = Math.floor(actualWorkMs / 60000);
 
                 await session.ref.update({
                     checkOut: timestamp,
                     status: 'completed',
                     onBreak: false,
+                    breakHistory: finalBreakHistory,
+                    totalBreakMinutes: breakMins,
                     overtimeMinutes,
                     actualWorkMinutes,
                     approvalStatus,
