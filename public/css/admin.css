@@ -3304,3 +3304,21 @@ body {
 .status-table tr:hover td {
     background-color: rgba(255,255,255,0.5) !important;
 }
+/* --- PREMIUM SETTINGS CARDS --- */
+.settings-card {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+.settings-card:hover {
+    transform: translateY(-6px) scale(1.01) !important;
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+}
+.danger-zone-box {
+    background: rgba(254, 242, 242, 0.5) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
