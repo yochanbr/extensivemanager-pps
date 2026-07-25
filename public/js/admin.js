@@ -4160,4 +4160,151 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+    });// --- DRAGGABLE POPUP LOGIC ---
+window.makeDraggable = function(panelId, headerSelector) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const header = panel.querySelector(headerSelector);
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) return; // Ignore close button clicks
+        
+        isDragging = true;
+        panel.classList.add('dragging');
+        
+        // Get initial mouse position
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const rect = panel.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        // Set inline positions based on current rect so it doesn't jump
+        panel.style.left = initialLeft + 'px';
+        panel.style.top = initialTop + 'px';
+        panel.style.transform = 'none';
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        
+        panel.style.left = (initialLeft + dx) + 'px';
+        panel.style.top = (initialTop + dy) + 'px';
+    }
+
+    function onMouseUp() {
+        if (isDragging) {
+            isDragging = false;
+            panel.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if(window.makeDraggable) {
+            window.makeDraggable('add-employee-panel', '.side-panel-header');
+            window.makeDraggable('edit-employee-panel', '.side-panel-header');
+        }
+        
+        // Wrap the open functions to reset inline styles
+        const _openAdd = window.openAddEmployeePanel;
+        window.openAddEmployeePanel = function() {
+            const p = document.getElementById('add-employee-panel');
+            if(p) {
+                p.style.left = '';
+                p.style.top = '';
+                p.style.transform = '';
+            }
+            if(_openAdd) _openAdd();
+        };
+
+        const _openEdit = window.openEditEmployeePanel;
+        window.openEditEmployeePanel = function(id) {
+            const p = document.getElementById('edit-employee-panel');
+            if(p) {
+                p.style.left = '';
+                p.style.top = '';
+                p.style.transform = '';
+            }
+            if(_openEdit) _openEdit(id);
+        };
+    }, 1000);
+});
+// --- EDIT EMPLOYEE STORY MODE LOGIC ---
+let currentEditStep = 1;
+const maxEditSteps = 3;
+
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if(!form) return;
+    
+    // Update steps
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        if ((i + 1) === currentEditStep) {
+            s.classList.add('active');
+        } else {
+            s.classList.remove('active');
+        }
+    });
+
+    // Update stepper dots
+    const stepper = document.getElementById('edit-stepper');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            if (stepNum === currentEditStep) {
+                d.classList.add('active');
+                d.classList.remove('completed');
+            } else if (stepNum < currentEditStep) {
+                d.classList.remove('active');
+                d.classList.add('completed');
+            } else {
+                d.classList.remove('active', 'completed');
+            }
+        });
+    }
+
+    // Update buttons
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+
+    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'block';
+    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'block';
+    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'block' : 'none';
+};
+
+window.nextEditStep = function() {
+    if (currentEditStep < maxEditSteps) {
+        currentEditStep++;
+        window.updateEditStepUI();
+    }
+};
+
+window.prevEditStep = function() {
+    if (currentEditStep > 1) {
+        currentEditStep--;
+        window.updateEditStepUI();
+    }
+};
+
+// Reset step on open
+const _originalOpenEdit = window.openEditEmployeePanel;
+window.openEditEmployeePanel = function(id) {
+    currentEditStep = 1;
+    if(window.updateEditStepUI) window.updateEditStepUI();
+    if(_originalOpenEdit) _originalOpenEdit(id);
+};
