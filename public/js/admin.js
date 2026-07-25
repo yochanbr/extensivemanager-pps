@@ -4308,3 +4308,66 @@ window.openEditEmployeePanel = function(id) {
     if(window.updateEditStepUI) window.updateEditStepUI();
     if(_originalOpenEdit) _originalOpenEdit(id);
 };
+// =============================================
+// UPDATED EDIT STEP UI - with line animation
+// =============================================
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if(!form) return;
+    
+    // Update steps
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentEditStep);
+    });
+
+    // Update stepper dots + lines
+    const stepper = document.getElementById('edit-stepper');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentEditStep) d.classList.add('active');
+            else if (stepNum < currentEditStep) d.classList.add('completed');
+        });
+        // Animate lines
+        const line1 = document.getElementById('edit-line-1');
+        const line2 = document.getElementById('edit-line-2');
+        if(line1) line1.classList.toggle('completed', currentEditStep > 1);
+        if(line2) line2.classList.toggle('completed', currentEditStep > 2);
+    }
+
+    // Update buttons
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
+    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
+    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
+};
+
+// =============================================
+// UPDATED ADD STEP UI - with line animation
+// =============================================
+window._updateAddStepUIEnhanced = function() {
+    const maxAdd = 4;
+    const stepper = document.querySelector('#add-employee-panel .stepper-minimal');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentAddStep) d.classList.add('active');
+            else if (stepNum < currentAddStep) d.classList.add('completed');
+        });
+        for(let i = 1; i <= 3; i++) {
+            const line = document.getElementById('add-line-' + i);
+            if(line) line.classList.toggle('completed', currentAddStep > i);
+        }
+    }
+};
+
+// Patch the existing updateAddStepUI
+const _baseUpdateAdd = window.updateAddStepUI;
+window.updateAddStepUI = function() {
+    if(_baseUpdateAdd) _baseUpdateAdd();
+    if(window._updateAddStepUIEnhanced) window._updateAddStepUIEnhanced();
+};

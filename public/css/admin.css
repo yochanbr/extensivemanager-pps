@@ -3363,3 +3363,275 @@ body {
     border-radius: 0 0 28px 28px !important;
     background: rgba(248, 250, 252, 0.8) !important;
 }
+/* ============================================
+   COMPLETE POPUP + STORY MODE FIX
+   ============================================ */
+
+/* 1. Side panel positioned as centred popup */
+.side-panel {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translate(-50%, -50%) scale(0.92) !important;
+    width: min(680px, 92vw) !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    border-radius: 28px !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    background: #FFFFFF !important;
+    box-shadow: 0 32px 64px -12px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06) !important;
+    border: none !important;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    z-index: 999999;
+}
+
+.side-panel.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+}
+
+/* 2. Header - proper drag handle */
+.side-panel-header {
+    cursor: grab !important;
+    user-select: none;
+    padding: 28px 32px 24px !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+    flex-shrink: 0;
+    background: #FFFFFF;
+}
+.side-panel-header:active { cursor: grabbing !important; }
+.panel-title h3 {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    color: #0F172A !important;
+    margin: 0 !important;
+    letter-spacing: -0.4px;
+}
+.panel-title p {
+    font-size: 13px !important;
+    color: #94A3B8 !important;
+    margin: 4px 0 0 !important;
+    font-weight: 500;
+}
+.close-panel-btn {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    color: #64748B !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s !important;
+}
+.close-panel-btn:hover {
+    background: #FEE2E2 !important;
+    border-color: #FECACA !important;
+    color: #EF4444 !important;
+}
+
+/* 3. Body - scrollable */
+.side-panel-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 28px 32px !important;
+    background: #FFFFFF;
+}
+.side-panel-body::-webkit-scrollbar { width: 4px; }
+.side-panel-body::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+
+/* 4. Modern Stepper */
+.stepper-minimal {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 28px !important;
+    gap: 0 !important;
+    padding: 0 20px;
+}
+.step-dot {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: #F1F5F9 !important;
+    border: 2px solid #E2E8F0 !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #94A3B8 !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 2 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.step-dot.active {
+    background: #0F172A !important;
+    border-color: #0F172A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3) !important;
+    transform: scale(1.1) !important;
+}
+.step-dot.completed {
+    background: #10B981 !important;
+    border-color: #10B981 !important;
+    color: #FFFFFF !important;
+    transform: scale(1) !important;
+}
+.step-line {
+    flex: 1 !important;
+    height: 2px !important;
+    background: #E2E8F0 !important;
+    margin: 0 !important;
+    max-width: 80px !important;
+    transition: background 0.3s ease !important;
+}
+.step-line.completed { background: #10B981 !important; }
+
+/* Step number labels inside dots */
+.step-dot[data-step]::before {
+    content: attr(data-step);
+}
+
+/* 5. Step panels - consistent animation */
+.spa-step {
+    display: none !important;
+    width: 100% !important;
+}
+.spa-step.active {
+    display: block !important;
+    animation: storySlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both !important;
+}
+@keyframes storySlideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* 6. Form Inputs - premium style */
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.input-group {
+    margin-bottom: 18px !important;
+}
+.input-group label {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #64748B !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    margin-bottom: 6px !important;
+}
+.input-group input,
+.input-group select,
+.input-group textarea {
+    width: 100% !important;
+    padding: 11px 14px !important;
+    border: 1.5px solid #E2E8F0 !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    background: #FAFAFA !important;
+    box-sizing: border-box !important;
+    font-family: 'Inter', sans-serif !important;
+}
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+    border-color: #0F172A !important;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08) !important;
+    background: #FFFFFF !important;
+}
+.form-section-title {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    color: #94A3B8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    margin: 0 0 18px !important;
+    border-left: 3px solid #F95A2C !important;
+    padding-left: 10px !important;
+}
+
+/* 7. Footer buttons - polished */
+.side-panel-footer {
+    padding: 20px 32px !important;
+    border-top: 1px solid #F1F5F9 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+    background: #FFFFFF !important;
+}
+.panel-btn-primary, .panel-btn-secondary,
+.panel-btn.primary, .panel-btn.secondary, .panel-btn.accent {
+    padding: 10px 22px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    border: none !important;
+    font-family: 'Inter', sans-serif !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+.panel-btn-primary, .panel-btn.primary, .panel-btn.accent {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.2) !important;
+}
+.panel-btn-primary:hover, .panel-btn.primary:hover, .panel-btn.accent:hover {
+    background: #1E293B !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(15,23,42,0.3) !important;
+}
+.panel-btn-secondary, .panel-btn.secondary {
+    background: #F8FAFC !important;
+    color: #475569 !important;
+    border: 1.5px solid #E2E8F0 !important;
+}
+.panel-btn-secondary:hover, .panel-btn.secondary:hover {
+    background: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+}
+
+/* Inner panel-footer (inside form for Add Emp) */
+.panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 0 4px;
+    border-top: 1px solid #F1F5F9;
+    margin-top: 8px;
+}
+
+/* Dragging state */
+.side-panel.dragging {
+    transition: none !important;
+    box-shadow: 0 40px 80px -12px rgba(0,0,0,0.35) !important;
+}

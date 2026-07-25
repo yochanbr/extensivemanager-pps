@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260725_UI_PRO_JS_1">
+    <link rel="stylesheet" href="../css/admin.css?v=20260725_POPUP_FIX">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -850,14 +850,14 @@
             <button class="close-panel-btn" onclick="window.closeEditEmployeePanel()">&times;</button>
         </div>
         
-                <div class="side-panel-body">
+        <div class="side-panel-body">
             <!-- Progress Stepper -->
             <div class="stepper-minimal" id="edit-stepper">
-                <div class="step-dot active" data-step="1"></div>
-                <div class="step-line"></div>
-                <div class="step-dot" data-step="2"></div>
-                <div class="step-line"></div>
-                <div class="step-dot" data-step="3"></div>
+                <div class="step-dot active" data-step="1">1</div>
+                <div class="step-line" id="edit-line-1"></div>
+                <div class="step-dot" data-step="2">2</div>
+                <div class="step-line" id="edit-line-2"></div>
+                <div class="step-dot" data-step="3">3</div>
             </div>
 
             <form id="spa-edit-employee-form">
@@ -1204,13 +1204,13 @@
         <div class="side-panel-body">
             <!-- Progress Stepper -->
             <div class="stepper-minimal">
-                <div class="step-dot active" data-step="1"></div>
-                <div class="step-line"></div>
-                <div class="step-dot" data-step="2"></div>
-                <div class="step-line"></div>
-                <div class="step-dot" data-step="3"></div>
-                <div class="step-line"></div>
-                <div class="step-dot" data-step="4"></div>
+                <div class="step-dot active" data-step="1">1</div>
+                <div class="step-line" id="add-line-1"></div>
+                <div class="step-dot" data-step="2">2</div>
+                <div class="step-line" id="add-line-2"></div>
+                <div class="step-dot" data-step="3">3</div>
+                <div class="step-line" id="add-line-3"></div>
+                <div class="step-dot" data-step="4">4</div>
             </div>
 
             <form id="spa-add-employee-form">
@@ -1854,7 +1854,7 @@
 
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260725_UI_PRO_JS_1"></script>
+    <script src="../js/admin.js?v=20260725_POPUP_FIX"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
