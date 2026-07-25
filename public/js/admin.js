@@ -3401,28 +3401,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="payslip-value">${stdDays}</td>
                                 </tr>
                                 <tr>
-                                    <td class="payslip-label"></td>
-                                    <td class="payslip-value"></td>
+                                    <td class="payslip-label">Joining Date</td>
+                                    <td class="payslip-value">${employee['joining-date'] || 'NOT SPECIFIED'}</td>
                                     <td class="payslip-label">Worked Days</td>
                                     <td class="payslip-value">${workedDays}</td>
                                 </tr>
                                 <tr>
-                                    <td class="payslip-label"></td>
-                                    <td class="payslip-value"></td>
+                                    <td class="payslip-label">ESI Number</td>
+                                    <td class="payslip-value">${employee.esi || 'NOT SPECIFIED'}</td>
                                     <td class="payslip-label">LOP Days</td>
                                     <td class="payslip-value">${lopDays}</td>
                                 </tr>
                                 <tr>
-                                    <td class="payslip-label">Joining Date</td>
-                                    <td class="payslip-value">${employee['joining-date'] || 'NOT SPECIFIED'}</td>
-                                    <td class="payslip-label">Leave Balance</td>
-                                    <td class="payslip-value">${leaveBalance}</td>
-                                </tr>
-                                <tr>
-                                    <td class="payslip-label">ESI Number</td>
-                                    <td class="payslip-value">${employee.esi || 'NOT SPECIFIED'}</td>
                                     <td class="payslip-label">PF Number</td>
                                     <td class="payslip-value">${employee['pf-number'] || 'N/A'}</td>
+                                    <td class="payslip-label">Leave Balance</td>
+                                    <td class="payslip-value">${leaveBalance}</td>
                                 </tr>
                                 <tr>
                                     <td class="payslip-label">Bank Name</td>
