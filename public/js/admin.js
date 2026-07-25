@@ -1415,14 +1415,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function updateAddStepUI() {
-        document.querySelectorAll('.spa-step').forEach((s, i) => {
-            s.classList.toggle('active', (i + 1) === currentAddStep);
-        });
-        document.querySelectorAll('.step-dot').forEach((d, i) => {
-            d.classList.toggle('active', (i + 1) === currentAddStep);
-            d.classList.toggle('completed', (i + 1) < currentAddStep);
-        });
-
+        // Scope to ONLY the add employee form (not edit panel)
+        const addForm = document.getElementById('spa-add-employee-form');
+        if (addForm) {
+            addForm.querySelectorAll('.spa-step').forEach((s, i) => {
+                s.classList.toggle('active', (i + 1) === currentAddStep);
+            });
+        }
+        // Scope stepper dots to ONLY the add panel
+        const addPanel = document.getElementById('add-employee-panel');
+        if (addPanel) {
+            addPanel.querySelectorAll('.step-dot').forEach((d, i) => {
+                d.classList.toggle('active', (i + 1) === currentAddStep);
+                d.classList.toggle('completed', (i + 1) < currentAddStep);
+            });
+            for (let li = 1; li <= 3; li++) {
+                const ln = document.getElementById('add-line-' + li);
+                if (ln) ln.classList.toggle('completed', currentAddStep > li);
+            }
+        }
         const prevBtn = document.getElementById('spa-btn-prev');
         const nextBtn = document.getElementById('spa-btn-next');
         const submitBtn = document.getElementById('spa-btn-submit');
