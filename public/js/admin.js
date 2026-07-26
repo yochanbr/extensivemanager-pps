@@ -2523,6 +2523,17 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Fetch raw logs and reconstruct sessions client-side
                 const res = await fetch('/api/attendance/logs/raw?filter=' + dateFilter);
+                
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (res.redirected) {
+                        window.location.href = '/';
+                        return;
+                    }
+                    const text = await res.text();
+                    throw new Error(`API returned non-JSON response. Status: ${res.status}. ${text.substring(0, 50)}`);
+                }
+                
                 const data = await res.json();
                 if (!data.success) return;
 
@@ -2532,7 +2543,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (allEmployeesForSPA.length === 0) {
                     try {
                         const empRes = await fetch('/api/employees');
-                        allEmployeesForSPA = await empRes.json();
+                        if (empRes.ok && empRes.headers.get('content-type')?.includes('application/json')) {
+                            allEmployeesForSPA = await empRes.json();
+                        }
                     } catch(e) { console.error('Failed to load employees for sessions', e); }
                 }
 
