@@ -123,7 +123,7 @@
                     <div class="action-icon blue"><i class="fas fa-utensils"></i></div>
                     <span>End Break</span>
                 </button>
-                <button class="action-btn glass-btn" onclick="submitAttendance('out')" id="btn-out">
+                <button class="action-btn glass-btn" onclick="promptCheckout()" id="btn-out">
                     <div class="action-icon red"><i class="fas fa-sign-out-alt"></i></div>
                     <span>Check Out</span>
                 </button>
@@ -131,6 +131,26 @@
             <button class="cancel-btn glass-cancel" onclick="resetScanner()">
                 <i class="fas fa-arrow-left"></i> Cancel
             </button>
+        </div>
+
+        <!-- Checkout Confirmation Modal -->
+        <div id="checkout-confirm-modal" class="modal-overlay">
+            <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 40px 30px;">
+                <div class="status-icon" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <h2 style="color: white; margin-bottom: 12px; font-size: 24px;">End Shift?</h2>
+                <p style="color: #94A3B8; font-size: 15px; margin-bottom: 30px; line-height: 1.5;">Are you sure you want to Check Out and complete your shift for today?</p>
+                <div style="display: flex; gap: 15px;">
+                    <button class="cancel-btn glass-cancel" onclick="closeCheckoutConfirm()" style="flex: 1; margin: 0;">
+                        Cancel
+                    </button>
+                    <button class="action-btn glass-btn" onclick="confirmCheckoutAction()" style="flex: 1; margin: 0; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3);">
+                        <div class="action-icon red" style="background: rgba(239, 68, 68, 0.2);"><i class="fas fa-check"></i></div>
+                        <span style="color: #FCA5A5;">Yes, Check Out</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Face Register Modal -->

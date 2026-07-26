@@ -2349,6 +2349,12 @@ app.post('/api/attendance/scan', async (req, res) => {
                 let lateMinutes = 0;
                 let approvalStatus = 'approved';
                 let requiresApproval = null;
+
+                // Detect if this is a SECOND SHIFT (they already completed a shift today)
+                if (sessions.length > 0) {
+                    approvalStatus = 'pending_approval';
+                    requiresApproval = 'SECOND_SHIFT';
+                }
                 if (empStart) {
                     const [h, m] = empStart.split(':').map(Number);
                     const shiftStart = new Date(now);
@@ -2356,12 +2362,13 @@ app.post('/api/attendance/scan', async (req, res) => {
 
                     if (now < shiftStart) {
                         earlyExtraMinutes = Math.floor((shiftStart - now) / 60000);
-                        approvalStatus = 'pending_approval';
-                        requiresApproval = 'EARLY_ARRIVAL';
+                        if (requiresApproval !== 'SECOND_SHIFT') {
+                            approvalStatus = 'pending_approval';
+                            requiresApproval = 'EARLY_ARRIVAL';
+                        }
                     } else if (now > shiftStart) {
                         lateMinutes = Math.floor((now - shiftStart) / 60000);
-                        // If it's more than 1 minute late, mark for review
-                        if (lateMinutes > 0) {
+                        if (lateMinutes > 0 && requiresApproval !== 'SECOND_SHIFT') {
                             approvalStatus = 'pending_approval';
                             requiresApproval = 'LATE_ARRIVAL';
                         }
@@ -2613,9 +2620,34 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
             if (session.requiresApproval === 'LATE_ARRIVAL') {
                 update.approvedLateMinutes = session.lateMinutes || 0;
             }
-        }
+            if (session.requiresApproval === 'SECOND_SHIFT') {
+                update.isSecondShift = true; // explicitly mark as a valid second shift
+            }
+            await sessionRef.update(update);
+        } else {
+            // If DECLINED
+            if (session.requiresApproval === 'SECOND_SHIFT') {
+                // If admin ignores an accidental second shift, we must completely erase it
+                await sessionRef.delete();
 
-        await sessionRef.update(update);
+                // We must also neutralize the raw check-in logs for this day so a recalculate doesn't bring it back!
+                const logsSnap = await db.attendance_logs()
+                    .where('employeeId', '==', session.employeeId)
+                    .where('timestamp', '>=', session.checkIn)
+                    .get();
+                
+                const batch = firestore.batch();
+                logsSnap.docs.forEach(l => {
+                    const lData = l.data();
+                    if(lData.action === 'CLOCK_IN' || lData.action === 'IN' || lData.action === 'LATE_ARRIVAL' || lData.action === 'EARLY_ARRIVAL') {
+                        batch.update(l.ref, { action: 'IGNORED_SECOND_SHIFT', type: 'IGNORED_SECOND_SHIFT' });
+                    }
+                });
+                await batch.commit();
+            } else {
+                await sessionRef.update(update);
+            }
+        }
 
         // Audit Log
         await logAttendance(session.employeeId, session.employeeName, `DISCREPANCY_${action.toUpperCase()}`, new Date().toISOString());

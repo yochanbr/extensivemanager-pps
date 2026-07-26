@@ -430,6 +430,27 @@ async function applyAutoFix(sequences, employeeId) {
 }
 
 // ─── Submit Attendance ────────────────────────────────────────────────────
+window.promptCheckout = function() {
+    const modal = document.getElementById('checkout-confirm-modal');
+    if(modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('visible'), 10);
+    }
+};
+
+window.closeCheckoutConfirm = function() {
+    const modal = document.getElementById('checkout-confirm-modal');
+    if(modal) {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+window.confirmCheckoutAction = function() {
+    closeCheckoutConfirm();
+    submitAttendance('out');
+};
+
 async function submitAttendance(actionType) {
     if (!currentEmployee) return;
 

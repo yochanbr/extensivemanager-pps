@@ -2566,7 +2566,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             checkOutTs: null,
                             totalBreakMs: 0,
                             currentBreakStart: null,
-                            lastEventTs: null
+                            lastEventTs: null,
+                            hasSecondShiftWarning: false
                         };
                     }
                     const m = sessionsMap[empId];
@@ -2575,6 +2576,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (action.includes('CLOCK_IN') || action.includes('CHECK_IN') || action === 'IN' || action === 'EARLY_ARRIVAL' || action === 'LATE_ARRIVAL') {
                         if (m.checkInTs === null) m.checkInTs = t; // only first check-in (including late arrivals)
+                        
+                        if (action === 'CLOCK_IN_SECOND_SHIFT' || action === 'SECOND_SHIFT') {
+                            m.hasSecondShiftWarning = true;
+                        }
                     } else if (action === 'BREAK_START') {
                         m.currentBreakStart = t;
                     } else if (action === 'BREAK_END' && m.currentBreakStart) {
@@ -2670,8 +2675,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!s.checkOutTs && !isActive) remarks.push('<span style="color:#EF4444;">No Checkout</span>');
             if (extraMin > 0) remarks.push('<span style="color:#10B981;">+' + extraMin + 'm OT</span>');
             if (lateMin > 10) remarks.push('<span style="color:#EF4444;">Late ' + lateMin + 'm</span>');
-            if (lateMin <= 10 && netWorkMin >= REQUIRED_MINUTES) remarks.push('<span style="color:#10B981;">✓ On Time</span>');
-            const remarksHtml = remarks.length ? remarks.join(', ') : '–';
+            if (s.hasSecondShiftWarning) remarks.push('<span style="color:#EF4444;font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Pending 2nd Shift</span>');
+            if (lateMin <= 10 && netWorkMin >= REQUIRED_MINUTES && !s.hasSecondShiftWarning) remarks.push('<span style="color:#10B981;">✅ On Time</span>');
+            
+            const remarksHtml = remarks.length ? remarks.join(', ') : '-';
 
             const eInit = s.empName.charAt(0).toUpperCase();
             const rowBg = isActive ? 'background: rgba(16,185,129,0.04);' : '';
