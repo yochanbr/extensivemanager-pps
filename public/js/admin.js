@@ -1077,6 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let title = 'Attention Required';
                     let color = '#F59E0B'; // Amber for pending
                     let icon = 'exclamation-triangle';
+                    let desc = 'Requires your review.';
 
                     if (type === 'LATE_ARRIVAL') {
                         title = 'Late Arrival';
@@ -1093,6 +1094,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         color = '#8B5CF6';
                         icon = 'stopwatch';
                         desc = `${session.overtimeMinutes || 0}m Overtime`;
+                    } else if (type === 'SECOND_SHIFT') {
+                        title = 'Pending 2nd Shift';
+                        color = '#EF4444';
+                        icon = 'exclamation-circle';
+                        desc = 'Employee checked in for a second shift.';
                     }
 
                     if (session.comment) desc += ` — "${session.comment}"`;

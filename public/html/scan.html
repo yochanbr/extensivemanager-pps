@@ -134,8 +134,8 @@
         </div>
 
         <!-- Checkout Confirmation Modal -->
-        <div id="checkout-confirm-modal" class="modal-overlay">
-            <div class="modal-content glass-panel" style="max-width: 400px; text-align: center; padding: 40px 30px;">
+        <div id="checkout-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+            <div class="modal-content glass-panel" style="max-width: 400px; width: 90%; text-align: center; padding: 40px 30px; background: rgba(30, 41, 59, 0.95); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.1); transform: translateY(20px); transition: transform 0.3s ease;">
                 <div class="status-icon" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
                     <i class="fas fa-sign-out-alt"></i>
                 </div>

@@ -434,14 +434,20 @@ window.promptCheckout = function() {
     const modal = document.getElementById('checkout-confirm-modal');
     if(modal) {
         modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('visible'), 10);
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            const content = modal.querySelector('.modal-content');
+            if(content) content.style.transform = 'translateY(0)';
+        }, 10);
     }
 };
 
 window.closeCheckoutConfirm = function() {
     const modal = document.getElementById('checkout-confirm-modal');
     if(modal) {
-        modal.classList.remove('visible');
+        modal.style.opacity = '0';
+        const content = modal.querySelector('.modal-content');
+        if(content) content.style.transform = 'translateY(20px)';
         setTimeout(() => modal.style.display = 'none', 300);
     }
 };
