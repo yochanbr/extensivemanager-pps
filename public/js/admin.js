@@ -2943,13 +2943,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.bulkChangeAction = async function () {
-        const newAction = await nammaModalSystem.prompt('Enter new action (CLOCK_IN, BREAK_START, BREAK_END, CLOCK_OUT):', { placeholder: 'e.g. CLOCK_IN' });
+        // Show a clean visual picker instead of a raw text prompt
+        const newAction = await new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+            
+            const types = [
+                { label: 'Check In',    value: 'CLOCK_IN',    icon: 'fa-sign-in-alt',  color: '#10B981', bg: '#ECFDF5', border: '#6EE7B7' },
+                { label: 'Break Start', value: 'BREAK_START', icon: 'fa-coffee',        color: '#F59E0B', bg: '#FFFBEB', border: '#FCD34D' },
+                { label: 'Break End',   value: 'BREAK_END',   icon: 'fa-play-circle',   color: '#3B82F6', bg: '#EFF6FF', border: '#93C5FD' },
+                { label: 'Check Out',   value: 'CLOCK_OUT',   icon: 'fa-sign-out-alt',  color: '#EF4444', bg: '#FEF2F2', border: '#FCA5A5' },
+            ];
+
+            overlay.innerHTML = `
+                <div style="background:#FFFFFF;border-radius:24px;padding:32px;width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.2);">
+                    <div style="font-size:18px;font-weight:800;color:#0F172A;margin-bottom:6px;">Change Event Type</div>
+                    <div style="font-size:13px;color:#94A3B8;margin-bottom:24px;">Select the new type for the selected log(s)</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+                        ${types.map(t => `
+                            <button data-val="${t.value}" style="background:${t.bg};border:1.5px solid ${t.border};border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 0.15s;">
+                                <i class="fas ${t.icon}" style="font-size:20px;color:${t.color};display:block;margin-bottom:8px;"></i>
+                                <div style="font-size:13px;font-weight:700;color:#1E293B;">${t.label}</div>
+                                <div style="font-size:10px;color:#94A3B8;margin-top:2px;">${t.value}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                    <button id="type-picker-cancel" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+                </div>`;
+
+            document.body.appendChild(overlay);
+
+            overlay.querySelectorAll('[data-val]').forEach(btn => {
+                btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.03)');
+                btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
+                btn.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    resolve(btn.dataset.val);
+                });
+            });
+            overlay.querySelector('#type-picker-cancel').addEventListener('click', () => {
+                document.body.removeChild(overlay);
+                resolve(null);
+            });
+        });
+
         if (!newAction) return;
         const ids = Array.from(window.selectedLogIds);
         try {
             const res = await fetch('/api/attendance/logs/bulk-edit', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ logIds: ids, newAction: newAction.toUpperCase() })
+                body: JSON.stringify({ logIds: ids, newAction })
             });
             if ((await res.json()).success) {
                 window.selectedLogIds.clear();

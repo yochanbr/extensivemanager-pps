@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260726_BETA_BACK">
+    <link rel="stylesheet" href="../css/admin.css?v=20260726_RAWLOG_UX">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -723,27 +723,19 @@
                             <div id="raw-logs-view-wrapper" style="display: none;">
                                 <!-- Bulk Action Toolbar -->
                                 <div id="bulk-action-toolbar"
-                                    style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
-                                    <div style="font-weight: 600; color: #1E293B;"><span id="bulk-count">0</span> logs
-                                        selected</div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="action-btn"
-                                            style="background: rgba(16, 185, 129, 0.1); color: #10B981; font-size: 12px;"
-                                            onclick="window.bulkChangeAction()">
-                                            <i class="fas fa-exchange-alt"></i> Change Type
+                                    style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 20px; border-radius: 14px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
+                                    <div style="display:flex; align-items:center; gap: 10px;">
+                                        <div style="background:#0F172A; color:white; font-size:13px; font-weight:700; padding:4px 12px; border-radius:20px;">
+                                            <span id="bulk-count">0</span> selected
+                                        </div>
+                                        <span style="font-size:12px; color:#94A3B8;">Select rows to edit or delete</span>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="action-btn" style="background:#EFF6FF; color:#3B82F6; font-size:12px; border:1px solid #BFDBFE;" onclick="window.bulkChangeAction()">
+                                            <i class="fas fa-pen"></i> Change Type
                                         </button>
-                                        <button class="action-btn"
-                                            style="background: rgba(239, 68, 68, 0.1); color: #EF4444; font-size: 12px;"
-                                            onclick="window.bulkDeleteLogs()">
+                                        <button class="action-btn" style="background:#FEF2F2; color:#EF4444; font-size:12px; border:1px solid #FECACA;" onclick="window.bulkDeleteLogs()">
                                             <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                        <button class="action-btn secondary" style="font-size: 12px;"
-                                            onclick="window.exportToExcel()">
-                                            <i class="fas fa-file-excel"></i> Export Selected
-                                        </button>
-                                        <button class="action-btn accent" style="font-size: 12px;"
-                                            onclick="window.rebuildSessions()">
-                                            <i class="fas fa-cogs"></i> Recalculate Sessions
                                         </button>
                                     </div>
                                 </div>
@@ -1857,7 +1849,7 @@
 
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260726_BETA_BACK"></script>
+    <script src="../js/admin.js?v=20260726_RAWLOG_UX"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
