@@ -845,9 +845,8 @@
         <div class="side-panel-header">
             <div class="panel-title">
                 <h3>Edit Staff Record</h3>
-                <p>Modify existing employee details</p>
+                <p>Modify existing employee details — drag to move</p>
             </div>
-            <button class="close-panel-btn" onclick="window.closeEditEmployeePanel()">&times;</button>
         </div>
         
         <div class="side-panel-body">
@@ -1117,16 +1116,20 @@
         </div>
         
         <div class="side-panel-footer" style="display: flex; gap: 10px; justify-content: space-between;">
-            <div>
-                <button type="button" class="panel-btn-secondary" id="spa-edit-prev-btn" style="display: none;" onclick="window.prevEditStep()">Previous</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="panel-btn-secondary" id="spa-edit-prev-btn" style="display: none;" onclick="window.prevEditStep()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="panel-btn-secondary" onclick="window.closeEditEmployeePanel()" style="color: #94A3B8;">
+                    <i class="fas fa-times"></i> Close
+                </button>
             </div>
             <div style="display: flex; gap: 10px;">
                 <button class="panel-btn-secondary" onclick="window.downloadEmployeePDF()" title="Export to PDF">
                     <i class="fas fa-file-pdf"></i>
                 </button>
-                <button class="panel-btn-secondary" onclick="window.closeEditEmployeePanel()">Cancel</button>
-                <button type="button" class="panel-btn-primary" id="spa-edit-next-btn" onclick="window.nextEditStep()">Next Step</button>
-                <button class="panel-btn-primary" id="spa-edit-save-btn" style="display: none;">Update Record</button>
+                <button type="button" class="panel-btn-primary" id="spa-edit-next-btn" onclick="window.nextEditStep()">Next <i class="fas fa-arrow-right"></i></button>
+                <button class="panel-btn-primary" id="spa-edit-save-btn" style="display: none;">Update Record <i class="fas fa-check"></i></button>
             </div>
         </div>
     </div>
@@ -1196,9 +1199,8 @@
         <div class="side-panel-header">
             <div class="panel-title">
                 <h3>New Staff Enrollment</h3>
-                <p>Register a new member to the system</p>
+                <p>Register a new member to the system — drag to move</p>
             </div>
-            <button class="close-panel-btn" onclick="window.closeAddEmployeePanel()">&times;</button>
         </div>
         
         <div class="side-panel-body">
@@ -1466,10 +1468,14 @@
                     </div>
                 </div>
 
-                <div class="panel-footer">
-                    <button type="button" class="panel-btn secondary" id="spa-btn-prev" style="display: none;">Back</button>
-                    <button type="button" class="panel-btn primary" id="spa-btn-next">Next <i class="fas fa-chevron-right"></i></button>
-                    <button type="submit" class="panel-btn accent" id="spa-btn-submit" style="display: none;">Finish & Save <i class="fas fa-check"></i></button>
+                <div class="panel-footer" style="justify-content: space-between;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="panel-btn-secondary" id="spa-btn-prev" style="display: none;" onclick="window.goBackAdd()"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="panel-btn-primary" id="spa-btn-next">Next <i class="fas fa-arrow-right"></i></button>
+                        <button type="submit" class="panel-btn-primary" id="spa-btn-submit" style="display: none;">Finish &amp; Save <i class="fas fa-check"></i></button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1854,7 +1860,7 @@
 
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260725_SCOPE_FIX"></script>
+    <script src="../js/admin.js?v=20260726_BTN_FIX"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 

@@ -1390,6 +1390,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ADD EMPLOYEE SPA SLIDE-OVER LOGIC ---
     let currentAddStep = 1;
 
+    // Expose globally so inline onclick handlers in HTML can call these
+    window.goBackAdd = function() {
+        if (currentAddStep > 1) {
+            currentAddStep--;
+            updateAddStepUI();
+        }
+    };
+
     window.openAddEmployeePanel = function () {
         const panel = document.getElementById('add-employee-panel');
         const overlay = document.getElementById('add-employee-overlay');
