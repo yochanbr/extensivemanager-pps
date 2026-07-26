@@ -27,12 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Initialize the timer
-    resetTimer();
+    // resetTimer();
 
     // Reset timer on any significant user activity
-    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-        window.addEventListener(event, resetTimer, { passive: true });
-    });
+    // ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    //     window.addEventListener(event, resetTimer, { passive: true });
+    // });
 
     const viewReportBtn = document.querySelector('.view-report-btn');
     const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
