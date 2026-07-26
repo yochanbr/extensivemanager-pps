@@ -857,3 +857,5 @@ sendScannerHeartbeat();
 
 setInterval(sendScannerHeartbeat, 5000);
 
+// Auto-refresh the employee list and face matcher every 5 seconds in the background
+setInterval(window.reloadFaceDescriptors, 5000);

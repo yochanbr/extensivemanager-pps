@@ -2951,8 +2951,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!(await nammaModalSystem.confirm('Are you sure you want to completely erase the selected raw logs? This will recalculate sessions.', { theme: 'danger' }))) return;
         const ids = Array.from(window.selectedLogIds);
         try {
-            const res = await fetch('/api/attendance/logs', {
-                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+            const res = await fetch('/api/attendance/logs/delete', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ logIds: ids })
             });
             const data = await res.json();

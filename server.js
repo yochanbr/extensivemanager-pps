@@ -2923,7 +2923,7 @@ app.put('/api/attendance/logs/bulk-edit', verifyAdmin, async (req, res) => {
 /**
  * Endpoint: Bulk Delete Logs
  */
-app.delete('/api/attendance/logs', verifyAdmin, async (req, res) => {
+app.post('/api/attendance/logs/delete', verifyAdmin, async (req, res) => {
     const { logIds } = req.body;
     if (!logIds || !Array.isArray(logIds)) return res.status(400).json({ success: false });
 
