@@ -2880,8 +2880,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">${a.actionLabel || 'VERIFY'}</button>`;
                 } else {
                     actionHtml = `
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap;">IGNORE</button>
-                        <button class="action-btn" onclick="reviewAttendance('${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">APPROVE</button>
+                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap;">IGNORE</button>
+                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">APPROVE</button>
                     `;
                 }
             } else {
@@ -2910,7 +2910,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * API Handler for Attendance Review
      */
-    window.reviewAttendance = async function (sessionId, action) {
+    window.reviewAttendance = async function (event, sessionId, action) {
         try {
             const btn = event.currentTarget;
             const originalHtml = btn.innerHTML;
