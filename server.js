@@ -2601,7 +2601,7 @@ app.post('/api/attendance/review', verifyAdmin, async (req, res) => {
         let update = {
             approvalStatus: isApproved ? 'approved' : 'declined',
             reviewedAt: new Date().toISOString(),
-            reviewedBy: req.admin.username
+            reviewedBy: req.admin.id || 'admin'
         };
 
         if (isApproved) {
