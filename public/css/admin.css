@@ -3663,27 +3663,3 @@ body {
 .panel-close-btn:active {
     transform: scale(0.95) rotate(90deg);
 }
-/* ============================================
-   FIX: Sticky topbar + correct table header offset
-   ============================================ */
-
-/* Make topbar sticky so it stays visible on scroll */
-.topbar {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 500 !important;
-    background: #F8FAFC !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-/* Table headers that are sticky must sit BELOW the sticky topbar (90px height) */
-.status-table th {
-    top: 90px !important;
-    z-index: 5 !important;
-}
-
-/* Reporting studio table headers - also offset for topbar */
-.reporting-studio-table th {
-    top: 90px !important;
-}
