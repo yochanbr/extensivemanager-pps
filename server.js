@@ -2978,6 +2978,12 @@ app.post('/api/attendance/sessions/recalculate', verifyAdmin, async (req, res) =
             delete activeSessions[empId];
         }
     }
+
+    // IMPORTANT: Save any sessions that are still active (not checked out yet)
+    for (const empId in activeSessions) {
+        await db.daily_sessions().add(activeSessions[empId]);
+    }
+
     res.json({ success: true });
 });
 
