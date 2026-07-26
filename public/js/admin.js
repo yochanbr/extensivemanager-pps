@@ -3017,8 +3017,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ logIds: ids, newAction })
             });
             if ((await res.json()).success) {
+                // Instantly recalculate the backend sessions so the face scanner stays in perfect sync
+                await fetch('/api/attendance/sessions/recalculate', { method: 'POST' });
+                
                 window.selectedLogIds.clear();
                 window.fetchLogsRealtime();
+                if (__currentAttendanceView === 'sessions') {
+                    window.fetchDailySessions();
+                }
             }
         } catch (e) { await nammaModalSystem.alert('Edit failed'); }
     }

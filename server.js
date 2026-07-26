@@ -2960,7 +2960,7 @@ app.post('/api/attendance/sessions/recalculate', verifyAdmin, async (req, res) =
         const empId = log.employeeId, empName = log.employeeName;
         const action = log.action || log.type;
 
-        if (action === 'CLOCK_IN' || action === 'IN') {
+        if (action === 'CLOCK_IN' || action === 'IN' || action === 'LATE_ARRIVAL' || action === 'EARLY_ARRIVAL') {
             const sid = shortid.generate();
             activeSessions[empId] = { id: sid, employeeId: empId, employeeName: empName, date: log.timestamp.split('T')[0], checkIn: log.timestamp, checkOut: null, onBreak: false, breakHistory: [], totalBreakMinutes: 0, status: 'active' };
         } else if (action === 'BREAK_START' && activeSessions[empId]) {
