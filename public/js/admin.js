@@ -2720,6 +2720,15 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (typeLabel === 'CLOCK_OUT' || typeLabel === 'OUT') { typeColor = '#EF4444'; typeLabel = 'Check Out'; statusClass = 'idle'; }
             else if (typeLabel === 'BREAK_START') { typeColor = '#F59E0B'; typeLabel = 'Break Start'; statusClass = 'on_break'; }
             else if (typeLabel === 'BREAK_END') { typeColor = '#3B82F6'; typeLabel = 'Break End'; statusClass = 'working'; }
+            else if (typeLabel === 'LATE_ARRIVAL') { typeColor = '#EF4444'; typeLabel = 'Late Arrival'; statusClass = 'working'; }
+            else if (typeLabel === 'EARLY_ARRIVAL') { typeColor = '#10B981'; typeLabel = 'Early Arrival'; statusClass = 'working'; }
+            else if (typeLabel === 'DISCREPANCY_APPROVE') { typeColor = '#3B82F6'; typeLabel = 'Discrepancy Approved'; statusClass = 'idle'; }
+            else if (typeLabel === 'DISCREPANCY_DECLINE') { typeColor = '#64748B'; typeLabel = 'Discrepancy Declined'; statusClass = 'idle'; }
+            else if (typeLabel.includes('_')) { 
+                // Generic fallback for any other backend keys: "SOME_BACKEND_KEY" -> "Some Backend Key"
+                typeLabel = typeLabel.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); 
+                typeColor = '#64748B';
+            }
 
             const checked = window.selectedLogIds.has(log.id) ? 'checked' : '';
 
