@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260725_STEPPER_FIX">
+    <link rel="stylesheet" href="../css/admin.css?v=20260726_CLOSEBTN">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -842,10 +842,14 @@
     <!-- EDIT EMPLOYEE SLIDE-OVER PANEL -->
     <div class="side-panel-overlay" id="edit-employee-overlay" onclick="window.closeEditEmployeePanel()"></div>
     <div class="side-panel" id="edit-employee-panel">
+        <!-- Top-right close button -->
+        <button class="panel-close-btn" onclick="window.closeEditEmployeePanel()" title="Close">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="side-panel-header">
             <div class="panel-title">
                 <h3>Edit Staff Record</h3>
-                <p>Modify existing employee details — drag to move</p>
+                <p>Modify existing employee details &mdash; drag to move</p>
             </div>
         </div>
         
@@ -1196,10 +1200,14 @@
     <!-- ADD EMPLOYEE SLIDE-OVER PANEL -->
     <div class="side-panel-overlay" id="add-employee-overlay" onclick="window.closeAddEmployeePanel()"></div>
     <div class="side-panel" id="add-employee-panel">
+        <!-- Top-right close button -->
+        <button class="panel-close-btn" onclick="window.closeAddEmployeePanel()" title="Close">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="side-panel-header">
             <div class="panel-title">
                 <h3>New Staff Enrollment</h3>
-                <p>Register a new member to the system — drag to move</p>
+                <p>Register a new member to the system &mdash; drag to move</p>
             </div>
         </div>
         
@@ -1860,7 +1868,7 @@
 
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260726_BTN_FIX"></script>
+    <script src="../js/admin.js?v=20260726_CLOSEBTN"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 

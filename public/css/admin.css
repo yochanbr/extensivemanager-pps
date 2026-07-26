@@ -3633,3 +3633,33 @@ body {
     transition: none !important;
     box-shadow: 0 40px 80px -12px rgba(0,0,0,0.35) !important;
 }
+/* --- PANEL CLOSE BUTTON (top-right, red hover) --- */
+.panel-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid #E2E8F0;
+    background: #F8FAFC;
+    color: #94A3B8;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.panel-close-btn:hover {
+    background: #FEE2E2;
+    border-color: #FECACA;
+    color: #EF4444;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+.panel-close-btn:active {
+    transform: scale(0.95) rotate(90deg);
+}
