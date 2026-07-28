@@ -1232,6 +1232,24 @@
         </div>
     </div>
 
+    <!-- Custom End Shift Confirm Modal -->
+    <div id="endshift-confirm-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+        <div class="modal-content" style="max-width: 400px; width: 90%; text-align: center; padding: 40px 30px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 1px solid #E2E8F0; transform: translateY(20px); transition: transform 0.3s ease;">
+            <div class="status-icon" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <h2 style="color: #1A1A1A; margin-bottom: 12px; font-size: 24px;">End Shift?</h2>
+            <p style="color: #64748B; font-size: 15px; margin-bottom: 30px; line-height: 1.5;">Are you sure you want to end your shift? No further transactions can be logged after this.</p>
+            <div style="display: flex; gap: 15px;">
+                <button class="namma-btn-cancel" onclick="closeEndShiftConfirm()" style="flex: 1; margin: 0; padding: 12px; font-size: 15px;">
+                    Cancel
+                </button>
+                <button class="namma-btn-danger" id="confirm-endshift-btn" onclick="executeEndShift()" disabled style="flex: 1; margin: 0; padding: 12px; font-size: 15px; background: #94A3B8; border-color: #94A3B8; opacity: 0.7; cursor: not-allowed; transition: all 0.3s ease;">
+                    <span id="confirm-endshift-text">Wait (5s)</span>
+                </button>
+            </div>
+        </div>
+    </div>
     <!-- Draggable End Shift Report Modal & Overlay -->
     <div id="esr-overlay"
         style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(6px); z-index: 9999;">
@@ -1395,13 +1413,68 @@
             window.location.href = 'index.html';
         }
 
-        async function endShift() {
+        let endShiftTimer = null;
+        let endShiftCountdown = 5;
+
+        function endShift() {
+            const overlay = document.getElementById('endshift-confirm-overlay');
+            const btn = document.getElementById('confirm-endshift-btn');
+            const text = document.getElementById('confirm-endshift-text');
+
+            overlay.style.display = 'flex';
+            // Slight delay for animation
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                overlay.querySelector('.modal-content').style.transform = 'translateY(0)';
+            }, 10);
+
+            endShiftCountdown = 5;
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'not-allowed';
+            btn.style.background = '#94A3B8';
+            btn.style.borderColor = '#94A3B8';
+            text.textContent = `Wait (${endShiftCountdown}s)`;
+
+            endShiftTimer = setInterval(() => {
+                endShiftCountdown--;
+                if (endShiftCountdown > 0) {
+                    text.textContent = `Wait (${endShiftCountdown}s)`;
+                } else {
+                    clearInterval(endShiftTimer);
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.style.background = '#EF4444'; // Red danger color
+                    btn.style.borderColor = '#DC2626';
+                    text.textContent = 'Confirm End Shift';
+                    // Add subtle pulsing animation to indicate it's ready
+                    btn.animate([
+                        { transform: 'scale(1)' },
+                        { transform: 'scale(1.02)' },
+                        { transform: 'scale(1)' }
+                    ], { duration: 1500, iterations: Infinity });
+                }
+            }, 1000);
+        }
+
+        function closeEndShiftConfirm() {
+            if (endShiftTimer) clearInterval(endShiftTimer);
+            const overlay = document.getElementById('endshift-confirm-overlay');
+            overlay.style.opacity = '0';
+            overlay.querySelector('.modal-content').style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+
+        function executeEndShift() {
+            if (endShiftTimer) clearInterval(endShiftTimer);
+            closeEndShiftConfirm();
+            
             const employeeId = localStorage.getItem('employeeId');
-            if (await nammaModalSystem.confirm("Your shift will be ended and no further transactions can be logged. Proceed?")) {
-                // Generate report instantly rather than enforcing the legacy OTP mechanism
-                const todayDate = new Date().toISOString().split('T')[0];
-                openEsrModal(employeeId, todayDate, null);
-            }
+            const todayDate = new Date().toISOString().split('T')[0];
+            openEsrModal(employeeId, todayDate, null);
         }
 
         // ESR Modal Logic
