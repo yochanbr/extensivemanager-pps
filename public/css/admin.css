@@ -2015,6 +2015,8 @@ body {
 /* Excel-Style Matrix Architecture */
 .matrix-table {
     border-collapse: collapse !important;
+    width: max-content;
+    min-width: 100%;
 }
 
 .matrix-table th {
@@ -2024,6 +2026,7 @@ body {
     font-weight: 700;
     font-size: 11px;
     padding: 6px !important;
+    white-space: nowrap;
 }
 
 .matrix-table td {
@@ -2032,6 +2035,7 @@ body {
     font-size: 12px;
     text-align: center;
     background: #FFF;
+    white-space: nowrap;
 }
 
 .excel-status-p { background: #70AD47 !important; color: #000 !important; font-weight: 800; }
