@@ -1844,8 +1844,9 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
 
         let startDate, endDate;
         if (dayStr) {
-            startDate = new Date(dayStr);
-            endDate = new Date(dayStr);
+            const [y, m, d] = dayStr.split('-').map(Number);
+            startDate = new Date(y, m - 1, d);
+            endDate = new Date(y, m - 1, d);
         } else if (monthStr) {
             const [year, month] = monthStr.split('-').map(Number);
             startDate = new Date(year, month - 1, 1);
@@ -1882,7 +1883,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
 
         for (let d = startDay; d <= startDay + numDays - 1; d++) {
             const dateObj = new Date(year, month - 1, d);
-            const dateIso = dateObj.toISOString().split('T')[0];
+            const dateIso = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const dayName = dateObj.toLocaleString('en-us', { weekday: 'long' });
             dateHeaders.push({
                 day: d,
