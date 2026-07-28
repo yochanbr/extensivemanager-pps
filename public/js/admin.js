@@ -3996,22 +3996,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentBvStructuredData) {
                 if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
                     upiHtml += `<div class="input-group">
-                    <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Pinelab)</label>
-                    <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
+                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Pinelab)</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                        <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    </div>
                 </div>`;
                 }
                 if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
                     upiHtml += `<div class="input-group">
-                    <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (Paytm)</label>
-                    <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
+                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Paytm)</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                        <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    </div>
                 </div>`;
                 }
             }
             // Fallback if no specific data detected
             if (!upiHtml) {
                 upiHtml = `<div class="input-group">
-                <label style="font-size: 12px; font-weight: 700; color: #475569;">UPI Difference (General)</label>
-                <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
+                <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (General)</label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                    <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                </div>
             </div>`;
             }
             upiRow.innerHTML = upiHtml;

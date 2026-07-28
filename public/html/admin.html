@@ -1813,46 +1813,57 @@
                     </div>
                 </div>
 
-                <div id="bv-step-2" style="display:none;">
-                    <div style="margin-bottom: 24px;">
-                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Remark Category</label>
-                        <select id="bv-type" onchange="window.handleBvTypeChange()" style="width: 100%; height: 50px; border-radius: 12px; border: 1px solid #E2E8F0; padding: 0 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC;">
+                <div id="bv-step-2" style="display:none; animation: fadeIn 0.3s ease;">
+                    <div style="margin-bottom: 24px; position: relative;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1E293B; margin-bottom: 10px; font-size: 14px;">
+                            <i class="fas fa-tag" style="color: #64748B;"></i> Remark Category
+                        </label>
+                        <select id="bv-type" onchange="window.handleBvTypeChange()" style="width: 100%; height: 52px; border-radius: 14px; border: 1px solid #E2E8F0; padding: 0 40px 0 16px; font-family: inherit; font-size: 15px; outline: none; background: #F8FAFC url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' fill=\'%2364748B\' viewBox=\'0 0 16 16\'><path fill-rule=\'evenodd\' d=\'M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z\'/></svg>') no-repeat right 16px center; appearance: none; -webkit-appearance: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease; cursor: pointer; font-weight: 500; color: #334155;">
                             <option value="">Choose Category...</option>
                             <option value="Bill Error">Bill Error</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
 
-                    <div id="bv-bill-error-group" style="display:none; margin-top:20px;">
-                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Error Type</label>
-                        <select id="bv-subtype" onchange="window.handleBvSubtypeChange()" style="width: 100%; height: 50px; border-radius: 12px; border: 1px solid #E2E8F0; padding: 0 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC;">
+                    <div id="bv-bill-error-group" style="display:none; margin-top:24px; position: relative; animation: slideDown 0.3s ease;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1E293B; margin-bottom: 10px; font-size: 14px;">
+                            <i class="fas fa-exclamation-circle" style="color: #EF4444;"></i> Error Type
+                        </label>
+                        <select id="bv-subtype" onchange="window.handleBvSubtypeChange()" style="width: 100%; height: 52px; border-radius: 14px; border: 1px solid #E2E8F0; padding: 0 40px 0 16px; font-family: inherit; font-size: 15px; outline: none; background: #FFF5F5 url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' fill=\'%23EF4444\' viewBox=\'0 0 16 16\'><path fill-rule=\'evenodd\' d=\'M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z\'/></svg>') no-repeat right 16px center; appearance: none; -webkit-appearance: none; box-shadow: inset 0 2px 4px rgba(239,68,68,0.05); transition: all 0.2s ease; cursor: pointer; font-weight: 500; color: #991B1B; border-color: #FECACA;">
                             <option value="">Choose Sub-category...</option>
                             <option value="Bill difference issue">Bill difference issue</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
 
-                    <div id="bv-differences-group" style="display:none; margin-top:20px; background:#FFF1ED; padding:20px; border-radius:16px; border:1px solid rgba(249,90,44,0.1);">
-                        <h4 style="color:#F95A2C; margin-bottom:15px; font-size:12px; text-transform:uppercase; font-weight: 800; letter-spacing: 0.5px;">Input Cash/UPI Differences</h4>
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                    <div id="bv-differences-group" style="display:none; margin-top:24px; background: linear-gradient(145deg, #FFF1ED 0%, #FFFAF8 100%); padding:24px; border-radius:20px; border:1px solid rgba(249,90,44,0.15); box-shadow: 0 10px 25px -5px rgba(249,90,44,0.05); animation: slideDown 0.3s ease;">
+                        <h4 style="color:#C2410C; margin-bottom:18px; font-size:12px; text-transform:uppercase; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-calculator"></i> Input Differences
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                             <div class="input-group">
-                                <label style="font-size: 12px; font-weight: 700; color: #475569;">Cash Difference</label>
-                                <input type="number" id="bv-diff-cash" placeholder="0" style="width: 100%; height: 44px; border-radius: 10px; border: 1px solid #FFD6CC; padding: 0 12px; outline: none; font-weight: 600;">
+                                <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">Cash Difference</label>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                                    <input type="number" id="bv-diff-cash" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                </div>
                             </div>
-                            <div id="bv-diff-upi-row" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                            <div id="bv-diff-upi-row" style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                                 <!-- UPI inputs injected here -->
                             </div>
                         </div>
                     </div>
 
-                    <div id="bv-manual-text-group" style="display:none; margin-top:20px;">
-                        <label style="display: block; font-weight: 700; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Detailed Remarks</label>
-                        <textarea id="bv-manual-text" placeholder="Explain the situation..." rows="3" style="width: 100%; border-radius: 12px; border: 1px solid #E2E8F0; padding: 12px 16px; font-family: inherit; font-size: 14px; outline: none; background: #F8FAFC; resize: none;"></textarea>
+                    <div id="bv-manual-text-group" style="display:none; margin-top:24px; animation: slideDown 0.3s ease;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1E293B; margin-bottom: 10px; font-size: 14px;">
+                            <i class="fas fa-align-left" style="color: #64748B;"></i> Detailed Remarks
+                        </label>
+                        <textarea id="bv-manual-text" placeholder="Please provide a clear explanation..." rows="4" style="width: 100%; border-radius: 16px; border: 1px solid #E2E8F0; padding: 16px; font-family: inherit; font-size: 15px; outline: none; background: #F8FAFC; resize: none; color: #334155; line-height: 1.5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease;"></textarea>
                     </div>
 
-                    <div style="margin-top:32px; display:flex; gap:12px;">
-                        <button class="modern-btn secondary" onclick="window.backToBvStep1()" style="flex:1; height: 50px;">Back</button>
-                        <button class="modern-btn accent" onclick="window.saveBillVerification('Yes')" style="flex:2; height: 50px; font-weight: 700;">Save Verification</button>
+                    <div style="margin-top:40px; display:flex; gap:16px;">
+                        <button class="modern-btn secondary" onclick="window.backToBvStep1()" style="flex:1; height: 54px; font-size: 15px; border-radius: 14px; background: #F1F5F9; border-color: #E2E8F0; color: #475569; font-weight: 600;">Back</button>
+                        <button class="modern-btn accent" onclick="window.saveBillVerification('Yes')" style="flex:2; height: 54px; font-size: 15px; font-weight: 700; border-radius: 14px; box-shadow: 0 10px 20px -5px rgba(249, 90, 44, 0.3);">Save Verification</button>
                     </div>
                 </div>
             </div>
