@@ -1934,7 +1934,11 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     } else {
                         status = 'P';
                         colorClass = 'grid-p';
-                        const actualMins = (s.totalWorkDuration || 0) / 60000;
+                        let actualMins = s.actualWorkMinutes || 0;
+                        if (!actualMins && s.checkOut && s.checkIn) {
+                            actualMins = Math.floor((new Date(s.checkOut) - new Date(s.checkIn)) / 60000) - (s.totalBreakMinutes || 0);
+                        }
+                        if (actualMins < 0) actualMins = 0;
                         variance = ((actualMins - expectedMins) / 60).toFixed(1);
                     }
                 } else if (dateKey > todayStr) {
@@ -2892,7 +2896,11 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
             const sessDate = data.date || '';
             if (sessDate.includes(month) && (data.status === 'completed' || data.checkOut)) {
                  // EXACT duration as calculated from attendance logs (CLOCK_IN to CLOCK_OUT minus breaks)
-                 const duration = data.durationMinutes || 0;
+                 let duration = data.actualWorkMinutes || 0;
+                 if (!duration && data.checkOut && data.checkIn) {
+                     duration = Math.floor((new Date(data.checkOut) - new Date(data.checkIn)) / 60000) - (data.totalBreakMinutes || 0);
+                 }
+                 if (duration < 0) duration = 0;
                  totalWorkedMinutes += duration;
                  uniqueDates.add(sessDate);
             }
