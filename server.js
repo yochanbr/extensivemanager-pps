@@ -916,6 +916,8 @@ app.post('/api/delivery', async (req, res) => {
     const employee = doc.data();
 
     const delivery = employee.delivery || [];
+    const timestamp = new Date().toISOString();
+
     delivery.push({
         id: shortid.generate(),
         billNumber: deliveryData.billNumber,
@@ -924,10 +926,26 @@ app.post('/api/delivery', async (req, res) => {
         totalAmount: deliveryData.totalAmount,
         modeOfPay: deliveryData.modeOfPay,
         delivered: false,
-        timestamp: new Date().toISOString()
+        timestamp: timestamp
     });
 
-    await doc.ref.update({ delivery });
+    const updateObj = { delivery };
+
+    // If there is an extra amount, also save it to the 'extra' category with 'ED' prefix
+    if (deliveryData.extraAmount && parseFloat(deliveryData.extraAmount) > 0) {
+        const extra = employee.extra || [];
+        extra.push({
+            id: shortid.generate(),
+            itemName: 'Delivery Extra: ' + (deliveryData.billNumber || ''),
+            billNumber: 'ED' + (deliveryData.billNumber || ''),
+            extraAmount: deliveryData.extraAmount,
+            modeOfPay: deliveryData.modeOfPay,
+            timestamp: timestamp
+        });
+        updateObj.extra = extra;
+    }
+
+    await doc.ref.update(updateObj);
     res.json({ success: true, message: 'Delivery data saved successfully.' });
 });
 

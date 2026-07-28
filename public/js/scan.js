@@ -429,11 +429,35 @@ async function applyAutoFix(sequences, employeeId) {
     }
 }
 
-// ─── Submit Attendance ────────────────────────────────────────────────────
+let checkoutTimer = null;
+
 window.promptCheckout = function() {
     const modal = document.getElementById('checkout-confirm-modal');
     if(modal) {
         modal.style.display = 'flex';
+        
+        const btn = document.getElementById('confirm-checkout-btn');
+        const text = document.getElementById('confirm-checkout-text');
+        
+        if (btn && text) {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+            let timeLeft = 3;
+            text.textContent = `Wait (${timeLeft}s)`;
+            
+            checkoutTimer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(checkoutTimer);
+                    btn.disabled = false;
+                    btn.classList.remove('disabled');
+                    text.textContent = 'Yes, Check Out';
+                } else {
+                    text.textContent = `Wait (${timeLeft}s)`;
+                }
+            }, 1000);
+        }
+
         setTimeout(() => {
             modal.style.opacity = '1';
             const content = modal.querySelector('.modal-content');
@@ -445,6 +469,7 @@ window.promptCheckout = function() {
 window.closeCheckoutConfirm = function() {
     const modal = document.getElementById('checkout-confirm-modal');
     if(modal) {
+        if (checkoutTimer) clearInterval(checkoutTimer);
         modal.style.opacity = '0';
         const content = modal.querySelector('.modal-content');
         if(content) content.style.transform = 'translateY(20px)';
