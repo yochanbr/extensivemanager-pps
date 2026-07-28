@@ -3999,7 +3999,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Pinelab)</label>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
-                        <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                     </div>
                 </div>`;
                 }
@@ -4008,7 +4008,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Paytm)</label>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
-                        <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                     </div>
                 </div>`;
                 }
@@ -4019,7 +4019,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (General)</label>
                 <div style="position: relative;">
                     <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
-                    <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 </div>
             </div>`;
             }
