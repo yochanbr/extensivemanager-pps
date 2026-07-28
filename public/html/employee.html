@@ -2315,7 +2315,7 @@
                         const extraData = {
                             employeeId: employeeId,
                             itemName: formData.get('extra-item-category'),
-                            billNumber: formattedBillNumber,
+                            billNumber: isBillWithExtra ? ('ED' + rawBillNumber) : formattedBillNumber,
                             extraAmount: formData.get('extra-amount'),
                             modeOfPay: formData.get('mode-of-pay')
                         };
