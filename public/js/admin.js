@@ -3996,19 +3996,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentBvStructuredData) {
                 if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
                     upiHtml += `<div class="input-group">
-                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Pinelab)</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Pinelab)</label>
+                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                            <button type="button" onclick="window.toggleDiffType('pinelab', 'shortage')" id="btn-pinelab-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                            <button type="button" onclick="window.toggleDiffType('pinelab', 'excess')" id="btn-pinelab-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                        </div>
+                    </div>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
                         <input type="number" id="bv-diff-pinelab" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="hidden" id="bv-type-pinelab" value="excess">
                     </div>
                 </div>`;
                 }
                 if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
                     upiHtml += `<div class="input-group">
-                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (Paytm)</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Paytm)</label>
+                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                            <button type="button" onclick="window.toggleDiffType('paytm', 'shortage')" id="btn-paytm-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                            <button type="button" onclick="window.toggleDiffType('paytm', 'excess')" id="btn-paytm-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                        </div>
+                    </div>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
                         <input type="number" id="bv-diff-paytm" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="hidden" id="bv-type-paytm" value="excess">
                     </div>
                 </div>`;
                 }
@@ -4016,10 +4030,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fallback if no specific data detected
             if (!upiHtml) {
                 upiHtml = `<div class="input-group">
-                <label style="font-size: 13px; font-weight: 700; color: #9A3412; margin-bottom: 8px; display: block;">UPI Difference (General)</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (General)</label>
+                    <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'shortage')" id="btn-upi-gen-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'excess')" id="btn-upi-gen-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                    </div>
+                </div>
                 <div style="position: relative;">
                     <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
                     <input type="number" id="bv-diff-upi-gen" placeholder="0" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <input type="hidden" id="bv-type-upi-gen" value="excess">
                 </div>
             </div>`;
             }
@@ -4040,16 +4061,27 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.subType = document.getElementById('bv-subtype').value;
             payload.manualText = document.getElementById('bv-manual-text').value;
 
-            payload.differences = {
-                cash: parseFloat(document.getElementById('bv-diff-cash').value) || 0
+            const getDiffValue = (idBase) => {
+                const el = document.getElementById(`bv-diff-${idBase}`);
+                if (!el) return 0;
+                let val = parseFloat(el.value) || 0;
+                const typeEl = document.getElementById(`bv-type-${idBase}`);
+                if (typeEl && typeEl.value === 'shortage') val = -val;
+                return val;
             };
 
-            const pinelabEl = document.getElementById('bv-diff-pinelab');
-            if (pinelabEl) payload.differences.pinelab = parseFloat(pinelabEl.value) || 0;
-            const paytmEl = document.getElementById('bv-diff-paytm');
-            if (paytmEl) payload.differences.paytm = parseFloat(paytmEl.value) || 0;
-            const upiGenEl = document.getElementById('bv-diff-upi-gen');
-            if (upiGenEl) payload.differences.upi_general = parseFloat(upiGenEl.value) || 0;
+            payload.differences = {
+                cash: getDiffValue('cash')
+            };
+
+            const pinelabVal = getDiffValue('pinelab');
+            if (pinelabVal !== 0 || document.getElementById('bv-diff-pinelab')) payload.differences.pinelab = pinelabVal;
+            
+            const paytmVal = getDiffValue('paytm');
+            if (paytmVal !== 0 || document.getElementById('bv-diff-paytm')) payload.differences.paytm = paytmVal;
+            
+            const upiGenVal = getDiffValue('upi-gen');
+            if (upiGenVal !== 0 || document.getElementById('bv-diff-upi-gen')) payload.differences.upi_general = upiGenVal;
         }
 
         try {
@@ -4071,6 +4103,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             await nammaModalSystem.alert("Failed to connect to server.");
+        }
+    };
+
+    window.toggleDiffType = function(idBase, type) {
+        document.getElementById(`bv-type-${idBase}`).value = type;
+        const btnShortage = document.getElementById(`btn-${idBase}-shortage`);
+        const btnExcess = document.getElementById(`btn-${idBase}-excess`);
+        
+        if (type === 'shortage') {
+            btnShortage.style.background = '#FFFFFF';
+            btnShortage.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+            btnShortage.style.color = '#DC2626'; // Red
+            
+            btnExcess.style.background = 'transparent';
+            btnExcess.style.boxShadow = 'none';
+            btnExcess.style.color = '#16A34A';
+        } else {
+            btnExcess.style.background = '#FFFFFF';
+            btnExcess.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+            btnExcess.style.color = '#16A34A'; // Green
+            
+            btnShortage.style.background = 'transparent';
+            btnShortage.style.boxShadow = 'none';
+            btnShortage.style.color = '#9A3412';
         }
     };
 
