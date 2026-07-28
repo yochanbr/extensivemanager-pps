@@ -1480,7 +1480,50 @@ app.put('/api/:type/:id', async (req, res) => {
             newRecord: Object.keys(data).reduce((acc, k) => { if (original[k] !== data[k] && typeof original[k] !== 'undefined') acc[k] = data[k]; return acc; }, {})
         });
 
-        await doc.ref.update({ [type]: records, audit_history });
+        // --- Cascading Update for Linked Extra ---
+        if (type === 'delivery' && original.extraAmount && parseFloat(original.extraAmount) > 0) {
+            if (employee['extra']) {
+                const extraArray = [...employee['extra']];
+                let rawBill = original.billNumber || '';
+                if (rawBill.startsWith('E')) rawBill = rawBill.substring(1);
+                const targetED = 'ED' + rawBill;
+
+                const extraIdx = extraArray.findIndex(ex => ex.billNumber === targetED);
+                if (extraIdx !== -1) {
+                    const extraOriginal = { ...extraArray[extraIdx] };
+                    
+                    let newRawBill = updated.billNumber || '';
+                    if (newRawBill.startsWith('E')) newRawBill = newRawBill.substring(1);
+                    
+                    const updatedExtra = {
+                        ...extraOriginal,
+                        extraAmount: updated.extraAmount || '0',
+                        modeOfPay: updated.modeOfPay || extraOriginal.modeOfPay,
+                        billNumber: 'ED' + newRawBill
+                    };
+                    
+                    extraArray[extraIdx] = updatedExtra;
+
+                    audit_history.push({
+                        id: shortid.generate(),
+                        action: 'edit',
+                        type: 'extra',
+                        reason: (data.editReason || 'User edited record via UI') + ` (Auto-synced with Delivery ${updated.billNumber})`,
+                        timestamp: new Date().toISOString(),
+                        originalRecord: extraOriginal,
+                        newRecord: { 
+                            extraAmount: updatedExtra.extraAmount,
+                            modeOfPay: updatedExtra.modeOfPay,
+                            billNumber: updatedExtra.billNumber
+                        }
+                    });
+                    
+                    employee['extra'] = extraArray;
+                }
+            }
+        }
+
+        await doc.ref.update({ [type]: records, audit_history, extra: employee['extra'] });
         res.json({ success: true });
     } catch (err) {
         console.error('PUT Error:', err);
@@ -1520,7 +1563,33 @@ app.delete('/api/:type/:id', async (req, res) => {
             originalRecord: original
         });
 
-        await doc.ref.update({ [type]: records, audit_history });
+        // --- Cascading Deletion for Linked Extra ---
+        if (type === 'delivery' && original.extraAmount && parseFloat(original.extraAmount) > 0) {
+            if (employee['extra']) {
+                const extraArray = [...employee['extra']];
+                let rawBill = original.billNumber || '';
+                if (rawBill.startsWith('E')) rawBill = rawBill.substring(1);
+                const targetED = 'ED' + rawBill;
+                
+                const extraIdx = extraArray.findIndex(ex => ex.billNumber === targetED);
+                if (extraIdx !== -1) {
+                    const extraOriginal = extraArray[extraIdx];
+                    extraArray.splice(extraIdx, 1);
+                    
+                    audit_history.push({
+                        id: shortid.generate(),
+                        action: 'delete',
+                        type: 'extra',
+                        reason: (reason || 'User deleted record via UI') + ` (Auto-deleted with Delivery ${original.billNumber})`,
+                        timestamp: new Date().toISOString(),
+                        originalRecord: extraOriginal
+                    });
+                    employee['extra'] = extraArray;
+                }
+            }
+        }
+
+        await doc.ref.update({ [type]: records, audit_history, extra: employee['extra'] });
         res.json({ success: true });
     } catch (err) {
         console.error('DELETE Error:', err);

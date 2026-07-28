@@ -1993,7 +1993,7 @@
                     const safeItem = JSON.stringify(item).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
                     cellsHTML += `<td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
                         <i class="fas fa-edit" style="color: #3B82F6; cursor: pointer; margin-right: 12px;" onclick="saEditItem('${type}', '${item.id}', '${safeItem}')"></i>
-                        <i class="fas fa-trash" style="color: #EF4444; cursor: pointer;" onclick="saDeleteItem('${type}', '${item.id}')"></i>
+                        <i class="fas fa-trash" style="color: #EF4444; cursor: pointer;" onclick="saDeleteItem('${type}', '${item.id}', '${safeItem}')"></i>
                     </td>`;
 
                     row.innerHTML = cellsHTML;
@@ -2135,8 +2135,22 @@
             }
         });
 
-        async function saDeleteItem(type, id) {
-            const reason = await nammaModalSystem.prompt("Reason for deletion:", "");
+        async function saDeleteItem(type, id, itemJsonStr) {
+            let promptMsg = "Reason for deletion:";
+            if (itemJsonStr) {
+                try {
+                    const parser = new DOMParser();
+                    const decodedJson = parser.parseFromString(`<!doctype html><body>${itemJsonStr}`, 'text/html').body.textContent;
+                    const item = JSON.parse(decodedJson);
+                    if (type === 'delivery' && item.extraAmount && parseFloat(item.extraAmount) > 0) {
+                        promptMsg = "⚠️ This delivery has a linked Extra Amount record. Deleting this will also delete the extra record. \n\nReason for deletion:";
+                    }
+                } catch (e) {
+                    console.error("Error parsing item for deletion warning", e);
+                }
+            }
+
+            const reason = await nammaModalSystem.prompt(promptMsg, "");
             if (!reason) return;
 
             const employeeId = localStorage.getItem('employeeId');
