@@ -1514,6 +1514,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
+            if (data['full-time'] === 'no' || data['fullTime'] === 'no') {
+                if (data.basicSalary) data.basicSalary = String(parseFloat(data.basicSalary) * 240);
+            }
+
             // Convert 12h format to 24h for backend
             const convertTo24h = (h, m, p) => {
                 let hour = parseInt(h);
@@ -1904,7 +1908,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVal('spa-edit-account-holder-name', emp['account-holder-name'] || emp.accountHolderName);
                 setVal('spa-edit-ifsc-code', emp['ifsc-code'] || emp.ifscCode);
                 setVal('spa-edit-pan-number', emp['pan-number'] || emp.panNumber);
-                setVal('spa-edit-basic-salary', emp.basicSalary || emp['basic-salary'] || emp['basicSalary']);
+                let basic = parseFloat(emp.basicSalary || emp['basic-salary'] || emp['basicSalary']) || '';
+                const isPartTime = (emp['full-time'] === 'no' || emp.fullTime === 'no');
+                if (isPartTime && basic) {
+                    basic = basic / 240;
+                }
+                setVal('spa-edit-basic-salary', basic);
                 setVal('spa-edit-lop-per-day', emp.lopPerDay || '');
                 setVal('spa-edit-lop-per-hour', emp.lopPerHour || '');
                 setVal('spa-edit-esi', emp.esi || emp.ESI);
@@ -1985,6 +1994,11 @@ document.addEventListener('DOMContentLoaded', () => {
             data['workingDays'] = formData.getAll('working-days').join(',');
             data['employeeId'] = data['employee-id'];
             data['guardianRelationship'] = data['guardian-relationship'];
+
+            if (data['full-time'] === 'no' || data['fullTime'] === 'no') {
+                if (data.basicSalary) data.basicSalary = String(parseFloat(data.basicSalary) * 240);
+                if (data['basic-salary']) data['basic-salary'] = String(parseFloat(data['basic-salary']) * 240);
+            }
 
             const btn = document.getElementById('spa-edit-save-btn');
             const originalHtml = btn.innerHTML;
@@ -2107,10 +2121,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spaEditFullTimeSelect) {
         spaEditFullTimeSelect.addEventListener('change', (e) => {
             const timeGroups = document.querySelectorAll('.spa-edit-time-group');
+            const label = document.getElementById('spa-edit-basic-salary-label');
             if (e.target.value === 'yes') {
                 timeGroups.forEach(group => group.style.display = 'flex');
+                if (label) label.innerHTML = 'Monthly Basic salary *';
             } else {
                 timeGroups.forEach(group => group.style.display = 'none');
+                if (label) label.innerHTML = 'Hourly Pay Rate *';
             }
         });
     }
@@ -2122,10 +2139,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addFullTimeSelect) {
             addFullTimeSelect.addEventListener('change', (e) => {
                 const timeGroups = document.querySelectorAll('.spa-add-time-group');
+                const label = document.getElementById('spa-add-basic-salary-label');
                 if (e.target.value === 'yes') {
                     timeGroups.forEach(group => group.style.display = 'flex');
+                    if (label) label.innerHTML = 'Monthly Basic salary *';
                 } else {
                     timeGroups.forEach(group => group.style.display = 'none');
+                    if (label) label.innerHTML = 'Hourly Pay Rate *';
                 }
             });
             // Initial trigger
