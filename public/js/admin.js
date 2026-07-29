@@ -4688,12 +4688,17 @@ document.addEventListener('DOMContentLoaded', () => {
 window.deleteShiftReport = async function(reportId, event) {
     event.stopPropagation();
     if (window.nammaModalSystem && window.nammaModalSystem.confirm) {
-        window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?", async (confirmed) => {
-            if (!confirmed) return;
-            await processDelete();
-        });
+        const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
+        if (!confirmed) return;
+        await processDelete();
     } else {
-        if (!confirm("Are you sure you want to permanently delete this shift report?")) return;
+        // Fallback (though native confirm seems to be disabled)
+        try {
+            const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
+            if (!confirmed) return;
+        } catch(e) {
+            // Very last resort if somehow nammaModalSystem isn't ready
+        }
         await processDelete();
     }
 
