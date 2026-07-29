@@ -1925,6 +1925,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dobEl) {
                     try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
                     catch (e) { dobEl.value = ''; }
+                    dobEl.dispatchEvent(new Event('change'));
                 }
 
                 const days = (emp.workingDays || '').split(',');
@@ -4633,3 +4634,49 @@ window.updateEditStepUI = function() {
     if (nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
     if (saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
 };
+
+// DOB Age validation for Marital Status
+document.addEventListener('DOMContentLoaded', () => {
+    function handleDobChange(dobInput, maritalGroup) {
+        if (!dobInput || !maritalGroup) return;
+        
+        const validateAge = () => {
+            if (!dobInput.value) {
+                maritalGroup.style.display = 'block';
+                return;
+            }
+            const dob = new Date(dobInput.value);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            
+            if (age < 18) {
+                maritalGroup.style.display = 'none';
+                if (window.nammaModalSystem && typeof window.nammaModalSystem.alert === 'function') {
+                    window.nammaModalSystem.alert('Child labouring is illegal. Employee is under 18.');
+                } else {
+                    alert('Child labouring is illegal. Employee is under 18.');
+                }
+            } else {
+                maritalGroup.style.display = 'block';
+            }
+        };
+
+        dobInput.addEventListener('change', validateAge);
+    }
+
+    const editDob = document.getElementById('spa-edit-dob');
+    const editMaritalGroup = document.getElementById('spa-edit-marital-group');
+    if (editDob && editMaritalGroup) handleDobChange(editDob, editMaritalGroup);
+
+    const addForm = document.getElementById('spa-add-employee-form');
+    if (addForm) {
+        const addDob = addForm.querySelector('input[name="dob"]');
+        const addMaritalGroup = document.getElementById('spa-add-marital-group');
+        if (addDob && addMaritalGroup) handleDobChange(addDob, addMaritalGroup);
+    }
+});
+
