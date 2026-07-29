@@ -1916,8 +1916,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setVal('spa-edit-gender', emp.gender);
                 setVal('spa-edit-marital-status', emp['marital-status'] || emp.maritalStatus);
-                setVal('spa-edit-full-time', emp['full-time'] || emp.fullTime || 'yes');
-
+                const spaEditFullTimeSelect = document.getElementById('spa-edit-full-time');
+                if (spaEditFullTimeSelect) {
+                    spaEditFullTimeSelect.value = emp['full-time'] || emp.fullTime || 'yes';
+                    spaEditFullTimeSelect.dispatchEvent(new Event('change'));
+                }
                 const dobEl = document.getElementById('spa-edit-dob');
                 if (dobEl) {
                     try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
@@ -2104,11 +2107,29 @@ document.addEventListener('DOMContentLoaded', () => {
         spaEditFullTimeSelect.addEventListener('change', (e) => {
             const timeGroups = document.querySelectorAll('.spa-edit-time-group');
             if (e.target.value === 'yes') {
-                timeGroups.forEach(group => group.style.display = 'block');
+                timeGroups.forEach(group => group.style.display = 'flex');
             } else {
                 timeGroups.forEach(group => group.style.display = 'none');
             }
         });
+    }
+
+    // Toggle full-time specific fields in Add Modal
+    const addEmployeeForm = document.getElementById('spa-add-employee-form');
+    if (addEmployeeForm) {
+        const addFullTimeSelect = addEmployeeForm.querySelector('select[name="full-time"]');
+        if (addFullTimeSelect) {
+            addFullTimeSelect.addEventListener('change', (e) => {
+                const timeGroups = document.querySelectorAll('.spa-add-time-group');
+                if (e.target.value === 'yes') {
+                    timeGroups.forEach(group => group.style.display = 'flex');
+                } else {
+                    timeGroups.forEach(group => group.style.display = 'none');
+                }
+            });
+            // Initial trigger
+            addFullTimeSelect.dispatchEvent(new Event('change'));
+        }
     }
 
     // Make SPA edit modal draggable

@@ -612,6 +612,14 @@ app.post('/api/employees', verifyAdmin, async (req, res) => {
         employeeData.username = employeeData['employee-id'];
         delete employeeData['employee-id'];
 
+        if (employeeData['full-time'] === 'no') {
+            delete employeeData['start-time'];
+            delete employeeData['end-time'];
+            delete employeeData['break-time'];
+            delete employeeData['working-days'];
+            delete employeeData.workingDays;
+        }
+
         // Check for existing employee with same username
         const existing = await db.employees().where('username', '==', employeeData.username).get();
         if (!existing.empty) {
@@ -720,6 +728,14 @@ app.get('/api/employees/:id', async (req, res) => {
 app.put('/api/employees/:id', verifyAdmin, async (req, res) => {
     const employeeId = req.params.id;
     const employeeData = req.body;
+
+    if (employeeData['full-time'] === 'no') {
+        delete employeeData['start-time'];
+        delete employeeData['end-time'];
+        delete employeeData['break-time'];
+        delete employeeData['working-days'];
+        delete employeeData.workingDays;
+    }
 
     // If the password is being updated, hash it then encrypt it
     if (employeeData.password && employeeData.password.trim() !== '') {
@@ -1898,8 +1914,9 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
             const empData = { name: emp.name, id: emp.id, daily: {} };
 
             // Expected Minutes Logic
-            let expectedMins = 480;
-            if (emp.startTime && emp.endTime) {
+            const isPartTime = (emp['full-time'] === 'no' || emp.fullTime === 'no');
+            let expectedMins = isPartTime ? 0 : 480;
+            if (!isPartTime && emp.startTime && emp.endTime) {
                 const [h1, m1] = emp.startTime.split(':').map(Number);
                 const [h2, m2] = emp.endTime.split(':').map(Number);
                 expectedMins = (h2 * 60 + m2) - (h1 * 60 + m1);
@@ -1918,7 +1935,7 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                 const dayLower = header.weekday.toLowerCase();
                 const empWeekOff = (emp.weekOff || 'sunday').toLowerCase();
 
-                if (dayLower === empWeekOff) {
+                if (!isPartTime && dayLower === empWeekOff) {
                     status = 'WO';
                     colorClass = 'grid-wo';
                     variance = 0;
@@ -1947,10 +1964,16 @@ app.get('/api/reports/attendance-grid', verifyAdmin, async (req, res) => {
                     colorClass = 'grid-empty';
                     variance = 0;
                 } else {
-                    // Past date, no session, no leave, no week-off => ABSENT
-                    status = 'A';
-                    colorClass = 'grid-a';
-                    variance = (-expectedMins / 60).toFixed(1);
+                    // Past date, no session, no leave, no week-off => ABSENT or Empty (if part-time)
+                    if (isPartTime) {
+                        status = '-';
+                        colorClass = 'grid-empty';
+                        variance = 0;
+                    } else {
+                        status = 'A';
+                        colorClass = 'grid-a';
+                        variance = (-expectedMins / 60).toFixed(1);
+                    }
                 }
 
                 empData.daily[dateKey] = { status, variance, colorClass };
@@ -2923,25 +2946,40 @@ app.get('/api/admin/payroll-reconcile', verifyAdmin, async (req, res) => {
         
         const requiredMinutes = (totalDaysInMonth - paidOffsAllowed) * shiftMinutes;
         
+        const isPartTime = (empData['full-time'] === 'no' || empData.fullTime === 'no');
+
         // Loss of minutes = Standard required - total worked
         const lostMinutes = Math.max(0, requiredMinutes - totalWorkedMinutes);
-        
-        const lopRateDay = parseFloat(empData.lopPerDay) || 0;
-        const lopRateHour = parseFloat(empData.lopPerHour) || 0;
-        
-        // Exact calculation: how many full days lost and how many extra hours lost
-        const lopDays = Math.floor(lostMinutes / shiftMinutes);
-        const lopRemainingMinutes = lostMinutes % shiftMinutes;
-        const lopHours = lopRemainingMinutes / 60;
 
-        const lopAmount = (lopDays * lopRateDay) + (lopHours * lopRateHour);
+        let lopDays = 0;
+        let lopAmount = 0;
+
+        if (isPartTime) {
+            const basicSal = parseFloat(empData.basicSalary || empData['basic-salary'] || empData.basic) || 0;
+            const hourlyRate = basicSal / 240; // 30 days * 8 hours
+            const workedHours = totalWorkedMinutes / 60;
+            const earnedSalary = hourlyRate * workedHours;
+
+            // Fit into standard Payslip UI: LOP is the difference between Basic and Earned
+            lopAmount = Math.max(0, basicSal - earnedSalary);
+            lopDays = Math.max(0, 30 - (workedHours / 8));
+        } else {
+            const lopRateDay = parseFloat(empData.lopPerDay) || 0;
+            const lopRateHour = parseFloat(empData.lopPerHour) || 0;
+            
+            // Exact calculation: how many full days lost and how many extra hours lost
+            lopDays = Math.floor(lostMinutes / shiftMinutes);
+            const lopRemainingMinutes = lostMinutes % shiftMinutes;
+            const lopHours = lopRemainingMinutes / 60;
+            lopAmount = (lopDays * lopRateDay) + (lopHours * lopRateHour);
+        }
 
         res.json({
             success: true,
             billingDifference: totalDiff,
             workedDays: (totalWorkedMinutes / shiftMinutes).toFixed(1), // Display relative to THEIR standard day
             attendanceDays: uniqueDates.size, // Number of physical days present
-            lopDays: (lostMinutes / shiftMinutes).toFixed(1), // Total lost days equivalent
+            lopDays: isPartTime ? lopDays.toFixed(1) : (lostMinutes / shiftMinutes).toFixed(1), // Total lost days equivalent
             lopAmount: lopAmount,
             totalWorkedMinutes,
             employeeId,
