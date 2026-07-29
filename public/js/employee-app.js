@@ -51,9 +51,31 @@ function showToast(message, type = 'info') {
 // View Switching
 function switchView(viewName) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-    if (viewName === 'login') viewLogin.classList.add('active');
-    if (viewName === 'dashboard') viewDashboard.classList.add('active');
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(v => v.classList.remove('active'));
+    
+    if (viewName === 'login') {
+        viewLogin.classList.add('active');
+        document.getElementById('app-bottom-nav').style.display = 'none';
+    } else {
+        document.getElementById('app-bottom-nav').style.display = 'flex';
+        const targetView = document.getElementById(`view-${viewName}`);
+        if (targetView) targetView.classList.add('active');
+        
+        const navBtn = document.querySelector(`.bottom-nav .nav-item[data-target="${viewName}"]`);
+        if (navBtn) navBtn.classList.add('active');
+        
+        if (viewName === 'finance') loadFinanceData();
+        if (viewName === 'leaves') loadLeavesData();
+    }
 }
+
+// Bottom Nav Listeners
+document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-target');
+        switchView(target);
+    });
+});
 
 // Toggle Password Visibility
 togglePwdBtn.addEventListener('click', () => {
@@ -164,7 +186,7 @@ async function loadDashboardData() {
             // Reports
             const reportsList = document.getElementById('recent-reports-list');
             if (data.reports && data.reports.length > 0) {
-                reportsList.innerHTML = data.reports.slice(0, 5).map(r => `
+                reportsList.innerHTML = data.reports.map(r => `
                     <div class="report-item">
                         <div class="report-info">
                             <h4>${r.date}</h4>
@@ -184,3 +206,120 @@ async function loadDashboardData() {
         showToast('Failed to load latest data', 'error');
     }
 }
+
+// ==========================================
+// PHASE 2 LOGIC (FINANCE & LEAVES)
+// ==========================================
+
+async function loadFinanceData() {
+    try {
+        const response = await fetch(`${API_BASE}/api/employee/finance`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('finance-live-salary').innerText = data.liveSalary || '0';
+            
+            // Render Ledger
+            const ledgerList = document.getElementById('finance-ledger-list');
+            if (data.ledger && data.ledger.length > 0) {
+                ledgerList.innerHTML = data.ledger.map(l => `
+                    <div class="report-item">
+                        <div class="report-info">
+                            <h4>${l.date}</h4>
+                            <p>${l.description}</p>
+                        </div>
+                        <h4 style="color: var(--danger)">-₹${l.amount}</h4>
+                    </div>
+                `).join('');
+            } else {
+                ledgerList.innerHTML = '<div class="empty-state">No pending deductions!</div>';
+            }
+            
+            // Render Payslips (Placeholder for now until PDFs are piped)
+            document.getElementById('finance-payslips-list').innerHTML = '<div class="empty-state">No payslips generated yet.</div>';
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadLeavesData() {
+    try {
+        const response = await fetch(`${API_BASE}/api/employee/leaves`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('leaves-balance-display').innerText = data.leaveBalance || '0';
+            
+            const historyList = document.getElementById('leaves-history-list');
+            if (data.requests && data.requests.length > 0) {
+                historyList.innerHTML = data.requests.map(r => `
+                    <div class="report-item">
+                        <div class="report-info">
+                            <h4>${r.date}</h4>
+                            <p>${r.type.toUpperCase()}</p>
+                        </div>
+                        <div class="report-status ${r.status === 'approved' ? 'verified' : r.status === 'rejected' ? 'danger' : 'pending'}">
+                            ${r.status}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                historyList.innerHTML = '<div class="empty-state">No leave requests found.</div>';
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// Leave Request UI Logic
+const btnRequestLeave = document.getElementById('btn-request-leave');
+const formContainer = document.getElementById('leave-request-form-container');
+const btnCancelLeave = document.getElementById('btn-cancel-leave');
+const btnSubmitLeave = document.getElementById('btn-submit-leave');
+
+btnRequestLeave.addEventListener('click', () => {
+    formContainer.style.display = 'block';
+    btnRequestLeave.style.display = 'none';
+});
+
+btnCancelLeave.addEventListener('click', () => {
+    formContainer.style.display = 'none';
+    btnRequestLeave.style.display = 'block';
+});
+
+btnSubmitLeave.addEventListener('click', async () => {
+    const date = document.getElementById('leave-date').value;
+    const type = document.getElementById('leave-type').value;
+    const reason = document.getElementById('leave-reason').value;
+
+    if (!date) return showToast('Please select a date', 'error');
+
+    btnSubmitLeave.disabled = true;
+    try {
+        const response = await fetch(`${API_BASE}/api/employee/leave-request`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ date, type, reason })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Leave request submitted!', 'success');
+            formContainer.style.display = 'none';
+            btnRequestLeave.style.display = 'block';
+            loadLeavesData(); // Refresh list
+        } else {
+            showToast(data.message || 'Failed to submit', 'error');
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+    } finally {
+        btnSubmitLeave.disabled = false;
+    }
+});

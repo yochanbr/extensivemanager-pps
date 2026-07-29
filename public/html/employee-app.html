@@ -114,6 +114,102 @@
 
             </div>
         </section>
+
+        <!-- View 3: Finance Screen -->
+        <section id="view-finance" class="app-view">
+            <header class="app-bar">
+                <h2>Financials</h2>
+            </header>
+            <div class="dashboard-scroll-area">
+                <div class="highlight-card" style="background: linear-gradient(135deg, #10B981, #059669);">
+                    <div class="highlight-header">
+                        <h3>Live Salary Tracker</h3>
+                        <span class="badge" style="background: rgba(0,0,0,0.2)">This Month</span>
+                    </div>
+                    <div class="shift-details">
+                        <div style="font-size: 32px; font-weight: 800; font-family: 'Outfit';">
+                            ₹<span id="finance-live-salary">0</span>
+                        </div>
+                        <p style="font-size: 12px; margin-top: 5px;">Estimated based on clocked hours</p>
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3>Shortages & Advances</h3>
+                    </div>
+                    <div class="reports-list" id="finance-ledger-list">
+                        <div class="empty-state">No pending deductions!</div>
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3>Digital Payslips</h3>
+                    </div>
+                    <div class="reports-list" id="finance-payslips-list">
+                        <div class="empty-state">No payslips generated yet.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 4: Leaves Screen -->
+        <section id="view-leaves" class="app-view">
+            <header class="app-bar">
+                <h2>Leave Management</h2>
+            </header>
+            <div class="dashboard-scroll-area">
+                <div class="stats-grid">
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <h3 id="leaves-balance-display">2</h3>
+                        <p>Available Leaves (This Month)</p>
+                        <button class="primary-btn" id="btn-request-leave" style="margin-top: 15px; padding: 12px; width: 100%;">
+                            <i class="fas fa-plus"></i> Request Leave
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-container" id="leave-request-form-container" style="display: none;">
+                    <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <h4 style="font-family: 'Outfit';">New Leave Request</h4>
+                        <input type="date" id="leave-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+                        <select id="leave-type" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+                            <option value="casual">Casual Leave</option>
+                            <option value="sick">Sick Leave</option>
+                        </select>
+                        <textarea id="leave-reason" placeholder="Reason for leave..." rows="2" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;"></textarea>
+                        <button class="primary-btn" id="btn-submit-leave" style="padding: 10px;">Submit Request</button>
+                        <button class="icon-btn" id="btn-cancel-leave" style="width: 100%; border-radius: 8px; margin-top: 5px;">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3>My Requests</h3>
+                    </div>
+                    <div class="reports-list" id="leaves-history-list">
+                        <div class="empty-state">No leave requests found.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" id="app-bottom-nav" style="display: none;">
+            <button class="nav-item active" data-target="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" data-target="finance">
+                <i class="fas fa-wallet"></i>
+                <span>Finance</span>
+            </button>
+            <button class="nav-item" data-target="leaves">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Leaves</span>
+            </button>
+        </nav>
         
     </div>
 

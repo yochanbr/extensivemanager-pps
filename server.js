@@ -3387,6 +3387,85 @@ app.get('/api/employee/dashboard', verifyEmployeeApp, async (req, res) => {
     }
 });
 
+app.get('/api/employee/finance', verifyEmployeeApp, async (req, res) => {
+    try {
+        const empDoc = await db.employees().doc(req.employeeId).get();
+        const empData = empDoc.data();
+        
+        // For Live Salary, calculate approx from their basic salary
+        let liveSalary = 0;
+        const basicSalary = parseFloat(empData.basicSalary || 0);
+        if (basicSalary > 0) {
+            // Rough estimate: Assuming 30 days in month, basic / 30 * workedDays
+            // We'll just return a placeholder calculation for now
+            liveSalary = Math.round(basicSalary * 0.7); 
+        }
+
+        // Ledger: Combine shortages, issues, advances
+        let ledger = [];
+        if (empData.issue && empData.issue.length > 0) {
+            empData.issue.forEach(i => {
+                ledger.push({ date: i.date, description: 'Store Issue', amount: i.amount });
+            });
+        }
+        
+        // Sort ledger by date descending
+        ledger.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.json({
+            success: true,
+            liveSalary,
+            ledger
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.get('/api/employee/leaves', verifyEmployeeApp, async (req, res) => {
+    try {
+        const reqSnapshot = await db.leave_requests().where('employeeId', '==', req.employeeId).get();
+        let requests = [];
+        if (!reqSnapshot.empty) {
+            requests = reqSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        res.json({
+            success: true,
+            leaveBalance: 2, // Hardcoded standard
+            requests
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.post('/api/employee/leave-request', verifyEmployeeApp, async (req, res) => {
+    try {
+        const { date, type, reason } = req.body;
+        if (!date) return res.status(400).json({ success: false, message: 'Date required' });
+
+        const newRequest = {
+            employeeId: req.employeeId,
+            date,
+            type,
+            reason: reason || '',
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        };
+
+        await db.leave_requests().add(newRequest);
+
+        res.json({ success: true, message: 'Request submitted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 // ==========================================
 
 // Export for Vercel (Cleanup)
