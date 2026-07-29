@@ -673,10 +673,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const viewReportBtn = document.querySelector('.view-reports-btn');
+    const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
+    const viewPayrollBtn = document.querySelector('[data-target="view-payroll"]');
+    const viewRequestsBtn = document.querySelector('[data-target="view-requests"]');
+
+    const employeesView = document.getElementById('view-employees');
+    const reportsView = document.getElementById('view-reports');
+    const settingsView = document.getElementById('view-settings');
+    const attendanceView = document.getElementById('view-attendance');
+    const shiftSummaryView = document.getElementById('view-shift-summary');
+    const masterReportsView = document.getElementById('view-master-reports');
+    const payrollView = document.getElementById('view-payroll');
+    const requestsView = document.getElementById('view-requests');
+
     if (dashboardBtn) dashboardBtn.addEventListener('click', () => switchSpaView(dashboardView, dashboardBtn));
     if (manageEmployeesBtn) manageEmployeesBtn.addEventListener('click', () => switchSpaView(employeesView, manageEmployeesBtn));
     if (viewReportBtn) viewReportBtn.addEventListener('click', () => switchSpaView(reportsView, viewReportBtn));
     if (viewEsrJpgsBtn) viewEsrJpgsBtn.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtn));
+    if (viewPayrollBtn) viewPayrollBtn.addEventListener('click', () => switchSpaView(payrollView, viewPayrollBtn));
+    if (viewRequestsBtn) viewRequestsBtn.addEventListener('click', () => switchSpaView(requestsView, viewRequestsBtn));
+    
     if (attendanceBtn) attendanceBtn.addEventListener('click', () => {
         switchSpaView(attendanceView, attendanceBtn);
         // Default to Sessions view (not Raw Logs) on every navigation
@@ -3608,13 +3625,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Ensure requests load when tab is clicked
-    document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            if (btn.getAttribute('data-target') === 'view-requests') {
-                loadAdminRequests();
-            }
+    if (viewRequestsBtn) {
+        viewRequestsBtn.addEventListener('click', () => {
+            loadAdminRequests();
         });
-    });
+    }
 
     const payslipConfigForm = document.getElementById('payslip-config-form');
     if (payslipConfigForm) {
