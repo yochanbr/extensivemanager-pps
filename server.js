@@ -3286,6 +3286,101 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
     });
 }
 
+// ==========================================
+// EMPLOYEE MOBILE APP ROUTES
+// ==========================================
+
+app.post('/api/employee/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ success: false, message: 'Credentials required' });
+
+        const empQuery = await db.employees().where('username', '==', username.trim()).get();
+        if (empQuery.empty) return res.status(401).json({ success: false, message: 'Invalid employee credentials' });
+
+        const employeeDoc = empQuery.docs[0];
+        const employee = employeeDoc.data();
+        
+        if (employee.isActive === false) return res.status(403).json({ success: false, message: 'Account deactivated' });
+
+        const validPassword = bcrypt.compareSync(password, decrypt(employee.password));
+        if (!validPassword) return res.status(401).json({ success: false, message: 'Incorrect password' });
+
+        const token = jwt.sign({ id: employee.id, role: 'employee' }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.json({ 
+            success: true, 
+            token, 
+            employee: {
+                id: employee.id,
+                username: employee.username,
+                name: employee.name,
+                'start-time': employee['start-time'],
+                'end-time': employee['end-time']
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+const verifyEmployeeApp = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, message: 'No token' });
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(401).json({ success: false, message: 'Invalid token' });
+        if (decoded.role !== 'employee') return res.status(403).json({ success: false, message: 'Forbidden' });
+        req.employeeId = decoded.id;
+        next();
+    });
+};
+
+app.get('/api/employee/dashboard', verifyEmployeeApp, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const sessionSnapshot = await db.daily_sessions()
+            .where('employeeId', '==', req.employeeId)
+            .where('date', '==', today)
+            .get();
+            
+        let todayShift = null;
+        if (!sessionSnapshot.empty) {
+            todayShift = sessionSnapshot.docs[0].data();
+        }
+
+        const reportsSnapshot = await db.esr_reports()
+            .where('employee_id', '==', req.employeeId)
+            .get();
+            
+        // Manual sort & limit due to missing composite index on Vercel sometimes
+        let reports = reportsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            date: doc.data().date,
+            verified: doc.data().verified
+        }));
+        
+        reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+        reports = reports.slice(0, 5);
+
+        res.json({
+            success: true,
+            leaveBalance: 2, 
+            workedDays: reportsSnapshot.size, 
+            todayShift,
+            reports
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// ==========================================
+
 // Export for Vercel (Cleanup)
 if (isVercel) {
     console.log('📦 Vercel Module Exported');

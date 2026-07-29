@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Strict mobile viewport constraints -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Employee Portal | Namma Mart</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/employee-app.css">
+</head>
+<body>
+    
+    <!-- Toast Notification System -->
+    <div id="toast-container"></div>
+
+    <!-- Mobile App Container -->
+    <div class="mobile-app-container">
+        
+        <!-- View 1: Login Screen -->
+        <section id="view-login" class="app-view active">
+            <div class="login-wrapper">
+                <div class="login-header">
+                    <div class="logo-box">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h1>Namma Mart</h1>
+                    <p>Employee Portal</p>
+                </div>
+                
+                <form id="employee-login-form" class="login-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="login-username" placeholder="Employee ID or Username" required autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
+                        <i class="fas fa-eye-slash toggle-password" id="toggle-pwd-btn"></i>
+                    </div>
+                    <button type="submit" class="primary-btn" id="login-submit-btn">
+                        <span>Log In</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>Forgot password? Contact your Administrator.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 2: Main Dashboard -->
+        <section id="view-dashboard" class="app-view">
+            <!-- App Bar -->
+            <header class="app-bar">
+                <div class="user-greeting">
+                    <img src="https://ui-avatars.com/api/?name=Emp&background=5B21B6&color=fff" id="nav-avatar" alt="Avatar">
+                    <div>
+                        <p class="greeting-text" id="greeting-time">Good Morning,</p>
+                        <h2 id="nav-employee-name">Loading...</h2>
+                    </div>
+                </div>
+                <button class="icon-btn" id="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </header>
+
+            <div class="dashboard-scroll-area">
+                
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
+                        <h3 id="stat-worked-days">--</h3>
+                        <p>Worked Days</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-plane-departure"></i></div>
+                        <h3 id="stat-leave-balance">--</h3>
+                        <p>Leave Balance</p>
+                    </div>
+                </div>
+
+                <!-- Shift Status Card -->
+                <div class="highlight-card">
+                    <div class="highlight-header">
+                        <h3>Today's Shift</h3>
+                        <span class="badge" id="shift-badge">Checking...</span>
+                    </div>
+                    <div class="shift-details">
+                        <div class="shift-time">
+                            <i class="far fa-clock"></i>
+                            <span id="shift-expected-time">--:-- to --:--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity / Reports -->
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3>Recent Shift Reports</h3>
+                    </div>
+                    <div class="reports-list" id="recent-reports-list">
+                        <!-- Populated dynamically -->
+                        <div class="empty-state">Loading your reports...</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/employee-app.js"></script>
+</body>
+</html>

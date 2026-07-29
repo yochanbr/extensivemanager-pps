@@ -1,0 +1,10 @@
+{
+  "appId": "com.nammamart.employee",
+  "appName": "Employee Portal",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://extensivemanager.vercel.app/html/employee-app.html",
+    "cleartext": true
+  }
+}
