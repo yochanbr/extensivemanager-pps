@@ -3678,7 +3678,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span>${report.date}</span>
                             </div>
                         </div>
-                        <span class="shift-badge-id">#${report.shift_id || 'N/A'}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="shift-badge-id">#${report.shift_id || 'N/A'}</span>
+                            <button onclick="window.deleteShiftReport('${report.id}', event)" class="modern-btn" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" title="Delete Report" onmouseover="this.style.background='#fecaca'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#fee2e2'; this.style.transform='scale(1)';">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="shift-card-metrics">
                         <div class="shift-metric">
@@ -4679,4 +4684,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addDob && addMaritalGroup) handleDobChange(addDob, addMaritalGroup);
     }
 });
+
+window.deleteShiftReport = async function(reportId, event) {
+    event.stopPropagation();
+    if (window.nammaModalSystem && window.nammaModalSystem.confirm) {
+        window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?", async (confirmed) => {
+            if (!confirmed) return;
+            await processDelete();
+        });
+    } else {
+        if (!confirm("Are you sure you want to permanently delete this shift report?")) return;
+        await processDelete();
+    }
+
+    async function processDelete() {
+        try {
+            const response = await fetch(`/api/shift-summary/${reportId}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                const dateFilter = document.getElementById('shift-summary-date-filter');
+                window.loadShiftSummaries(dateFilter ? dateFilter.value : null);
+            } else {
+                if (window.nammaModalSystem && window.nammaModalSystem.alert) {
+                    window.nammaModalSystem.alert("Failed to delete report: " + data.message);
+                } else {
+                    alert("Failed to delete report: " + data.message);
+                }
+            }
+        } catch (err) {
+            console.error("Error deleting report:", err);
+        }
+    }
+};
 
