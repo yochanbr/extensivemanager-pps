@@ -673,8 +673,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const viewReportBtn = document.querySelector('.view-reports-btn');
-    const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
+    const viewReportsBtnEl = document.querySelector('.view-reports-btn');
+    const viewEsrJpgsBtnEl = document.querySelector('.view-esr-jpgs-btn');
     const viewPayrollBtn = document.querySelector('[data-target="view-payroll"]');
     const viewRequestsBtn = document.querySelector('[data-target="view-requests"]');
 
@@ -689,8 +689,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (dashboardBtn) dashboardBtn.addEventListener('click', () => switchSpaView(dashboardView, dashboardBtn));
     if (manageEmployeesBtn) manageEmployeesBtn.addEventListener('click', () => switchSpaView(employeesView, manageEmployeesBtn));
-    if (viewReportBtn) viewReportBtn.addEventListener('click', () => switchSpaView(reportsView, viewReportBtn));
-    if (viewEsrJpgsBtn) viewEsrJpgsBtn.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtn));
+    if (viewReportsBtnEl) viewReportsBtnEl.addEventListener('click', () => switchSpaView(reportsView, viewReportsBtnEl));
+    if (viewEsrJpgsBtnEl) viewEsrJpgsBtnEl.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtnEl));
     if (viewPayrollBtn) viewPayrollBtn.addEventListener('click', () => switchSpaView(payrollView, viewPayrollBtn));
     if (viewRequestsBtn) viewRequestsBtn.addEventListener('click', () => switchSpaView(requestsView, viewRequestsBtn));
     
