@@ -678,12 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewPayrollBtn = document.querySelector('[data-target="view-payroll"]');
     const viewRequestsBtn = document.querySelector('[data-target="view-requests"]');
 
-    const employeesView = document.getElementById('view-employees');
-    const reportsView = document.getElementById('view-reports');
-    const settingsView = document.getElementById('view-settings');
-    const attendanceView = document.getElementById('view-attendance');
-    const shiftSummaryView = document.getElementById('view-shift-summary');
-    const masterReportsView = document.getElementById('view-master-reports');
     const payrollView = document.getElementById('view-payroll');
     const requestsView = document.getElementById('view-requests');
 
