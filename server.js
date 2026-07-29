@@ -313,9 +313,12 @@ const db = {
     daily_sessions: () => firestore.collection('daily_sessions'),
     esr_reports: () => firestore.collection('esr_reports'),
     esr_jpgs: () => firestore.collection('esr_jpgs'),
-    leave_swaps: () => firestore.collection('leave_swaps'),
+    leave_swaps: () => firestore.collection('leave_swaps'), // Legacy
     auth_sessions: () => firestore.collection('auth_sessions'),
-    face_requests: () => firestore.collection('face_requests')
+    face_requests: () => firestore.collection('face_requests'),
+    payslips: () => firestore.collection('payslips'),
+    leave_requests: () => firestore.collection('leave_requests'),
+    shift_swaps: () => firestore.collection('shift_swaps')
 };
 
 
