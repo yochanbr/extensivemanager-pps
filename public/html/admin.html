@@ -43,6 +43,8 @@
                     <button class="nav-item dashboard-btn" onclick="location.reload()">
                         <i class="fas fa-th-large"></i><span>Dashboard</span>
                     </button>
+                    <button class="nav-item" data-target="view-payroll"><i class="fas fa-file-invoice-dollar"></i><span>Payroll</span></button>
+                    <button class="nav-item" data-target="view-requests"><i class="fas fa-inbox"></i><span>Requests</span></button>
                 </div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item update-btn">
@@ -768,6 +770,40 @@
                             </div>
                         </div>
                     </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW: REQUESTS (Leaves & Swaps) -->
+        <!-- ========================================== -->
+        <section id="view-requests" class="admin-view" style="display: none;">
+            <header class="section-header">
+                <div class="header-content">
+                    <h2><i class="fas fa-inbox"></i> Employee Requests</h2>
+                    <p>Manage leave requests and shift swaps</p>
+                </div>
+            </header>
+            
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card">
+                    <div class="card-header">
+                        <h3>Pending Leave Requests</h3>
+                        <button class="icon-btn" onclick="loadAdminRequests()"><i class="fas fa-sync"></i></button>
+                    </div>
+                    <div class="reports-list" id="admin-leave-requests-list" style="margin-top: 15px;">
+                        <div class="empty-state">Loading requests...</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-header">
+                        <h3>Pending Shift Swaps</h3>
+                    </div>
+                    <div class="reports-list" id="admin-swap-requests-list" style="margin-top: 15px;">
+                        <div class="empty-state">Loading requests...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         </main>
     </div>
 
@@ -1759,6 +1795,10 @@
                     <p style="margin: 2px 0 0; font-size: 13px; color: #64748B;">Review and download the generated document</p>
                 </div>
                 <div style="display: flex; gap: 15px;">
+                    <button class="modern-btn primary" onclick="window.publishPayslipToApp()" 
+                        style="background: #10B981; height: 50px; padding: 0 30px; font-size: 16px; font-weight: 700; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-paper-plane"></i> Send to Employee App
+                    </button>
                     <button class="modern-btn primary" onclick="window.downloadPayslip()" 
                         style="background: #1E293B; height: 50px; padding: 0 30px; font-size: 16px; font-weight: 700; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);">
                         <i class="fas fa-file-pdf"></i> Download Payslip (PDF)

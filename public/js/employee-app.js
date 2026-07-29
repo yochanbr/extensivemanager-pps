@@ -190,7 +190,7 @@ async function loadDashboardData() {
             const reportsList = document.getElementById('recent-reports-list');
             if (data.reports && data.reports.length > 0) {
                 reportsList.innerHTML = data.reports.map(r => `
-                    <div class="report-item">
+                    <div class="report-item" style="cursor:pointer;" onclick="openReportModal('${r.id}')">
                         <div class="report-info">
                             <h4>${r.date}</h4>
                             <p>Shift Report</p>
@@ -239,8 +239,23 @@ async function loadFinanceData() {
                 ledgerList.innerHTML = '<div class="empty-state">No pending deductions!</div>';
             }
             
-            // Render Payslips (Placeholder for now until PDFs are piped)
-            document.getElementById('finance-payslips-list').innerHTML = '<div class="empty-state">No payslips generated yet.</div>';
+            // Render Payslips
+            const payslipsList = document.getElementById('finance-payslips-list');
+            if (data.payslips && data.payslips.length > 0) {
+                payslipsList.innerHTML = data.payslips.map(p => `
+                    <div class="report-item" style="cursor: pointer;" onclick="alert('Viewing Payslip for ${p.month}')">
+                        <div class="report-info">
+                            <h4>Payslip: ${p.month}</h4>
+                            <p>Net Pay: ₹${p.netPay}</p>
+                        </div>
+                        <div class="report-status verified">
+                            <i class="fas fa-file-pdf"></i> View
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                payslipsList.innerHTML = '<div class="empty-state">No payslips available yet.</div>';
+            }
         }
     } catch (err) {
         console.error(err);
@@ -284,17 +299,52 @@ const formContainer = document.getElementById('leave-request-form-container');
 const btnCancelLeave = document.getElementById('btn-cancel-leave');
 const btnSubmitLeave = document.getElementById('btn-submit-leave');
 
+const btnRequestSwap = document.getElementById('btn-request-swap');
+const swapFormContainer = document.getElementById('swap-request-form-container');
+const btnCancelSwap = document.getElementById('btn-cancel-swap');
+const btnSubmitSwap = document.getElementById('btn-submit-swap');
+const swapCoworkerSelect = document.getElementById('swap-coworker');
+
+// UI Toggles
 btnRequestLeave.addEventListener('click', () => {
     formContainer.style.display = 'block';
-    btnRequestLeave.style.display = 'none';
+    swapFormContainer.style.display = 'none';
 });
 
 btnCancelLeave.addEventListener('click', () => {
     formContainer.style.display = 'none';
-    btnRequestLeave.style.display = 'block';
 });
 
-btnSubmitLeave.addEventListener('click', async () => {
+btnRequestSwap.addEventListener('click', async () => {
+    swapFormContainer.style.display = 'block';
+    formContainer.style.display = 'none';
+    
+    // Load coworkers if not already loaded
+    if (swapCoworkerSelect.options.length <= 1) {
+        try {
+            const response = await fetch(`${API_BASE}/api/employee/coworkers`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                data.coworkers.forEach(cw => {
+                    const opt = document.createElement('option');
+                    opt.value = cw.id;
+                    opt.innerText = cw.name;
+                    swapCoworkerSelect.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+});
+
+btnCancelSwap.addEventListener('click', () => {
+    swapFormContainer.style.display = 'none';
+});
+
+// Leave Submit
     const date = document.getElementById('leave-date').value;
     const type = document.getElementById('leave-type').value;
     const reason = document.getElementById('leave-reason').value;
@@ -326,3 +376,76 @@ btnSubmitLeave.addEventListener('click', async () => {
         btnSubmitLeave.disabled = false;
     }
 });
+
+// Swap Submit
+btnSubmitSwap.addEventListener('click', async () => {
+    const date = document.getElementById('swap-date').value;
+    const coworkerId = swapCoworkerSelect.value;
+    const reason = document.getElementById('swap-reason').value;
+
+    if (!date || !coworkerId) return showToast('Please select a date and coworker', 'error');
+
+    btnSubmitSwap.disabled = true;
+    try {
+        const response = await fetch(`${API_BASE}/api/employee/shift-swap`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ date, coworkerId, reason })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Swap request submitted!', 'success');
+            swapFormContainer.style.display = 'none';
+            loadLeavesData(); // Refresh history
+        } else {
+            showToast(data.message || 'Failed to submit', 'error');
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+    } finally {
+        btnSubmitSwap.disabled = false;
+    }
+});
+
+// ==========================================
+// REPORT MODAL LOGIC
+// ==========================================
+const reportModal = document.getElementById('report-modal');
+document.getElementById('btn-close-report').addEventListener('click', () => {
+    reportModal.style.display = 'none';
+});
+
+async function openReportModal(reportId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/employee/reports/${reportId}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('report-modal-date').innerText = `Report: ${data.report.date}`;
+            document.getElementById('report-modal-sales').innerText = `₹${data.report.sales}`;
+            document.getElementById('report-modal-upi').innerText = `₹${data.report.upi}`;
+            document.getElementById('report-modal-cash').innerText = `₹${data.report.cash}`;
+            
+            const dropsDiv = document.getElementById('report-modal-drops');
+            dropsDiv.innerHTML = data.report.drops.length > 0 
+                ? data.report.drops.map(d => `<div style="padding: 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span>${d.time}</span><span style="font-weight: 600;">₹${d.amount}</span></div>`).join('')
+                : 'No drops recorded.';
+                
+            const issuesDiv = document.getElementById('report-modal-issues');
+            issuesDiv.innerHTML = data.report.issues.length > 0 
+                ? data.report.issues.map(i => `<div style="padding: 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;"><span>${i.reason || 'Issue'}</span><span style="color: var(--danger); font-weight: 600;">-₹${i.amount}</span></div>`).join('')
+                : 'No issues recorded.';
+
+            reportModal.style.display = 'flex';
+        } else {
+            showToast('Could not load report details', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Network error', 'error');
+    }
+}

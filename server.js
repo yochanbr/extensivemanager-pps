@@ -1385,6 +1385,90 @@ app.post('/api/end-shift', async (req, res) => {
     }
 });
 
+// Publish payslip to Employee App
+app.post('/api/admin/payslips/publish', verifyAdmin, async (req, res) => {
+    try {
+        const { employeeId, month, basicSalary, lopAmount, netPay } = req.body;
+        if (!employeeId || !month) return res.status(400).json({ success: false, message: 'Missing fields' });
+
+        const payslipDoc = {
+            employeeId,
+            month, // YYYY-MM
+            basicSalary: basicSalary || 0,
+            lopAmount: lopAmount || 0,
+            netPay: netPay || 0,
+            published: true,
+            publishedAt: new Date().toISOString()
+        };
+
+        // Upsert to ensure we don't have duplicate months
+        const existing = await db.payslips().where('employeeId', '==', employeeId).where('month', '==', month).get();
+        if (!existing.empty) {
+            await db.payslips().doc(existing.docs[0].id).update(payslipDoc);
+        } else {
+            await db.payslips().add(payslipDoc);
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+// Get pending employee requests (Leaves & Swaps)
+app.get('/api/admin/requests', verifyAdmin, async (req, res) => {
+    try {
+        const [leavesSnap, swapsSnap] = await Promise.all([
+            db.leave_requests().where('status', '==', 'pending').get(),
+            db.shift_swaps().where('status', '==', 'pending').get()
+        ]);
+        
+        // Fetch all employees to map names
+        const empSnap = await db.employees().get();
+        const empMap = {};
+        empSnap.forEach(doc => empMap[doc.id] = doc.data().name || doc.data().username);
+
+        const leaves = leavesSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            employeeName: empMap[doc.data().employeeId] || 'Unknown'
+        }));
+
+        const swaps = swapsSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            employeeName: empMap[doc.data().employeeId] || 'Unknown',
+            coworkerName: empMap[doc.data().coworkerId] || 'Unknown'
+        }));
+
+        res.json({ success: true, leaves, swaps });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
+});
+
+// Update Request Status (Leave or Swap)
+app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { type, id } = req.params;
+        const { status } = req.body; // 'approved' or 'rejected'
+        
+        if (type === 'leave') {
+            await db.leave_requests().doc(id).update({ status, updatedAt: new Date().toISOString() });
+        } else if (type === 'swap') {
+            await db.shift_swaps().doc(id).update({ status, updatedAt: new Date().toISOString() });
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid type' });
+        }
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
+});
 
 /**
  * Endpoint: Master Reset - Clear All Attendance Data
@@ -3412,10 +3496,24 @@ app.get('/api/employee/finance', verifyEmployeeApp, async (req, res) => {
         // Sort ledger by date descending
         ledger.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+        // Fetch Published Payslips
+        const payslipsSnapshot = await db.payslips()
+            .where('employeeId', '==', req.employeeId)
+            .where('published', '==', true)
+            .get();
+            
+        let payslips = [];
+        if (!payslipsSnapshot.empty) {
+            payslips = payslipsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Sort payslips by month descending (e.g. 2026-08, 2026-07)
+            payslips.sort((a, b) => b.month.localeCompare(a.month));
+        }
+
         res.json({
             success: true,
             liveSalary,
-            ledger
+            ledger,
+            payslips
         });
     } catch (err) {
         console.error(err);
@@ -3463,6 +3561,74 @@ app.post('/api/employee/leave-request', verifyEmployeeApp, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.get('/api/employee/coworkers', verifyEmployeeApp, async (req, res) => {
+    try {
+        const empSnapshot = await db.employees().get();
+        let coworkers = [];
+        empSnapshot.forEach(doc => {
+            if (doc.id !== req.employeeId) {
+                coworkers.push({ id: doc.id, name: doc.data().name || doc.data().username });
+            }
+        });
+        res.json({ success: true, coworkers });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
+});
+
+app.post('/api/employee/shift-swap', verifyEmployeeApp, async (req, res) => {
+    try {
+        const { date, coworkerId, reason } = req.body;
+        if (!date || !coworkerId) return res.status(400).json({ success: false, message: 'Missing fields' });
+
+        const swapReq = {
+            employeeId: req.employeeId,
+            coworkerId,
+            date,
+            reason: reason || '',
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        };
+
+        await db.shift_swaps().add(swapReq);
+        res.json({ success: true, message: 'Swap request submitted to Admin' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+app.get('/api/employee/reports/:id', verifyEmployeeApp, async (req, res) => {
+    try {
+        const reportDoc = await db.esr_reports().doc(req.params.id).get();
+        if (!reportDoc.exists) return res.status(404).json({ success: false, message: 'Report not found' });
+        
+        const reportData = reportDoc.data();
+        if (reportData.employee_id !== req.employeeId) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        // Return safe, read-only data
+        res.json({
+            success: true,
+            report: {
+                date: reportData.date,
+                verified: reportData.verified,
+                sales: reportData.sales || 0,
+                upi: reportData.upi || 0,
+                cash: reportData.cash || 0,
+                drops: reportData.drops || [],
+                issues: reportData.issues || [],
+                expenses: reportData.expenses || []
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
     }
 });
 

@@ -161,15 +161,23 @@
             </header>
             <div class="dashboard-scroll-area">
                 <div class="stats-grid">
-                    <div class="stat-card" style="grid-column: span 2;">
+                    <div class="stat-card">
                         <h3 id="leaves-balance-display">2</h3>
-                        <p>Available Leaves (This Month)</p>
-                        <button class="primary-btn" id="btn-request-leave" style="margin-top: 15px; padding: 12px; width: 100%;">
+                        <p>Available Leaves</p>
+                        <button class="primary-btn" id="btn-request-leave" style="margin-top: 15px; padding: 10px; width: 100%; font-size: 12px;">
                             <i class="fas fa-plus"></i> Request Leave
+                        </button>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="swaps-count-display">0</h3>
+                        <p>Pending Swaps</p>
+                        <button class="primary-btn" id="btn-request-swap" style="margin-top: 15px; padding: 10px; width: 100%; font-size: 12px; background: #f97316;">
+                            <i class="fas fa-exchange-alt"></i> Swap Shift
                         </button>
                     </div>
                 </div>
 
+                <!-- Leave Request Form -->
                 <div class="section-container" id="leave-request-form-container" style="display: none;">
                     <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
                         <h4 style="font-family: 'Outfit';">New Leave Request</h4>
@@ -181,6 +189,20 @@
                         <textarea id="leave-reason" placeholder="Reason for leave..." rows="2" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;"></textarea>
                         <button class="primary-btn" id="btn-submit-leave" style="padding: 10px;">Submit Request</button>
                         <button class="icon-btn" id="btn-cancel-leave" style="width: 100%; border-radius: 8px; margin-top: 5px;">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Shift Swap Form -->
+                <div class="section-container" id="swap-request-form-container" style="display: none;">
+                    <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <h4 style="font-family: 'Outfit';">Request Shift Swap</h4>
+                        <input type="date" id="swap-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+                        <select id="swap-coworker" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+                            <option value="">Select Coworker</option>
+                        </select>
+                        <textarea id="swap-reason" placeholder="Reason for swap..." rows="2" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;"></textarea>
+                        <button class="primary-btn" id="btn-submit-swap" style="padding: 10px; background: #f97316;">Submit Swap</button>
+                        <button class="icon-btn" id="btn-cancel-swap" style="width: 100%; border-radius: 8px; margin-top: 5px;">Cancel</button>
                     </div>
                 </div>
 
@@ -210,6 +232,38 @@
                 <span>Leaves</span>
             </button>
         </nav>
+
+        <!-- Read-Only Report Modal -->
+        <div id="report-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end; justify-content: center;">
+            <div style="background: var(--card-bg); width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; padding-bottom: 40px; transform: translateY(0); transition: 0.3s; max-height: 85vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 id="report-modal-date" style="margin: 0; font-family: 'Outfit';">Shift Report</h3>
+                    <button class="icon-btn" id="btn-close-report"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div class="stat-card" style="margin-bottom: 15px; background: rgba(91, 33, 182, 0.05); border-color: rgba(91, 33, 182, 0.1);">
+                    <p style="color: var(--text-muted);">Total Sales</p>
+                    <h2 id="report-modal-sales" style="color: var(--primary); font-family: 'Outfit';">₹0</h2>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div class="stat-card" style="padding: 10px;">
+                        <p style="font-size: 11px;">UPI</p>
+                        <h4 id="report-modal-upi" style="margin:0;">₹0</h4>
+                    </div>
+                    <div class="stat-card" style="padding: 10px;">
+                        <p style="font-size: 11px;">Cash</p>
+                        <h4 id="report-modal-cash" style="margin:0;">₹0</h4>
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top: 20px;"><h4>Cash Drops</h4></div>
+                <div id="report-modal-drops" style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;"></div>
+
+                <div class="section-header" style="margin-top: 20px;"><h4>Issues / Shortages</h4></div>
+                <div id="report-modal-issues" style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;"></div>
+            </div>
+        </div>
         
     </div>
 

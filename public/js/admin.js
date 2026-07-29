@@ -3476,6 +3476,148 @@ document.addEventListener('DOMContentLoaded', () => {
         html2pdf().set(opt).from(element).save();
     };
 
+    window.publishPayslipToApp = async function() {
+        // Scrape the DOM of the preview area to get the data
+        const element = document.getElementById('payslip-rendering-area');
+        if (!element) return;
+        
+        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
+        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
+        
+        // Find net pay from the element
+        const netPayEl = Array.from(element.querySelectorAll('td')).find(td => td.innerText.includes('Net Pay'));
+        const netPay = netPayEl ? netPayEl.nextElementSibling.innerText.replace(/[^0-9]/g, '') : 0;
+        
+        // Also get the raw inputs from the configuration form to save accurate structured data
+        const employeeId = document.getElementById('payslip-employee-select').value;
+        const month = document.getElementById('payslip-month-input').value; // YYYY-MM
+        const basic = document.getElementById('payslip-basic-input').value;
+        const lop = document.getElementById('payslip-lop-input').value;
+
+        try {
+            const res = await fetch('/api/admin/payslips/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                body: JSON.stringify({
+                    employeeId,
+                    month,
+                    basicSalary: basic,
+                    lopAmount: lop,
+                    netPay: netPay,
+                    publishedDate: new Date().toISOString()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                nammaModalSystem.alert(`Successfully sent the ${month} payslip to ${empName}'s app!`);
+            } else {
+                nammaModalSystem.alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            console.error(err);
+            nammaModalSystem.alert('Network error publishing payslip.');
+        }
+    };
+
+    // ==========================================
+    // REQUESTS (LEAVES & SWAPS) LOGIC
+    // ==========================================
+    window.loadAdminRequests = async function() {
+        const leavesList = document.getElementById('admin-leave-requests-list');
+        const swapsList = document.getElementById('admin-swap-requests-list');
+        
+        if (!leavesList || !swapsList) return;
+        
+        leavesList.innerHTML = '<div class="empty-state">Loading...</div>';
+        swapsList.innerHTML = '<div class="empty-state">Loading...</div>';
+
+        try {
+            const res = await fetch('/api/admin/requests', {
+                headers: { 'Authorization': `Bearer ${getCookie('accessToken')}` }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Render Leaves
+                if (data.leaves.length === 0) {
+                    leavesList.innerHTML = '<div class="empty-state">No pending leave requests.</div>';
+                } else {
+                    leavesList.innerHTML = data.leaves.map(req => `
+                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <h4 style="margin:0;">${req.employeeName}</h4>
+                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date} (${req.type})</p>
+                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Swaps
+                if (data.swaps.length === 0) {
+                    swapsList.innerHTML = '<div class="empty-state">No pending shift swaps.</div>';
+                } else {
+                    swapsList.innerHTML = data.swaps.map(req => `
+                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <h4 style="margin:0;">${req.employeeName} requests to swap with ${req.coworkerName}</h4>
+                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date}</p>
+                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                nammaModalSystem.alert('Failed to load requests');
+            }
+        } catch (err) {
+            console.error(err);
+            nammaModalSystem.alert('Network error loading requests');
+        }
+    };
+
+    window.updateRequestStatus = async function(type, id, status) {
+        if (!await nammaModalSystem.confirm(`Are you sure you want to ${status} this request?`)) return;
+        
+        try {
+            const res = await fetch(`/api/admin/requests/${type}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                body: JSON.stringify({ status })
+            });
+            const data = await res.json();
+            if (data.success) {
+                loadAdminRequests(); // refresh
+            } else {
+                nammaModalSystem.alert('Failed to update request');
+            }
+        } catch (err) {
+            console.error(err);
+            nammaModalSystem.alert('Network error');
+        }
+    };
+
+    // Ensure requests load when tab is clicked
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (btn.getAttribute('data-target') === 'view-requests') {
+                loadAdminRequests();
+            }
+        });
+    });
+
     const payslipConfigForm = document.getElementById('payslip-config-form');
     if (payslipConfigForm) {
         payslipConfigForm.addEventListener('submit', async (e) => {
