@@ -3290,6 +3290,11 @@ if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
 // EMPLOYEE MOBILE APP ROUTES
 // ==========================================
 
+// Serve the Employee App HTML securely
+app.get('/employee-app', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/html/employee-app.html'));
+});
+
 app.post('/api/employee/login', async (req, res) => {
     try {
         const { username, password } = req.body;

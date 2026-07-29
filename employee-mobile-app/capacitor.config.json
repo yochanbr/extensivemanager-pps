@@ -4,7 +4,7 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://extensivemanager.vercel.app/html/employee-app.html",
+    "url": "https://extensivemanager.vercel.app/employee-app",
     "cleartext": true
   }
 }
