@@ -168,19 +168,22 @@ async function loadDashboardData() {
             document.getElementById('stat-leave-balance').innerText = data.leaveBalance || '0';
             
             // Shift Status
+            const shiftStart = currentEmployee['start-time'] || '09:00';
+            const shiftEnd = currentEmployee['end-time'] || '18:00';
+            document.getElementById('shift-expected-time').innerText = `${shiftStart} to ${shiftEnd}`;
+            
+            const badge = document.getElementById('shift-badge');
             if (data.todayShift) {
-                const shiftStart = currentEmployee['start-time'] || '09:00';
-                const shiftEnd = currentEmployee['end-time'] || '18:00';
-                document.getElementById('shift-expected-time').innerText = `${shiftStart} to ${shiftEnd}`;
-                
-                const badge = document.getElementById('shift-badge');
-                if (data.todayShift.status === 'completed') {
+                if (data.todayShift.status === 'completed' || data.todayShift.checkOut) {
                     badge.innerText = 'Completed';
                     badge.style.background = 'rgba(255,255,255,0.3)';
                 } else if (data.todayShift.checkIn) {
                     badge.innerText = 'Clocked In';
                     badge.style.background = 'var(--success)';
                 }
+            } else {
+                badge.innerText = 'Not Started';
+                badge.style.background = 'var(--danger)';
             }
 
             // Reports
