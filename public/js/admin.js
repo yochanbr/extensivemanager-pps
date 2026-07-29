@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         progressPct = Math.min((elapsedMs / (9 * 60 * 60 * 1000)) * 100, 100);
                     }
 
-                    const role = s.fullTime === 'yes' ? 'Full Time' : 'Part Time';
+                    const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
                     const timeStr = new Date(s.session.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
                     rowsHtml += `
@@ -1151,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.staffData.filter(s => !s.session && s.isActive !== false).forEach(s => {
                     if (filterValue === 'working' || filterValue === 'break') return;
 
-                    const role = s.fullTime === 'yes' ? 'Full Time' : 'Part Time';
+                    const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
                     rowsHtml += `
                         <tr>
                             <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #94A3B8;">${s.name}</div></div></td>
@@ -2423,7 +2423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 'Employee Name': s.name,
                 'Employee ID': s.id,
-                'Role': s.fullTime === 'yes' ? 'Full Time' : 'Part Time',
+                'Role': (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time',
                 'Status': s.statusText,
                 'Check-In': checkInStr,
                 'Check-Out': checkOutStr,
