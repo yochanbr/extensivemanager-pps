@@ -345,6 +345,7 @@ btnCancelSwap.addEventListener('click', () => {
 });
 
 // Leave Submit
+btnSubmitLeave.addEventListener('click', async () => {
     const date = document.getElementById('leave-date').value;
     const type = document.getElementById('leave-type').value;
     const reason = document.getElementById('leave-reason').value;
