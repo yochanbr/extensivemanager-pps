@@ -1461,6 +1461,17 @@ app.delete('/api/attendance/reset', verifyAdmin, async (req, res) => {
     }
 });
 
+// DELETE Shift Summary Route (must be before generalized /api/:type/:id to prevent greedy interception)
+app.delete('/api/shift-summary/:id', verifyAdmin, async (req, res) => {
+    try {
+        await db.esr_reports().doc(req.params.id).delete();
+        await db.esr_jpgs().doc(req.params.id).delete();
+        res.json({ success: true, message: 'Report deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // Generalized Update Record Route
 app.put('/api/:type/:id', async (req, res) => {
     try {
@@ -2787,15 +2798,7 @@ app.get('/api/shift-summary', verifyAdmin, async (req, res) => {
     }
 });
 
-app.delete('/api/shift-summary/:id', verifyAdmin, async (req, res) => {
-    try {
-        await db.esr_reports().doc(req.params.id).delete();
-        await db.esr_jpgs().doc(req.params.id).delete();
-        res.json({ success: true, message: 'Report deleted successfully.' });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
+
 
 /**
  * Endpoint: Get Unverified Shift Bills
