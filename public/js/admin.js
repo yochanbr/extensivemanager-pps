@@ -3497,7 +3497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/admin/payslips/publish', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     employeeId,
                     month,
@@ -3532,9 +3532,7 @@ document.addEventListener('DOMContentLoaded', () => {
         swapsList.innerHTML = '<div class="empty-state">Loading...</div>';
 
         try {
-            const res = await fetch('/api/admin/requests', {
-                headers: { 'Authorization': `Bearer ${getCookie('accessToken')}` }
-            });
+            const res = await fetch('/api/admin/requests');
             const data = await res.json();
             
             if (data.success) {
@@ -3594,7 +3592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`/api/admin/requests/${type}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
             });
             const data = await res.json();
