@@ -288,6 +288,9 @@ app.use('/api', (req, res, next) => {
     // Password Reset APIs are public
     if (req.path === '/request-reset-otp' && req.method === 'POST') return next();
     if (req.path === '/reset-admin-password' && req.method === 'POST') return next();
+
+    // Employee App Login is public (no token needed yet)
+    if (req.path === '/employee/login' && req.method === 'POST') return next();
     
     // Authenticate all API requests automatically
     verifyEmployee(req, res, () => {
