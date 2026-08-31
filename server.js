@@ -1512,6 +1512,21 @@ app.delete('/api/admin/payslips/:id', verifyAdmin, async (req, res) => {
     }
 });
 
+// Employee: fetch a single payslip by ID (only if it belongs to the employee)
+app.get('/api/employee/payslips/:id', verifyEmployeeApp, async (req, res) => {
+    try {
+        const doc = await db.payslips().doc(req.params.id).get();
+        if (!doc.exists) return res.status(404).json({ success: false, message: 'Payslip not found' });
+        const data = doc.data();
+        if (data.employeeId !== req.employeeId) return res.status(403).json({ success: false, message: 'Forbidden' });
+        if (data.status && data.status !== 'published') return res.status(403).json({ success: false, message: 'Payslip not published' });
+        res.json({ success: true, payslip: data });
+    } catch (err) {
+        console.error('Error fetching payslip:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 // Get pending employee requests (Leaves & Swaps)
 // =========================
 // REQUEST ID GENERATOR & AUDIT
