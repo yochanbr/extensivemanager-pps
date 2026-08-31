@@ -5226,104 +5226,95 @@ window.renderAdminPayroll = function() {
     const listEl = document.getElementById('admin-payslip-history-list');
     const { payslips, employees, currentMonth, search, filter } = window.payrollState;
     
-    // Filter to currently selected month FIRST
     const monthSlips = payslips.filter(p => p.month === currentMonth);
-    
-    // Stats calculation based ONLY on selected month
     let totalNet = 0;
     monthSlips.forEach(p => { totalNet += p._normalized.net; });
     
     const activeEmployeesCount = employees.length;
-    
-    // Deduplicate employees paid (though db shouldn't have dupes for same month)
     const paidEmployeeIds = new Set(monthSlips.map(p => p.employeeId));
     const paidCount = paidEmployeeIds.size;
     const pendingCount = Math.max(0, activeEmployeesCount - paidCount);
     
     const avgNet = paidCount > 0 ? (totalNet / paidCount) : 0;
     
-    // Update stats UI
     document.getElementById('payroll-stat-total').textContent = window.formatINR(totalNet);
     document.getElementById('payroll-stat-paid').textContent = `${paidCount} / ${activeEmployeesCount}`;
+    document.getElementById('payroll-stat-paid-sub').textContent = `${activeEmployeesCount > 0 ? Math.round((paidCount/activeEmployeesCount)*100) : 0}% processed`;
     document.getElementById('payroll-stat-slips').textContent = monthSlips.length;
     document.getElementById('payroll-stat-avg').textContent = window.formatINR(avgNet);
+    document.getElementById('payroll-stat-pending').textContent = pendingCount;
     
     const statusEl = document.getElementById('payroll-stat-status');
+    const statusDot = document.getElementById('payroll-status-dot');
     const statusIcon = document.getElementById('payroll-status-icon');
-    const statusText = document.getElementById('payroll-status-text');
+    const statusIconBg = document.getElementById('payroll-status-icon-bg');
+    const statusSub = document.getElementById('payroll-status-sub');
     
     if (activeEmployeesCount === 0) {
-        statusText.textContent = "No Staff";
-        statusIcon.style.color = "#94A3B8";
-        statusEl.style.color = "#64748B";
+        statusEl.textContent = "No Staff";
+        statusDot.style.color = "#94A3B8"; statusIconBg.style.background = "#F1F5F9"; statusIconBg.style.color = "#64748B";
+        statusSub.textContent = "-";
     } else if (paidCount === 0) {
-        statusText.textContent = "Draft";
-        statusIcon.style.color = "#94A3B8";
-        statusEl.style.color = "#64748B";
+        statusEl.textContent = "Draft";
+        statusDot.style.color = "#94A3B8"; statusIconBg.style.background = "#F1F5F9"; statusIconBg.style.color = "#64748B";
+        statusSub.textContent = "Not started";
     } else if (pendingCount === 0) {
-        statusText.textContent = "Published";
-        statusIcon.style.color = "#059669";
-        statusEl.style.color = "#059669";
+        statusEl.textContent = "Ready";
+        statusDot.style.color = "#059669"; statusIconBg.style.background = "#ECFDF5"; statusIconBg.style.color = "#059669";
+        statusSub.textContent = "All good to go";
     } else {
-        statusText.textContent = "Processing";
-        statusIcon.style.color = "#F59E0B";
-        statusEl.style.color = "#D97706";
+        statusEl.textContent = "Processing";
+        statusDot.style.color = "#D97706"; statusIconBg.style.background = "#FFFBEB"; statusIconBg.style.color = "#D97706";
+        statusSub.textContent = "In progress";
     }
     
-    // Further filter for rendering ledger
     let renderList = monthSlips.filter(p => {
         const matchesSearch = p.employeeName.toLowerCase().includes(search) || (p.employeeId && p.employeeId.toLowerCase().includes(search));
-        const matchesFilter = filter === 'all' || p.status === filter || (filter === 'published' && !p.status); // fallback for old records
+        const matchesFilter = filter === 'all' || p.status === filter || (filter === 'published' && !p.status);
         return matchesSearch && matchesFilter;
     });
     
+    document.getElementById('payroll-pagination-text').textContent = `Showing ${renderList.length > 0 ? 1 : 0} to ${renderList.length} of ${renderList.length} employees`;
+    
     if (renderList.length === 0) {
-        if (monthSlips.length === 0) {
-            listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 64px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:16px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No payslips yet</h4><p style="margin:0; color:#64748B;">Generate your first payslip for this payroll period.</p><button onclick="window.openPayslipConfig()" style="margin-top:16px; background:#0F172A; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Generate Payslip</button></td></tr>';
-        } else {
-            listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px; color:#64748B;">No employees found matching your search.</td></tr>';
-        }
+        listEl.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 64px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:16px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No payslips found</h4></td></tr>';
         return;
     }
     
     listEl.innerHTML = renderList.map(p => {
-        const initial = (p.employeeName || 'U')[0].toUpperCase();
+        const initial = (p.employeeName || 'U').substring(0,2).toUpperCase();
         return `
-        <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'" onclick="window.openPayslipDrawer('${p.id}')">
-            <td style="padding: 16px 24px;">
+        <tr style="cursor: pointer;" onclick="window.openPayslipDrawer('${p.id}')">
+            <td>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing:0.5px;">
                         ${initial}
                     </div>
-                    <div>
-                        <div style="font-weight: 600; color: #0F172A;">${p.employeeName}</div>
-                        <div style="font-size: 12px; color: #64748B;">${p.employeeId.substring(0, 8)}...</div>
+                    <div style="font-weight: 600; color: #0F172A;">${p.employeeName}</div>
+                </div>
+            </td>
+            <td style="font-weight: 500; font-family: monospace;">${p.employeeId}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.basic)}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.allowances)}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.deductions)}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.lop)}</td>
+            <td style="text-align: right; font-weight: 700; color: #059669; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.net)}</td>
+            <td><span class="pm-badge pm-badge-success">Published</span></td>
+            <td style="text-align: center;">
+                <div style="position: relative; display: inline-block;" onclick="event.stopPropagation()">
+                    <button onclick="window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#94A3B8; cursor:pointer; padding:4px 8px; font-size: 18px; line-height: 1;">&vellip;</button>
+                    <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
+                        <div onclick="window.openPayslipDrawer('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer;">View Details</div>
+                        <div onclick="window.deletePayslip('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #DC2626; cursor: pointer; border-top: 1px solid #F1F5F9;">Delete</div>
                     </div>
                 </div>
             </td>
-            <td style="padding: 16px 24px; text-align: right; color: #475569; font-variant-numeric: tabular-nums;">
-                ${window.formatINR(p._normalized.basic)}
-            </td>
-            <td style="padding: 16px 24px; text-align: right; color: #475569; font-variant-numeric: tabular-nums;">
-                ${window.formatINR(p._normalized.allowances)}
-            </td>
-            <td style="padding: 16px 24px; text-align: right; color: #DC2626; font-variant-numeric: tabular-nums;">
-                ${window.formatINR(p._normalized.deductions)}
-            </td>
-            <td style="padding: 16px 24px; text-align: right; color: #DC2626; font-variant-numeric: tabular-nums;">
-                ${p._normalized.lop > 0 ? window.formatINR(p._normalized.lop) : '-'}
-            </td>
-            <td style="padding: 16px 24px; text-align: right; font-weight: 700; color: #059669; font-variant-numeric: tabular-nums; font-size: 14px;">
-                ${window.formatINR(p._normalized.net)}
-            </td>
-            <td style="padding: 16px 24px;">
-                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 600; border: 1px solid #A7F3D0;">
-                    <i class="fas fa-circle" style="font-size: 8px;"></i> PUBLISHED
-                </span>
-            </td>
-            <td style="padding: 16px 24px; text-align: center;">
-                <div style="position: relative; display: inline-block;" onclick="event.stopPropagation()">
-                    <button onclick="window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#64748B; cursor:pointer; padding:4px 8px; font-size: 16px;">
+        </tr>
+        `;
+    }).join('');
+};
+
+window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#64748B; cursor:pointer; padding:4px 8px; font-size: 16px;">
                         &ctdot;
                     </button>
                     <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
@@ -5363,87 +5354,80 @@ window.openPayslipDrawer = function(id) {
     const payslip = window.payrollState.payslips.find(p => p.id === id);
     if (!payslip) return;
     
+    const initial = (payslip.employeeName || 'U').substring(0,2).toUpperCase();
     const content = document.getElementById('payslip-drawer-content');
+    const footer = document.getElementById('payslip-drawer-footer');
     
     content.innerHTML = `
-        <div style="margin-bottom: 24px;">
-            <div style="font-size: 20px; font-weight: 700; color: #0F172A;">${payslip.employeeName}</div>
-            <div style="font-size: 13px; color: #64748B; font-family: monospace;">ID: ${payslip.employeeId}</div>
-        </div>
-        
-        <div style="display: flex; gap: 12px; margin-bottom: 32px;">
-            <div style="flex: 1; padding: 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
-                <div style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase;">Month</div>
-                <div style="font-size: 14px; font-weight: 600; color: #0F172A; margin-top: 4px;">${new Date(payslip.month+'-01').toLocaleDateString('en-US', {month:'long', year:'numeric'})}</div>
+        <!-- Header Profile -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; letter-spacing:0.5px;">
+                ${initial}
             </div>
-            <div style="flex: 1; padding: 12px; background: #ECFDF5; border-radius: 8px; border: 1px solid #A7F3D0;">
-                <div style="font-size: 11px; font-weight: 600; color: #059669; text-transform: uppercase;">Net Pay</div>
-                <div style="font-size: 14px; font-weight: 700; color: #059669; margin-top: 4px;">${window.formatINR(payslip._normalized.net)}</div>
+            <div>
+                <div style="font-size: 18px; font-weight: 700; color: #0F172A;">${payslip.employeeName}</div>
+                <div style="font-size: 14px; color: #64748B;">${payslip.employeeId}</div>
             </div>
         </div>
         
-        <div style="margin-bottom: 24px;">
-            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-bottom: 12px;">Earnings</div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">Basic Pay</span>
-                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip._normalized.basic)}</span>
+        <!-- Period & Status -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #0F172A;">
+                <i class="far fa-calendar-alt" style="color: #64748B;"></i>
+                ${new Date(payslip.month+'-01').toLocaleDateString('en-US', {month:'long', year:'numeric'})}
             </div>
-            ${payslip.earnings?.allowances?.hra ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">HRA / Allowances</span>
-                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.hra)}</span>
-            </div>` : ''}
-            ${payslip.earnings?.allowances?.overtime ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">Overtime</span>
-                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.overtime)}</span>
-            </div>` : ''}
-            ${payslip.earnings?.allowances?.other ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">Other Earnings</span>
-                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.other)}</span>
-            </div>` : ''}
-            ${!payslip.earnings && payslip._normalized.allowances > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">Allowances (Legacy)</span>
-                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip._normalized.allowances)}</span>
-            </div>` : ''}
-            <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0; font-size: 14px; font-weight: 700;">
-                <span style="color: #0F172A;">Gross Earnings</span>
-                <span style="color: #0F172A;">${window.formatINR(payslip._normalized.gross)}</span>
+            <span class="pm-badge pm-badge-success">Published</span>
+        </div>
+        
+        <!-- Metadata -->
+        <div style="display: flex; background: #F8FAFC; border-radius: 8px; padding: 16px;">
+            <div style="flex: 1;">
+                <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">Published On</div>
+                <div style="font-size: 12px; font-weight: 600; color: #0F172A;">${new Date(payslip.publishedAt || payslip.createdAt || Date.now()).toLocaleString('en-US', {day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'})}</div>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">Published By</div>
+                <div style="font-size: 12px; font-weight: 600; color: #0F172A;">${payslip.publishedBy || 'Admin User'}</div>
             </div>
         </div>
         
-        <div style="margin-bottom: 24px;">
-            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-bottom: 12px;">Deductions</div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">LOP / Shortage</span>
-                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip._normalized.lop)}</span>
-            </div>
-            ${payslip._normalized.esi !== null ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">ESI</span>
-                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip._normalized.esi)}</span>
-            </div>` : `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">ESI</span>
-                <span style="color: #94A3B8; font-style: italic;">Not recorded</span>
-            </div>`}
-            ${payslip.deductions?.other ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
-                <span style="color: #475569;">Other Deductions</span>
-                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip.deductions.other)}</span>
-            </div>` : ''}
-            <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0; font-size: 14px; font-weight: 700;">
-                <span style="color: #0F172A;">Total Deductions</span>
-                <span style="color: #DC2626;">${window.formatINR(payslip._normalized.deductions)}</span>
+        <!-- Earnings -->
+        <div>
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.05em; margin-bottom: 16px;">EARNINGS</div>
+            <div class="pm-detail-row"><span class="pm-detail-label">Basic Pay</span><span class="pm-detail-value">${window.formatINR(payslip._normalized.basic)}</span></div>
+            <div class="pm-detail-row"><span class="pm-detail-label">HRA</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.hra || 0)}</span></div>
+            <div class="pm-detail-row"><span class="pm-detail-label">Overtime</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.overtime || 0)}</span></div>
+            <div class="pm-detail-row"><span class="pm-detail-label">Other Allowances</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.other || (!payslip.earnings ? payslip._normalized.allowances : 0))}</span></div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-weight: 700;">
+                <span>Gross Pay</span>
+                <span>${window.formatINR(payslip._normalized.gross)}</span>
             </div>
         </div>
         
-        <div style="margin-top: 32px; padding: 16px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
-            <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-bottom: 8px;">Metadata</div>
-            <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span>Published At:</span>
-                <span style="font-family: monospace;">${new Date(payslip.publishedAt || payslip.createdAt || Date.now()).toLocaleString()}</span>
-            </div>
-            <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between;">
-                <span>Published By:</span>
-                <span style="font-family: monospace;">${payslip.publishedBy || 'admin'}</span>
+        <!-- Deductions -->
+        <div>
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.05em; margin-bottom: 16px;">DEDUCTIONS</div>
+            <div class="pm-detail-row"><span class="pm-detail-label">LOP</span><span class="pm-detail-value">${window.formatINR(payslip._normalized.lop)}</span></div>
+            <div class="pm-detail-row"><span class="pm-detail-label">ESI</span><span class="pm-detail-value">${payslip._normalized.esi !== null ? window.formatINR(payslip._normalized.esi) : window.formatINR(0)}</span></div>
+            <div class="pm-detail-row"><span class="pm-detail-label">Other Deductions</span><span class="pm-detail-value">${window.formatINR(payslip.deductions?.other || 0)}</span></div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-weight: 700;">
+                <span>Total Deductions</span>
+                <span>${window.formatINR(payslip._normalized.deductions)}</span>
             </div>
         </div>
+        
+        <!-- Net Pay Big Box -->
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 11px; font-weight: 700; color: #059669; letter-spacing: 0.05em;">NET PAY</div>
+            <div style="font-size: 24px; font-weight: 800; color: #059669;">${window.formatINR(payslip._normalized.net)}</div>
+        </div>
+    `;
+    
+    footer.innerHTML = `
+        <button class="pm-btn pm-btn-outline" style="flex:1; justify-content:center;"><i class="fas fa-download"></i> Download PDF</button>
+        <button class="pm-btn pm-btn-danger-outline" style="flex:1; justify-content:center;" onclick="window.deletePayslip('${payslip.id}')"><i class="fas fa-trash"></i> Delete Payslip</button>
     `;
     
     document.getElementById('payslip-drawer-overlay').style.display = 'block';

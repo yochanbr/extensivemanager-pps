@@ -789,123 +789,230 @@
         <!-- VIEW: PAYROLL (Dashboard & History) -->
         <!-- ========================================== -->
         
-        <section id="view-payroll" class="admin-view rq-view">
+        
+        <section id="view-payroll" class="admin-view rq-view" style="background-color: #F8FAFC; padding: 24px; min-height: 100vh;">
+            <style>
+                /* Typography & Reset */
+                #view-payroll { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0F172A; }
+                #view-payroll h2, #view-payroll h3, #view-payroll p { margin: 0; }
+                
+                /* Buttons */
+                .pm-btn { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; padding: 10px 16px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+                .pm-btn-primary { background: #F95A2C; color: white; box-shadow: 0 4px 6px -1px rgba(249, 90, 44, 0.2); }
+                .pm-btn-primary:hover { background: #E0481D; box-shadow: 0 4px 12px rgba(249, 90, 44, 0.3); transform: translateY(-1px); }
+                .pm-btn-outline { background: white; border: 1px solid #E2E8F0; color: #475569; }
+                .pm-btn-outline:hover { background: #F8FAFC; color: #0F172A; border-color: #CBD5E1; }
+                .pm-btn-danger-outline { background: white; border: 1px solid #FECACA; color: #DC2626; }
+                .pm-btn-danger-outline:hover { background: #FEF2F2; }
+                
+                /* Month Selector */
+                .pm-month-selector { display: flex; align-items: center; background: white; border: 1px solid #E2E8F0; border-radius: 8px; padding: 4px; }
+                .pm-month-btn { background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #64748B; border-radius: 6px; }
+                .pm-month-btn:hover { background: #F1F5F9; color: #0F172A; }
+                .pm-month-text { font-weight: 600; font-size: 14px; padding: 0 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+                
+                /* Stats Cards */
+                .pm-stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+                .pm-stat-header { display: flex; align-items: center; gap: 12px; }
+                .pm-stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+                .pm-stat-title { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; }
+                .pm-stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: #0F172A; }
+                .pm-stat-sub { font-size: 12px; color: #94A3B8; font-weight: 500; }
+                
+                /* Toolbar */
+                .pm-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #E2E8F0; background: white; }
+                .pm-input { border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none; transition: border 0.2s; }
+                .pm-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+                
+                /* Table */
+                .pm-table-container { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+                .pm-table { width: 100%; border-collapse: collapse; text-align: left; }
+                .pm-table th { padding: 12px 24px; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; background: #F8FAFC; }
+                .pm-table td { padding: 16px 24px; font-size: 14px; border-bottom: 1px solid #F1F5F9; color: #475569; }
+                .pm-table tr:hover td { background: #F8FAFC; }
+                
+                /* Badges */
+                .pm-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+                .pm-badge-success { background: #ECFDF5; color: #059669; }
+                .pm-badge-warning { background: #FFFBEB; color: #D97706; }
+                
+                /* Drawer */
+                .pm-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); z-index:9998; backdrop-filter:blur(2px); }
+                .pm-drawer { position:fixed; top:0; right:-500px; width:480px; max-width:100vw; height:100vh; background:white; z-index:9999; box-shadow:-10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-direction:column; }
+                .pm-drawer-header { padding: 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; }
+                .pm-drawer-content { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+                .pm-drawer-footer { padding: 24px; border-top: 1px solid #E2E8F0; display: flex; gap: 12px; background: #F8FAFC; }
+                
+                .pm-detail-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
+                .pm-detail-label { color: #475569; }
+                .pm-detail-value { font-weight: 600; color: #0F172A; }
+            </style>
 
-<style>
-#view-payroll .premium-table th { padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; }
-#view-payroll .modern-input { width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0 12px; height: 50px; font-size: 15px; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
-#view-payroll .modern-input:focus { border-color: #2563EB; }
-#view-payroll .modern-btn { cursor: pointer; transition: all 0.2s; }
-#view-payroll .modern-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-#view-payroll .modern-btn.accent:hover:not(:disabled) { box-shadow: 0 4px 12px rgba(249, 90, 44, 0.25); }
-.payroll-table-container::-webkit-scrollbar { height: 8px; }
-.payroll-table-container::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 4px; }
-.payroll-table-container::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-.payroll-table-container::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
-</style>
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
+                <div>
+                    <h2 style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: #0F172A; margin-bottom: 6px;">Payroll & Compensation</h2>
+                    <p style="font-size: 14px; color: #64748B;">Manage employee salaries, payslips and monthly payroll</p>
+                </div>
+                <button class="pm-btn pm-btn-primary" onclick="window.openPayslipConfig()">
+                    <i class="fas fa-plus"></i> Generate Payslip
+                </button>
+            </div>
 
-            <!-- Page Header -->
-            <header class="rq-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 24px; margin-bottom: 24px;">
-                <div class="rq-header-left">
-                    <div class="rq-header-icon" style="background: linear-gradient(135deg, #F95A2C 0%, #D9381E 100%); color: white; box-shadow: 0 4px 12px rgba(249, 90, 44, 0.25);"><i class="fas fa-file-invoice-dollar"></i></div>
-                    <div class="rq-header-text">
-                        <h2 class="rq-title" style="font-size: 24px; letter-spacing: -0.02em; color: #0F172A; margin: 0 0 4px 0;">Payroll & Compensation</h2>
-                        <p class="rq-subtitle" style="font-size: 14px; color: #64748B; margin: 0;">Manage employee salaries, payslips and monthly payroll</p>
+            <!-- Controls Row -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div class="pm-month-selector">
+                    <button class="pm-month-btn" onclick="window.changePayrollMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <div class="pm-month-text" onclick="document.getElementById('payroll-month-selector').showPicker()">
+                        <span id="payroll-current-month-display">August 2026</span>
+                        <i class="fas fa-chevron-down" style="font-size: 10px; color: #94A3B8;"></i>
+                    </div>
+                    <input type="month" id="payroll-month-selector" style="display:none;" onchange="window.setPayrollMonth(this.value)">
+                    <button class="pm-month-btn" onclick="window.changePayrollMonth(1)"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                
+                <button class="pm-btn pm-btn-outline" onclick="window.loadAdminPayroll()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <!-- Stats Grid -->
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 32px;">
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" style="background: #FFF1F2; color: #E11D48;"><i class="fas fa-wallet"></i></div>
+                        <div class="pm-stat-title">Total Payroll</div>
+                    </div>
+                    <div>
+                        <div class="pm-stat-value" id="payroll-stat-total">₹0</div>
+                        <div class="pm-stat-sub" id="payroll-stat-total-label">For selected month</div>
                     </div>
                 </div>
-                <div class="rq-header-actions" style="display: flex; gap: 12px; align-items: center;">
-                    <div style="display: flex; align-items: center; border: 1px solid #E2E8F0; border-radius: 8px; background: #F8FAFC; padding: 4px; gap: 8px; font-weight: 600; font-size: 14px;">
-                        <button onclick="window.changePayrollMonth(-1)" style="border:none; background:transparent; cursor:pointer; color:#64748B; padding:4px 8px; border-radius:4px;"><i class="fas fa-chevron-left"></i></button>
-                        <span id="payroll-current-month-display" style="min-width: 120px; text-align: center; color: #0F172A;">August 2026</span>
-                        <input type="month" id="payroll-month-selector" style="display:none;" onchange="window.setPayrollMonth(this.value)">
-                        <button onclick="document.getElementById('payroll-month-selector').showPicker()" style="border:none; background:transparent; cursor:pointer; color:#64748B; padding:4px 8px; border-radius:4px;"><i class="fas fa-caret-down"></i></button>
-                        <button onclick="window.changePayrollMonth(1)" style="border:none; background:transparent; cursor:pointer; color:#64748B; padding:4px 8px; border-radius:4px;"><i class="fas fa-chevron-right"></i></button>
+                
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" style="background: #ECFDF5; color: #059669;"><i class="fas fa-users"></i></div>
+                        <div class="pm-stat-title">Employees Paid</div>
                     </div>
-                    
-                    <button class="req-action-btn" onclick="window.openPayslipConfig()" style="background: #090B10; color: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">
-                        <i class="fas fa-plus"></i> Generate Payslip
-                    </button>
+                    <div>
+                        <div class="pm-stat-value" id="payroll-stat-paid">0 / 0</div>
+                        <div class="pm-stat-sub" id="payroll-stat-paid-sub">Processed</div>
+                    </div>
                 </div>
-            </header>
 
-            <!-- Stats -->
-            <div class="req-stats-row" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 32px;">
-                <!-- Card 1 -->
-                <div class="req-stat-card" style="background: white; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; grid-column: span 2;">
-                    <div class="req-stat-label" style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Total Payroll</div>
-                    <div class="req-stat-value" id="payroll-stat-total" style="font-size: 24px; font-weight: 800; color: #0F172A;">₹0</div>
-                    <div class="req-stat-label" style="font-size: 12px; color: #94A3B8; margin-top: 4px;" id="payroll-stat-total-label">For selected month</div>
-                </div>
-                <!-- Card 2 -->
-                <div class="req-stat-card" style="background: white; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; grid-column: span 1;">
-                    <div class="req-stat-label" style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Employees Paid</div>
-                    <div class="req-stat-value" id="payroll-stat-paid" style="font-size: 24px; font-weight: 800; color: #0F172A;">0 / 0</div>
-                </div>
-                <!-- Card 3 -->
-                <div class="req-stat-card" style="background: white; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; grid-column: span 1;">
-                    <div class="req-stat-label" style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Payslips</div>
-                    <div class="req-stat-value" id="payroll-stat-slips" style="font-size: 24px; font-weight: 800; color: #0F172A;">0</div>
-                </div>
-                <!-- Card 4 -->
-                <div class="req-stat-card" style="background: white; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; grid-column: span 1;">
-                    <div class="req-stat-label" style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Average Net</div>
-                    <div class="req-stat-value" id="payroll-stat-avg" style="font-size: 24px; font-weight: 800; color: #0F172A;">₹0</div>
-                </div>
-                <!-- Card 5 -->
-                <div class="req-stat-card" style="background: white; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; grid-column: span 1;">
-                    <div class="req-stat-label" style="font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Payroll Status</div>
-                    <div class="req-stat-value" id="payroll-stat-status" style="font-size: 18px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                        <i class="fas fa-circle" id="payroll-status-icon" style="font-size: 10px;"></i> <span id="payroll-status-text">Ready</span>
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" style="background: #EEF2FF; color: #4F46E5;"><i class="fas fa-file-invoice"></i></div>
+                        <div class="pm-stat-title">Payslips Generated</div>
                     </div>
+                    <div>
+                        <div class="pm-stat-value" id="payroll-stat-slips">0</div>
+                        <div class="pm-stat-sub">This month</div>
+                    </div>
+                </div>
+                
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" style="background: #EFF6FF; color: #2563EB;"><i class="fas fa-chart-line"></i></div>
+                        <div class="pm-stat-title">Average Net Pay</div>
+                    </div>
+                    <div>
+                        <div class="pm-stat-value" id="payroll-stat-avg">₹0</div>
+                        <div class="pm-stat-sub">Across paid employees</div>
+                    </div>
+                </div>
+                
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" style="background: #FFFBEB; color: #D97706;"><i class="fas fa-clock"></i></div>
+                        <div class="pm-stat-title">Pending</div>
+                    </div>
+                    <div>
+                        <div class="pm-stat-value" id="payroll-stat-pending">0</div>
+                        <div class="pm-stat-sub">Awaiting payslips</div>
+                    </div>
+                </div>
+                
+                <div class="pm-stat-card" style="grid-column: span 1;">
+                    <div class="pm-stat-header">
+                        <div class="pm-stat-icon" id="payroll-status-icon-bg" style="background: #ECFDF5; color: #059669;"><i class="fas fa-check-circle" id="payroll-status-icon"></i></div>
+                        <div class="pm-stat-title">Payroll Status</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <i class="fas fa-circle" id="payroll-status-dot" style="font-size: 8px; color: #059669;"></i>
+                        <span class="pm-stat-value" id="payroll-stat-status" style="font-size: 24px;">Ready</span>
+                    </div>
+                    <div class="pm-stat-sub" id="payroll-status-sub">All good to go</div>
                 </div>
             </div>
 
-            <!-- Ledger -->
-            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);">
-                <div style="padding: 20px 24px; border-bottom: 1px solid #E2E8F0; background: #FAFAFA; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #0F172A;">Payroll Ledger</h3>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <!-- Ledger Container -->
+            <div class="pm-table-container">
+                <div class="pm-toolbar">
+                    <h3 style="font-size: 16px; font-weight: 700;">Payroll Ledger</h3>
+                    <div style="display: flex; gap: 12px; align-items: center;">
                         <div style="position: relative;">
-                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 10px; color: #94A3B8;"></i>
-                            <input type="text" id="payroll-search-input" oninput="window.filterAdminPayroll()" placeholder="Search employee or ID..." style="padding: 8px 12px 8px 36px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 14px; width: 240px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E2E8F0'">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
+                            <input type="text" class="pm-input" id="payroll-search-input" oninput="window.filterAdminPayroll()" placeholder="Search employee or ID..." style="padding-left: 36px; width: 220px;">
                         </div>
-                        <select id="payroll-status-filter" onchange="window.filterAdminPayroll()" style="padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white; outline: none; cursor: pointer; color:#0F172A;">
+                        <select class="pm-input" id="payroll-status-filter" onchange="window.filterAdminPayroll()" style="width: 140px; background: white; cursor: pointer;">
                             <option value="all">All Status</option>
                             <option value="published">Published</option>
                             <option value="draft">Draft</option>
                         </select>
+                        <select class="pm-input" style="width: 150px; background: white; cursor: pointer;">
+                            <option>All Departments</option>
+                        </select>
+                        <button class="pm-btn pm-btn-outline">
+                            <i class="fas fa-filter"></i> More filters
+                        </button>
                     </div>
                 </div>
-                <div style="overflow-x: auto; min-height: 200px;" class="payroll-table-container">
-                    <table class="premium-table" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 800px;">
+                
+                <div style="overflow-x: auto;">
+                    <table class="pm-table">
                         <thead>
-                            <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Employee</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Basic</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Allowances</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Deductions</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">LOP</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Net Pay</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
-                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Actions</th>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Employee ID</th>
+                                <th style="text-align: right;">Basic</th>
+                                <th style="text-align: right;">Allowances</th>
+                                <th style="text-align: right;">Deductions</th>
+                                <th style="text-align: right;">LOP</th>
+                                <th style="text-align: right;">Net Pay</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="admin-payslip-history-list">
-                            <!-- Items will be injected here -->
+                            <!-- JS Injected -->
                         </tbody>
                     </table>
                 </div>
-            </div>
-            
-            <!-- Off-canvas drawer for Payslip Detail -->
-            <div id="payslip-drawer-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:9998; backdrop-filter:blur(2px);" onclick="window.closePayslipDrawer()"></div>
-            <div id="payslip-detail-drawer" style="position:fixed; top:0; right:-500px; width:450px; max-width:100%; height:100%; background:white; z-index:9999; box-shadow:-5px 0 25px rgba(0,0,0,0.1); transition: right 0.3s ease; display:flex; flex-direction:column;">
-                <div style="padding: 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; background:#FAFAFA;">
-                    <h3 style="margin:0; font-size: 18px; font-weight: 700; color: #0F172A;">Payslip Details</h3>
-                    <button onclick="window.closePayslipDrawer()" style="background:transparent; border:none; font-size: 24px; color: #64748B; cursor: pointer; padding:0; line-height:1;">&times;</button>
+                
+                <!-- Pagination Footer -->
+                <div style="padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; color: #64748B; font-size: 13px;">
+                    <div id="payroll-pagination-text">Showing 0 employees</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="pm-btn pm-btn-outline" style="padding: 6px 12px; opacity: 0.5; cursor: not-allowed;">Previous</button>
+                        <button class="pm-btn pm-btn-primary" style="padding: 6px 12px; border-radius: 6px;">1</button>
+                        <button class="pm-btn pm-btn-outline" style="padding: 6px 12px;">Next</button>
+                    </div>
                 </div>
-                <div id="payslip-drawer-content" style="padding: 24px; overflow-y: auto; flex: 1; background: white;">
-                    <!-- Content injected via JS -->
+            </div>
+
+            <!-- Drawer -->
+            <div class="pm-drawer-overlay" id="payslip-drawer-overlay" onclick="window.closePayslipDrawer()"></div>
+            <div class="pm-drawer" id="payslip-detail-drawer">
+                <div class="pm-drawer-header">
+                    <h3 style="font-size: 18px; font-weight: 700;">Payslip Details</h3>
+                    <button onclick="window.closePayslipDrawer()" style="background:transparent; border:none; font-size: 20px; color: #64748B; cursor: pointer; padding: 4px;"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="pm-drawer-content" id="payslip-drawer-content">
+                    <!-- JS Injected -->
+                </div>
+                <div class="pm-drawer-footer" id="payslip-drawer-footer">
+                    <!-- JS Injected -->
                 </div>
             </div>
         </section>
