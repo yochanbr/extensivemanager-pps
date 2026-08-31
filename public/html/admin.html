@@ -19,6 +19,7 @@
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../css/admin.css?v=20260726_MODAL_UI">
+    <link rel="stylesheet" href="../css/admin-overrides.css?v=20260831">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -108,16 +109,26 @@
                     <button class="mobile-menu-btn" id="mobile-menu-toggle" style="display: none;">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1 id="view-title">Dashboard</h1>
+                    <div>
+                        <h1 id="view-title">Dashboard</h1>
+                        <p id="view-subtitle"></p>
+                    </div>
                 </div>
                 <div class="topbar-right">
+                    <button class="topbar-icon-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="topbar-icon-btn" style="margin-right: 8px;">
+                        <i class="far fa-bell"></i>
+                        <span class="unread-indicator"></span>
+                    </button>
                     <div class="user-profile" id="user-profile-toggle">
                         <div
-                            style="width: 36px; height: 36px; border-radius: 50%; background: #7C3AED; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                            style="width: 32px; height: 32px; border-radius: 50%; background: #4338ca; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; margin-left: 2px;">
                             YO</div>
                         <div class="user-info"><span class="user-name">Yochan</span><span
                                 class="user-role">Developer</span></div>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                        <i class="fas fa-chevron-down dropdown-icon" style="margin-right: 6px; font-size: 10px;"></i>
 
                         <!-- Developer Profile Dropdown -->
                         <div class="profile-dropdown-menu" id="profile-dropdown">
@@ -774,31 +785,111 @@
         <!-- ========================================== -->
         <!-- VIEW: REQUESTS (Leaves & Swaps) -->
         <!-- ========================================== -->
-        <section id="view-requests" class="admin-view" style="display: none;">
-            <header class="section-header">
-                <div class="header-content">
-                    <h2><i class="fas fa-inbox"></i> Employee Requests</h2>
-                    <p>Manage leave requests and shift swaps</p>
-                </div>
-            </header>
+        <section id="view-requests" class="admin-view" style="display: none; padding: 32px; max-width: 1400px; margin: 0 auto;">
             
-            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start; gap: 24px;">
-                <div class="live-status-section">
-                    <div class="section-header" style="justify-content: space-between; margin-bottom: 20px;">
-                        <h3>Pending Leave Requests</h3>
-                        <button class="icon-btn" onclick="loadAdminRequests()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fas fa-sync"></i></button>
+            <!-- Compact Beta Alert -->
+            <div class="beta-alert-compact">
+                <div class="beta-alert-left">
+                    <div class="beta-icon-box">
+                        <i class="fas fa-flask"></i>
                     </div>
-                    <div class="reports-list" id="admin-leave-requests-list" style="display: flex; flex-direction: column; gap: 12px;">
-                        <div class="empty-state">Loading requests...</div>
+                    <div>
+                        <h4 class="beta-title">
+                            BETA VERSION
+                            <span class="beta-badge">Active Review</span>
+                        </h4>
+                        <p class="beta-desc">You're viewing a version currently under testing.</p>
+                    </div>
+                </div>
+                <a href="#" class="beta-btn" style="text-decoration: none;">
+                    <i class="fab fa-whatsapp"></i> Report issue
+                </a>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="req-stats-row">
+                <div class="req-stat-card">
+                    <div class="req-stat-icon orange">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="req-stat-content">
+                        <span class="req-stat-value" id="stat-pending-leaves">0</span>
+                        <span class="req-stat-label">Pending Leave</span>
+                    </div>
+                </div>
+                <div class="req-stat-card">
+                    <div class="req-stat-icon blue">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="req-stat-content">
+                        <span class="req-stat-value" id="stat-pending-swaps">0</span>
+                        <span class="req-stat-label">Pending Swaps</span>
+                    </div>
+                </div>
+                <div class="req-stat-card">
+                    <div class="req-stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="req-stat-content">
+                        <span class="req-stat-value" id="stat-approved">0</span>
+                        <span class="req-stat-label">Approved This Month</span>
+                    </div>
+                </div>
+                <div class="req-stat-card">
+                    <div class="req-stat-icon purple">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <div class="req-stat-content">
+                        <span class="req-stat-value" id="stat-total-reqs">0</span>
+                        <span class="req-stat-label">Total Requests</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="req-toolbar">
+                <div class="req-filters">
+                    <button class="req-filter-btn active">All</button>
+                    <button class="req-filter-btn">Pending</button>
+                    <button class="req-filter-btn">Approved</button>
+                    <button class="req-filter-btn">Rejected</button>
+                </div>
+                <div class="req-actions-right">
+                    <button class="req-action-btn"><i class="fas fa-search"></i> Search</button>
+                    <button class="req-action-btn"><i class="fas fa-filter"></i> Filter</button>
+                    <button class="req-action-btn"><i class="fas fa-sort"></i> Sort</button>
+                    <button class="req-action-btn" onclick="loadAdminRequests()" style="background: #111827; color: #FFF; border-color: #111827;"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+            </div>
+            
+            <div class="req-main-grid">
+                <!-- LEAVES COLUMN -->
+                <div>
+                    <h3 class="req-col-header">
+                        Leave Requests
+                        <span class="req-badge" id="badge-pending-leaves">0 pending</span>
+                    </h3>
+                    <div id="admin-leave-requests-list" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="req-empty">
+                            <div class="req-empty-icon"><i class="fas fa-calendar-times"></i></div>
+                            <h4 class="req-empty-title">No pending leave requests</h4>
+                            <p class="req-empty-desc">Leave requests will appear here when employees submit them.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="live-status-section">
-                    <div class="section-header" style="margin-bottom: 20px;">
-                        <h3>Pending Shift Swaps</h3>
-                    </div>
-                    <div class="reports-list" id="admin-swap-requests-list" style="display: flex; flex-direction: column; gap: 12px;">
-                        <div class="empty-state">Loading requests...</div>
+                <!-- SWAPS COLUMN -->
+                <div>
+                    <h3 class="req-col-header">
+                        Shift Swaps
+                        <span class="req-badge" id="badge-pending-swaps">0 pending</span>
+                    </h3>
+                    <div id="admin-swap-requests-list" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="req-empty">
+                            <div class="req-empty-icon"><i class="fas fa-exchange-alt"></i></div>
+                            <h4 class="req-empty-title">No pending shift swaps</h4>
+                            <p class="req-empty-desc">Shift swap requests will appear here when employees submit them.</p>
+                        </div>
                     </div>
                 </div>
             </div>

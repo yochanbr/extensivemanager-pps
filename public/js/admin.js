@@ -652,10 +652,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (activeBtn) activeBtn.classList.add('active');
 
-        // Update Topbar Title
+        // Update Topbar Title and Subtitle
         const viewTitle = document.getElementById('view-title');
+        const viewSubtitle = document.getElementById('view-subtitle');
         if (viewTitle && activeBtn) {
             viewTitle.textContent = activeBtn.innerText.trim();
+            if (viewSubtitle) {
+                if (targetView && targetView.id === 'view-requests') {
+                    viewSubtitle.textContent = 'Manage employee leave requests and shift swaps';
+                    viewSubtitle.style.display = 'block';
+                } else {
+                    viewSubtitle.style.display = 'none';
+                }
+            }
         }
 
         // Refresh data based on view
@@ -3539,58 +3548,131 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!leavesList || !swapsList) return;
         
-        leavesList.innerHTML = '<div class="empty-state">Loading...</div>';
-        swapsList.innerHTML = '<div class="empty-state">Loading...</div>';
+        leavesList.innerHTML = `
+            <div class="req-empty">
+                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
+                <h4 class="req-empty-title">Loading...</h4>
+            </div>`;
+        swapsList.innerHTML = `
+            <div class="req-empty">
+                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
+                <h4 class="req-empty-title">Loading...</h4>
+            </div>`;
 
         try {
             const res = await fetch('/api/admin/requests');
             const data = await res.json();
             
             if (data.success) {
+                // Update Stats
+                const pendingLeaves = data.leaves.length;
+                const pendingSwaps = data.swaps.length;
+                const totalReqs = pendingLeaves + pendingSwaps;
+                
+                const sLeaves = document.getElementById('stat-pending-leaves');
+                const sSwaps = document.getElementById('stat-pending-swaps');
+                const sTotal = document.getElementById('stat-total-reqs');
+                const badgeLeaves = document.getElementById('badge-pending-leaves');
+                const badgeSwaps = document.getElementById('badge-pending-swaps');
+                
+                if (sLeaves) sLeaves.textContent = pendingLeaves;
+                if (sSwaps) sSwaps.textContent = pendingSwaps;
+                if (sTotal) sTotal.textContent = totalReqs;
+                if (badgeLeaves) badgeLeaves.textContent = pendingLeaves + ' pending';
+                if (badgeSwaps) badgeSwaps.textContent = pendingSwaps + ' pending';
+
+                const emptyLeaveHtml = `
+                    <div class="req-empty">
+                        <div class="req-empty-icon"><i class="fas fa-calendar-times"></i></div>
+                        <h4 class="req-empty-title">No pending leave requests</h4>
+                        <p class="req-empty-desc">Leave requests will appear here when employees submit them.</p>
+                    </div>`;
+
+                const emptySwapHtml = `
+                    <div class="req-empty">
+                        <div class="req-empty-icon"><i class="fas fa-exchange-alt"></i></div>
+                        <h4 class="req-empty-title">No pending shift swaps</h4>
+                        <p class="req-empty-desc">Shift swap requests will appear here when employees submit them.</p>
+                    </div>`;
+
                 // Render Leaves
-                if (data.leaves.length === 0) {
-                    leavesList.innerHTML = '<div class="empty-state">No pending leave requests.</div>';
+                if (pendingLeaves === 0) {
+                    leavesList.innerHTML = emptyLeaveHtml;
                 } else {
-                    leavesList.innerHTML = data.leaves.map(req => `
-                        <div class="report-item" style="flex-direction: column; align-items: stretch; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: #f8fafc; gap: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 15px; color: var(--text-dark);">${req.employeeName}</h4>
-                                    <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e2e8f0; color: #475569; display: inline-block;">Leave: ${req.date} (${req.type})</span>
+                    leavesList.innerHTML = data.leaves.map(req => {
+                        const initials = req.employeeName.substring(0,2).toUpperCase();
+                        return `
+                        <div class="req-card">
+                            <div class="req-card-top">
+                                <div class="req-profile">
+                                    <div class="req-avatar">${initials}</div>
+                                    <div>
+                                        <h4 class="req-name">${req.employeeName}</h4>
+                                        <p class="req-role">Employee</p>
+                                    </div>
+                                </div>
+                                <div class="req-status">PENDING</div>
+                            </div>
+                            <div class="req-details">
+                                <div class="req-detail-item">
+                                    <span class="req-detail-label">Type</span>
+                                    <span class="req-detail-val" style="text-transform: capitalize;">${req.type} Leave</span>
+                                </div>
+                                <div class="req-detail-item">
+                                    <span class="req-detail-label">Date</span>
+                                    <span class="req-detail-val">${req.date}</span>
                                 </div>
                             </div>
-                            <div style="background: #ffffff; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--text-muted); border: 1px solid #e2e8f0;">
-                                <strong>Reason:</strong> ${req.reason || 'No reason provided.'}
+                            <div class="req-reason-box">
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
+                                ${req.reason || 'No reason provided.'}
                             </div>
-                            <div style="display: flex; gap: 10px; margin-top: 5px;">
-                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'approved')" style="flex:1; background: #10b981; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Approve</button>
-                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')" style="flex:1; background: #ef4444; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Reject</button>
+                            <div class="req-actions">
+                                <button class="req-btn req-btn-reject" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
+                                <button class="req-btn req-btn-approve" onclick="updateRequestStatus('leave', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
                             </div>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
 
                 // Render Swaps
-                if (data.swaps.length === 0) {
-                    swapsList.innerHTML = '<div class="empty-state">No pending shift swaps.</div>';
+                if (pendingSwaps === 0) {
+                    swapsList.innerHTML = emptySwapHtml;
                 } else {
-                    swapsList.innerHTML = data.swaps.map(req => `
-                        <div class="report-item" style="flex-direction: column; align-items: stretch; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: #f8fafc; gap: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 15px; color: var(--text-dark);">${req.employeeName}</h4>
-                                    <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e0e7ff; color: #4338ca; display: inline-block;">Swap with ${req.coworkerName} on ${req.date}</span>
+                    swapsList.innerHTML = data.swaps.map(req => {
+                        const initials = req.employeeName.substring(0,2).toUpperCase();
+                        return `
+                        <div class="req-card">
+                            <div class="req-card-top">
+                                <div class="req-profile">
+                                    <div class="req-avatar">${initials}</div>
+                                    <div>
+                                        <h4 class="req-name">${req.employeeName}</h4>
+                                        <p class="req-role">Employee</p>
+                                    </div>
+                                </div>
+                                <div class="req-status">PENDING</div>
+                            </div>
+                            <div class="req-details">
+                                <div class="req-detail-item">
+                                    <span class="req-detail-label">Swap With</span>
+                                    <span class="req-detail-val">${req.coworkerName}</span>
+                                </div>
+                                <div class="req-detail-item">
+                                    <span class="req-detail-label">Date</span>
+                                    <span class="req-detail-val">${req.date}</span>
                                 </div>
                             </div>
-                            <div style="background: #ffffff; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--text-muted); border: 1px solid #e2e8f0;">
-                                <strong>Reason:</strong> ${req.reason || 'No reason provided.'}
+                            <div class="req-reason-box">
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
+                                ${req.reason || 'No reason provided.'}
                             </div>
-                            <div style="display: flex; gap: 10px; margin-top: 5px;">
-                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'approved')" style="flex:1; background: #10b981; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Approve</button>
-                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')" style="flex:1; background: #ef4444; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Reject</button>
+                            <div class="req-actions">
+                                <button class="req-btn req-btn-reject" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
+                                <button class="req-btn req-btn-approve" onclick="updateRequestStatus('swap', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
                             </div>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
             } else {
                 nammaModalSystem.alert('Failed to load requests');
