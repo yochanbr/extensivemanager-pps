@@ -3651,16 +3651,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const drawer = document.getElementById('request-detail-drawer');
         if (!drawer) return;
 
+        // Store current request on drawer for reference
+        drawer._currentReq = req;
+        drawer._isSwap = isSwap;
+
         document.getElementById('drawer-req-id').textContent = req.requestId || 'Legacy Request';
-        document.getElementById('drawer-req-status').textContent = req.status.toUpperCase();
-        document.getElementById('drawer-req-status').className = 'drawer-badge drawer-badge-' + req.status;
+        const statusEl = document.getElementById('drawer-req-status');
+        statusEl.textContent = req.status.charAt(0).toUpperCase() + req.status.slice(1);
+        statusEl.className = 'drawer-badge drawer-badge-' + req.status;
 
         document.getElementById('drawer-emp-avatar').textContent = req.employeeName ? req.employeeName.charAt(0).toUpperCase() : '?';
         document.getElementById('drawer-emp-name').textContent = req.employeeName || 'Unknown';
-        
-        let typeStr = isSwap ? 'Shift Swap' : (req.type + ' Leave');
-        let dateStr = isSwap ? req.date : (req.startDate && req.endDate ? `${req.startDate} to ${req.endDate} (${req.days} days)` : (req.date || 'N/A'));
-        
+
+        const typeStr = isSwap ? 'Shift Swap' : `${req.type ? req.type.charAt(0).toUpperCase() + req.type.slice(1) : ''} Leave`;
+        const dateStr = isSwap ? req.date : (req.startDate && req.endDate ? `${req.startDate} → ${req.endDate} (${req.days} day${req.days !== 1 ? 's' : ''})` : (req.date || 'N/A'));
+
         let detailsHtml = `
             <div class="drawer-detail-item">
                 <div class="drawer-detail-label">Type</div>
@@ -3670,33 +3675,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="drawer-detail-label">Date</div>
                 <div class="drawer-detail-value">${dateStr}</div>
             </div>
+            <div class="drawer-detail-item">
+                <div class="drawer-detail-label">Employee</div>
+                <div class="drawer-detail-value">${req.employeeName || 'Unknown'}</div>
+            </div>
+            <div class="drawer-detail-item">
+                <div class="drawer-detail-label">Status</div>
+                <div class="drawer-detail-value" style="text-transform:capitalize;">${req.status}</div>
+            </div>
         `;
 
         if (isSwap) {
             detailsHtml += `
                 <div class="drawer-detail-item">
-                    <div class="drawer-detail-label">Coworker</div>
+                    <div class="drawer-detail-label">Swap With</div>
                     <div class="drawer-detail-value">${req.coworkerName || 'Unknown'}</div>
                 </div>
             `;
         }
-        
+
+        if (req.decision && req.decision.by) {
+            detailsHtml += `
+                <div class="drawer-detail-item">
+                    <div class="drawer-detail-label">Decided By</div>
+                    <div class="drawer-detail-value">${req.decision.by}</div>
+                </div>
+            `;
+        }
+
         document.getElementById('drawer-details-grid').innerHTML = detailsHtml;
         document.getElementById('drawer-req-reason').textContent = req.reason || 'No reason provided.';
 
+        const reqType = isSwap ? 'shift_swap' : 'leave';
+        const endpointType = isSwap ? 'swap' : 'leave';
         const actionArea = document.getElementById('drawer-action-area');
-        if (req.status === 'pending') {
-            actionArea.style.display = 'flex';
-            actionArea.innerHTML = `
-                <button class="drawer-btn btn-reject" onclick="window.updateRequestStatus('${isSwap ? 'shift_swap' : 'leave'}', '${req.id}', 'rejected')">Reject</button>
-                <button class="drawer-btn btn-approve" onclick="window.updateRequestStatus('${isSwap ? 'shift_swap' : 'leave'}', '${req.id}', 'approved')">Approve</button>
-            `;
-        } else {
-            actionArea.style.display = 'none';
+        actionArea.style.display = 'flex';
+        actionArea.style.flexDirection = 'column';
+        actionArea.style.gap = '10px';
+
+        let actionsHtml = '';
+
+        // Row 1: Approve / Reject — show the opposite(s) of current status
+        let decisionBtns = '';
+        if (req.status !== 'approved') {
+            decisionBtns += `<button class="drawer-btn btn-approve" onclick="window.updateRequestStatus('${endpointType}', '${req.id}', 'approved')">
+                <i class="fas fa-check"></i> ${req.status === 'rejected' ? 'Override: Approve' : 'Approve'}
+            </button>`;
+        }
+        if (req.status !== 'rejected') {
+            decisionBtns += `<button class="drawer-btn btn-reject" onclick="window.updateRequestStatus('${endpointType}', '${req.id}', 'rejected')">
+                <i class="fas fa-times"></i> ${req.status === 'approved' ? 'Override: Reject' : 'Reject'}
+            </button>`;
+        }
+        if (decisionBtns) {
+            actionsHtml += `<div style="display:flex; gap:10px; flex:1;">${decisionBtns}</div>`;
         }
 
+        // Row 2: Delete button (always available)
+        actionsHtml += `<button class="drawer-btn btn-delete" onclick="window.deleteRequest('${endpointType}', '${req.id}')">
+            <i class="fas fa-trash-alt"></i> Delete Request
+        </button>`;
+
+        actionArea.innerHTML = actionsHtml;
         drawer.classList.add('active');
     };
+
 
     window.closeRequestDrawer = function() {
         const drawer = document.getElementById('request-detail-drawer');
@@ -3776,21 +3819,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.updateRequestStatus = async function(type, id, status) {
         let reason = '';
+        const drawer = document.getElementById('request-detail-drawer');
+        const req = drawer && drawer._currentReq;
+        const isOverride = req && req.status !== 'pending';
+
         if (status === 'rejected') {
-            reason = await nammaModalSystem.prompt('Please enter a rejection reason (required):');
+            reason = await nammaModalSystem.prompt(isOverride
+                ? `Override: Enter rejection reason for this ${req.status} request:`
+                : 'Please enter a rejection reason (required):');
             if (!reason) {
                 await nammaModalSystem.alert('Rejection reason is required.');
                 return;
             }
         } else {
-            if (!await nammaModalSystem.confirm(`Are you sure you want to approve this request?`)) return;
+            const confirmMsg = isOverride
+                ? `Override decision? This request was previously ${req ? req.status : ''}. Approve anyway?`
+                : 'Are you sure you want to approve this request?';
+            if (!await nammaModalSystem.confirm(confirmMsg)) return;
         }
-        
+
         window.closeRequestDrawer();
-        
+
         try {
-            const endpointType = type === 'shift_swap' ? 'swap' : 'leave';
-            const res = await fetch(`/api/admin/requests/${endpointType}/${id}`, {
+            const res = await fetch(`/api/admin/requests/${type}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, reason })
@@ -3805,6 +3856,32 @@ document.addEventListener('DOMContentLoaded', () => {
             await nammaModalSystem.alert('Network error');
         }
     };
+
+    window.deleteRequest = async function(type, id) {
+        const confirmed = await nammaModalSystem.confirm(
+            'Delete this request permanently? Leave balances will be corrected automatically.',
+            { theme: 'danger' }
+        );
+        if (!confirmed) return;
+
+        window.closeRequestDrawer();
+
+        try {
+            const res = await fetch(`/api/admin/requests/${type}/${id}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.loadAdminRequests();
+            } else {
+                await nammaModalSystem.alert(data.message || 'Failed to delete request');
+            }
+        } catch (err) {
+            await nammaModalSystem.alert('Network error during deletion');
+        }
+    };
+
+
 
     // Ensure requests load when tab is clicked
     if (viewRequestsBtn) {

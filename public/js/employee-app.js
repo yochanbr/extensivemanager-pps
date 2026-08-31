@@ -269,44 +269,78 @@ async function loadLeavesData() {
         });
         const data = await response.json();
         if (data.success) {
-            let balText = '0';
-            if (data.balances) {
-                // Show paid leave available as primary
-                balText = `${data.balances.paid?.available || 0}`;
+            // Render balance section
+            const balEl = document.getElementById('leaves-balance-display');
+            if (data.balances && balEl) {
+                const paid = data.balances.paid || {};
+                const sick = data.balances.sick || {};
+                balEl.innerHTML = `
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:100px; background:#F0FDF4; border-radius:10px; padding:10px 14px; border:1px solid #D1FAE5;">
+                            <div style="font-size:22px; font-weight:800; color:#059669;">${paid.available ?? 0}</div>
+                            <div style="font-size:11px; color:#6B7280; margin-top:2px;">Paid Available</div>
+                            <div style="font-size:10px; color:#9CA3AF;">${paid.used ?? 0} used / ${paid.total ?? 0} total</div>
+                        </div>
+                        <div style="flex:1; min-width:100px; background:#EFF6FF; border-radius:10px; padding:10px 14px; border:1px solid #BFDBFE;">
+                            <div style="font-size:22px; font-weight:800; color:#3B82F6;">${sick.available ?? 0}</div>
+                            <div style="font-size:11px; color:#6B7280; margin-top:2px;">Sick Available</div>
+                            <div style="font-size:10px; color:#9CA3AF;">${sick.used ?? 0} used / ${sick.total ?? 0} total</div>
+                        </div>
+                    </div>`;
             }
-            document.getElementById('leaves-balance-display').innerText = balText;
-            
+
             const historyList = document.getElementById('leaves-history-list');
             if (data.requests && data.requests.length > 0) {
                 historyList.innerHTML = data.requests.map(r => {
                     const isSwap = !!r.coworkerId;
-                    const title = isSwap ? `Shift Swap: ${r.date}` : `Leave: ${r.date}`;
-                    const subtitle = isSwap ? 'Shift Swap' : (r.type || 'Leave').toUpperCase();
-                    
+                    const dateStr = r.startDate && r.endDate
+                        ? `${r.startDate} → ${r.endDate}${r.days ? ` (${r.days} day${r.days !== 1 ? 's' : ''})` : ''}`
+                        : (r.date || 'N/A');
+                    const typeLabel = isSwap ? 'Shift Swap' : `${r.type ? r.type.charAt(0).toUpperCase() + r.type.slice(1) : ''} Leave`;
+
+                    // Status styling
+                    const statusColors = {
+                        approved: { bg: '#F0FDF4', color: '#059669', border: '#D1FAE5' },
+                        rejected: { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
+                        pending:  { bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' }
+                    };
+                    const sc = statusColors[r.status] || statusColors.pending;
+
+                    // Override notice
+                    const overrideNotice = r.decision && r.decision.overrideFrom
+                        ? `<div style="font-size:10px; color:#9CA3AF; margin-top:4px;">↻ Changed from <b>${r.decision.overrideFrom}</b> by admin</div>`
+                        : '';
+
+                    // Decision note
+                    const decisionNote = r.decision && r.decision.note
+                        ? `<div style="font-size:11px; color:#6B7280; margin-top:4px; padding: 6px 10px; background:#F8FAFC; border-radius:6px; border-left:2px solid ${sc.color};">Admin note: ${r.decision.note.replace(/</g, '&lt;')}</div>`
+                        : '';
+
                     return `
-                    <div class="report-item" style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="report-info">
-                                <h4>${title}</h4>
-                                <p style="font-size:0.75rem; color:#666;">${r.requestId || 'Legacy ID'}</p>
-                                <p>${subtitle}</p>
+                    <div style="background:#fff; border:1px solid #F1F5F9; border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div>
+                                <div style="font-weight:700; font-size:14px; color:#0F172A;">${typeLabel}</div>
+                                <div style="font-size:12px; color:#94A3B8; margin-top:2px;">${r.requestId || 'Legacy'}</div>
                             </div>
-                            <div class="report-status ${r.status === 'approved' ? 'verified' : r.status === 'rejected' ? 'danger' : 'pending'}">
-                                ${(r.status || 'pending').toUpperCase()}
-                            </div>
+                            <div style="background:${sc.bg}; color:${sc.color}; border:1px solid ${sc.border}; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; text-transform:uppercase; white-space:nowrap;">${r.status}</div>
                         </div>
-                        <div style="font-size:0.8rem; color:#444;">${r.reason ? r.reason.replace(/</g, '&lt;') : 'No reason'}</div>
-                        ${r.status === 'pending' ? `<button onclick="cancelRequest('${r.id}')" style="margin-top:8px; background:#FEE2E2; color:#EF4444; border:none; border-radius:6px; padding:6px 12px; font-weight:600; font-size:12px; cursor:pointer; align-self:flex-start;">Cancel Request</button>` : ''}
+                        <div style="font-size:12px; color:#475569;"><i class="fas fa-calendar-alt" style="width:14px;"></i> ${dateStr}</div>
+                        ${r.reason ? `<div style="font-size:12px; color:#64748B;"><i class="fas fa-comment-alt" style="width:14px;"></i> ${r.reason.replace(/</g, '&lt;')}</div>` : ''}
+                        ${decisionNote}
+                        ${overrideNotice}
+                        ${r.status === 'pending' ? `<button onclick="cancelRequest('${r.id}')" style="margin-top:6px; background:#FEF2F2; color:#EF4444; border:1px solid #FECACA; border-radius:8px; padding:7px 14px; font-weight:600; font-size:12px; cursor:pointer; align-self:flex-start; font-family:inherit;">Cancel Request</button>` : ''}
                     </div>
                 `}).join('');
             } else {
-                historyList.innerHTML = '<div class="empty-state">No requests found.</div>';
+                historyList.innerHTML = '<div class="empty-state" style="text-align:center; padding:32px; color:#94A3B8;">No requests found.</div>';
             }
         }
     } catch (err) {
         console.error(err);
     }
 }
+
 
 window.cancelRequest = async function(id) {
     if (!confirm('Are you sure you want to cancel this request?')) return;

@@ -1548,29 +1548,53 @@ app.get('/api/admin/requests', verifyAdmin, async (req, res) => {
 app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
     try {
         const { type, id } = req.params;
-        const { status, reason } = req.body; 
-        
+        const { status, reason } = req.body;
+
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status. Must be approved or rejected.' });
+        }
+
         await firestore.runTransaction(async (t) => {
             const collection = type === 'leave' ? db.leave_requests() : db.shift_swaps();
             const reqRef = collection.doc(id);
             const reqDoc = await t.get(reqRef);
-            
+
             if (!reqDoc.exists) throw new Error('Request not found');
             const request = reqDoc.data();
-            if (request.status !== 'pending') throw new Error('REQUEST_ALREADY_PROCESSED');
-            
-            if (type === 'leave' && status === 'approved') {
-                const balance = await initializeLeaveBalance(t, request.employeeId);
+            const prevStatus = request.status;
+
+            // Allow override of any status (pending → approved/rejected, approved → rejected, rejected → approved)
+            if (prevStatus === status) {
+                throw new Error(`REQUEST_SAME_STATUS:${status}`);
+            }
+
+            if (type === 'leave') {
                 const leaveType = request.type === 'sick' ? 'sick' : 'paid';
-                let days = 1; // Simplify days calculation
-                
-                if (balance[leaveType].available < days) throw new Error('INSUFFICIENT_BALANCE');
-                
-                balance[leaveType].available -= days;
-                balance[leaveType].used += days;
-                if (balance[leaveType].pending >= days) balance[leaveType].pending -= days;
+                const days = request.days || 1;
+                const balance = await initializeLeaveBalance(t, request.employeeId);
+
+                // REVERSE previous decision's balance effect before applying new one
+                if (prevStatus === 'approved') {
+                    // Was approved: restore used balance, remove from used, add back to available
+                    balance[leaveType].used = Math.max(0, (balance[leaveType].used || 0) - days);
+                    balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - (balance[leaveType].pending || 0);
+                } else if (prevStatus === 'pending') {
+                    // Was pending: remove from pending bucket
+                    balance[leaveType].pending = Math.max(0, (balance[leaveType].pending || 0) - days);
+                    balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - balance[leaveType].pending;
+                }
+                // If prevStatus === 'rejected', balance was never touched, nothing to reverse
+
+                // Now apply new decision
+                if (status === 'approved') {
+                    if (balance[leaveType].available < days) throw new Error('INSUFFICIENT_BALANCE');
+                    balance[leaveType].available -= days;
+                    balance[leaveType].used += days;
+                }
+                // If status === 'rejected', no balance change needed
+
                 balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-                t.set(db.leave_balances().doc(request.employeeId), balance);
+                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
             }
 
             t.update(reqRef, {
@@ -1578,21 +1602,71 @@ app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
                 decision: {
                     by: req.user ? req.user.username : 'admin',
                     at: admin.firestore.FieldValue.serverTimestamp(),
-                    note: reason || ''
+                    note: reason || '',
+                    overrideFrom: prevStatus !== 'pending' ? prevStatus : null
                 },
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            await logAudit(t, 'REQUEST_' + status.toUpperCase(), request.requestId, type, 'pending', status, reason, 'ADMIN');
+            await logAudit(t, 'REQUEST_' + status.toUpperCase(), request.requestId, type, prevStatus, status, reason, 'ADMIN');
         });
 
         res.json({ success: true });
     } catch (err) {
-        if (err.message === 'REQUEST_ALREADY_PROCESSED') return res.status(409).json({ success: false, message: 'This request has already been updated.' });
-        if (err.message === 'INSUFFICIENT_BALANCE') return res.status(409).json({ success: false, message: 'Insufficient leave balance.' });
+        if (err.message && err.message.startsWith('REQUEST_SAME_STATUS')) {
+            const s = err.message.split(':')[1];
+            return res.status(409).json({ success: false, message: `This request is already ${s}.` });
+        }
+        if (err.message === 'INSUFFICIENT_BALANCE') return res.status(409).json({ success: false, message: 'Insufficient leave balance to approve.' });
+        console.error('Request update error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// DELETE a leave or swap request (admin only)
+app.delete('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { type, id } = req.params;
+        const collection = type === 'leave' ? db.leave_requests() : db.shift_swaps();
+
+        await firestore.runTransaction(async (t) => {
+            const reqRef = collection.doc(id);
+            const reqDoc = await t.get(reqRef);
+            if (!reqDoc.exists) throw new Error('Request not found');
+            const request = reqDoc.data();
+
+            // If was approved leave, restore balance
+            if (type === 'leave' && request.status === 'approved') {
+                const leaveType = request.type === 'sick' ? 'sick' : 'paid';
+                const days = request.days || 1;
+                const balance = await initializeLeaveBalance(t, request.employeeId);
+                balance[leaveType].used = Math.max(0, (balance[leaveType].used || 0) - days);
+                balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - (balance[leaveType].pending || 0);
+                balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
+            }
+            // If was pending leave, restore pending bucket
+            if (type === 'leave' && request.status === 'pending') {
+                const leaveType = request.type === 'sick' ? 'sick' : 'paid';
+                const days = request.days || 1;
+                const balance = await initializeLeaveBalance(t, request.employeeId);
+                balance[leaveType].pending = Math.max(0, (balance[leaveType].pending || 0) - days);
+                balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - balance[leaveType].pending;
+                balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
+            }
+
+            await logAudit(t, 'REQUEST_DELETED', request.requestId, type, request.status, 'deleted', '', 'ADMIN');
+            t.delete(reqRef);
+        });
+
+        res.json({ success: true, message: 'Request deleted successfully.' });
+    } catch (err) {
+        console.error('Delete request error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 
 
 /**
