@@ -155,7 +155,10 @@
                     <button class="icon-btn" onclick="closeSheet('payslip-sheet')"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="sheet-body" id="ps-modal-content"></div>
-                <button class="secondary-btn" style="margin-top: 24px; color: var(--success); border-color: var(--success);" onclick="alert('Digital signature verified.')"><i class="fas fa-shield-alt"></i> Verified Document</button>
+                <div style="display:flex; gap:12px; margin-top:16px;">
+                    <button class="secondary-btn" style="flex:1; color: var(--success); border-color: var(--success);" onclick="downloadPayslipPrintable()"><i class="fas fa-file-pdf"></i> Download / Print</button>
+                    <button class="secondary-btn" style="flex:1; color: var(--success); border-color: var(--success);" onclick="alert('Digital signature verified.')"><i class="fas fa-shield-alt"></i> Verified Document</button>
+                </div>
             </div>
         </div>
 
