@@ -181,7 +181,17 @@
                 <div class="section-container" id="leave-request-form-container" style="display: none;">
                     <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
                         <h4 style="font-family: 'Outfit';">New Leave Request</h4>
-                        <input type="date" id="leave-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+                        
+    <div style="display:flex; gap:10px; width:100%;">
+        <div style="flex:1;">
+            <label style="font-size:12px; color:#666;">Start Date</label>
+            <input type="date" id="leave-start-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+        </div>
+        <div style="flex:1;">
+            <label style="font-size:12px; color:#666;">End Date</label>
+            <input type="date" id="leave-end-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
+        </div>
+    </div>
                         <select id="leave-type" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
                             <option value="casual">Casual Leave</option>
                             <option value="sick">Sick Leave</option>

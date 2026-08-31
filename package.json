@@ -18,10 +18,8 @@
     "express": "^4.17.1",
     "express-rate-limit": "^8.4.1",
     "firebase-admin": "^13.8.0",
-    "googleapis": "^171.4.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^7.0.10",
-    "selfsigned": "^2.4.1",
     "shortid": "^2.2.16"
   },
   "devDependencies": {

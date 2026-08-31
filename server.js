@@ -1,5 +1,16 @@
 const fs = require('fs');
 const express = require('express');
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
 const bodyParser = require('body-parser');
 const path = require('path');
 
@@ -318,7 +329,10 @@ const db = {
     face_requests: () => firestore.collection('face_requests'),
     payslips: () => firestore.collection('payslips'),
     leave_requests: () => firestore.collection('leave_requests'),
-    shift_swaps: () => firestore.collection('shift_swaps')
+    shift_swaps: () => firestore.collection('shift_swaps'),
+    leave_balances: () => firestore.collection('leave_balances'),
+    request_audit_logs: () => firestore.collection('request_audit_logs'),
+    counters: () => firestore.collection('counters')
 };
 
 
@@ -1420,30 +1434,109 @@ app.post('/api/admin/payslips/publish', verifyAdmin, async (req, res) => {
 });
 
 // Get pending employee requests (Leaves & Swaps)
+// =========================
+// REQUEST ID GENERATOR & AUDIT
+// =========================
+async function getNextId(type) {
+    const counterRef = db.counters().doc(type);
+    let newId = null;
+    await firestore.runTransaction(async (t) => {
+        const doc = await t.get(counterRef);
+        let count = 1;
+        if (doc.exists) {
+            count = doc.data().count + 1;
+        }
+        t.set(counterRef, { count }, { merge: true });
+        
+        const prefix = type === 'leave' ? 'LV' : 'SW';
+        const year = new Date().getFullYear();
+        newId = `${prefix}-${year}-${String(count).padStart(6, '0')}`;
+    });
+    return newId;
+}
+
+async function logAudit(t, action, requestId, requestType, previousStatus, newStatus, note, performedBy) {
+    const logRef = db.request_audit_logs().doc();
+    const log = {
+        requestId,
+        requestType,
+        action,
+        performedBy: performedBy || 'SYSTEM',
+        previousStatus,
+        newStatus,
+        note: note || '',
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+    };
+    if (t) t.set(logRef, log);
+    else await logRef.set(log);
+}
+
+async function initializeLeaveBalance(t, employeeId) {
+    const balanceRef = db.leave_balances().doc(employeeId);
+    const doc = await t.get(balanceRef);
+    if (!doc.exists) {
+        const defaultBalance = {
+            employeeId,
+            year: new Date().getFullYear(),
+            paid: { total: 12, used: 0, pending: 0, available: 12 },
+            sick: { total: 5, used: 0, pending: 0, available: 5 },
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        t.set(balanceRef, defaultBalance);
+        return defaultBalance;
+    }
+    return doc.data();
+}
+
+// =========================
+// ADMIN API ENHANCED
+// =========================
 app.get('/api/admin/requests', verifyAdmin, async (req, res) => {
     try {
-        const [leavesSnap, swapsSnap] = await Promise.all([
-            db.leave_requests().get(),
-            db.shift_swaps().get()
-        ]);
-        
-        // Fetch all employees to map names
+        const { status, type, cursorLeave, cursorSwap, search, pageSize = 25 } = req.query;
+        const limitSize = Math.min(parseInt(pageSize) || 25, 100);
+
+        let leaves = { data: [], hasMore: false, nextCursor: null };
+        let swaps = { data: [], hasMore: false, nextCursor: null };
+
         const empSnap = await db.employees().get();
         const empMap = {};
         empSnap.forEach(doc => empMap[doc.id] = doc.data().name || doc.data().username);
 
-        const leaves = leavesSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            employeeName: empMap[doc.data().employeeId] || 'Unknown'
-        }));
+        // LEAVES
+        if (!type || type === 'leave' || type === 'all') {
+            let q = db.leave_requests().orderBy('createdAt', 'desc').limit(limitSize);
+            if (status && status !== 'all') q = q.where('status', '==', status);
+            if (cursorLeave) {
+                const cDoc = await db.leave_requests().doc(cursorLeave).get();
+                if (cDoc.exists) q = q.startAfter(cDoc);
+            }
+            const snap = await q.get();
+            leaves.data = snap.docs.map(d => ({ id: d.id, ...d.data(), employeeName: empMap[d.data().employeeId] || 'Unknown' }));
+            leaves.hasMore = snap.docs.length === limitSize;
+            if (leaves.hasMore) leaves.nextCursor = snap.docs[snap.docs.length - 1].id;
+        }
 
-        const swaps = swapsSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            employeeName: empMap[doc.data().employeeId] || 'Unknown',
-            coworkerName: empMap[doc.data().coworkerId] || 'Unknown'
-        }));
+        // SWAPS
+        if (!type || type === 'swap' || type === 'all') {
+            let q = db.shift_swaps().orderBy('createdAt', 'desc').limit(limitSize);
+            if (status && status !== 'all') q = q.where('status', '==', status);
+            if (cursorSwap) {
+                const cDoc = await db.shift_swaps().doc(cursorSwap).get();
+                if (cDoc.exists) q = q.startAfter(cDoc);
+            }
+            const snap = await q.get();
+            swaps.data = snap.docs.map(d => ({ id: d.id, ...d.data(), employeeName: empMap[d.data().employeeId] || 'Unknown', coworkerName: empMap[d.data().coworkerId] || 'Unknown' }));
+            swaps.hasMore = snap.docs.length === limitSize;
+            if (swaps.hasMore) swaps.nextCursor = snap.docs[snap.docs.length - 1].id;
+        }
+
+        // Server-side filtering for Search (as fallback since true fuzzy search requires external index)
+        if (search) {
+            const s = search.toLowerCase();
+            leaves.data = leaves.data.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
+            swaps.data = swaps.data.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
+        }
 
         res.json({ success: true, leaves, swaps });
     } catch (err) {
@@ -1452,26 +1545,55 @@ app.get('/api/admin/requests', verifyAdmin, async (req, res) => {
     }
 });
 
-// Update Request Status (Leave or Swap)
 app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
     try {
         const { type, id } = req.params;
-        const { status } = req.body; // 'approved' or 'rejected'
+        const { status, reason } = req.body; 
         
-        if (type === 'leave') {
-            await db.leave_requests().doc(id).update({ status, updatedAt: new Date().toISOString() });
-        } else if (type === 'swap') {
-            await db.shift_swaps().doc(id).update({ status, updatedAt: new Date().toISOString() });
-        } else {
-            return res.status(400).json({ success: false, message: 'Invalid type' });
-        }
-        
+        await firestore.runTransaction(async (t) => {
+            const collection = type === 'leave' ? db.leave_requests() : db.shift_swaps();
+            const reqRef = collection.doc(id);
+            const reqDoc = await t.get(reqRef);
+            
+            if (!reqDoc.exists) throw new Error('Request not found');
+            const request = reqDoc.data();
+            if (request.status !== 'pending') throw new Error('REQUEST_ALREADY_PROCESSED');
+            
+            if (type === 'leave' && status === 'approved') {
+                const balance = await initializeLeaveBalance(t, request.employeeId);
+                const leaveType = request.type === 'sick' ? 'sick' : 'paid';
+                let days = 1; // Simplify days calculation
+                
+                if (balance[leaveType].available < days) throw new Error('INSUFFICIENT_BALANCE');
+                
+                balance[leaveType].available -= days;
+                balance[leaveType].used += days;
+                if (balance[leaveType].pending >= days) balance[leaveType].pending -= days;
+                balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+                t.set(db.leave_balances().doc(request.employeeId), balance);
+            }
+
+            t.update(reqRef, {
+                status,
+                decision: {
+                    by: req.user ? req.user.username : 'admin',
+                    at: admin.firestore.FieldValue.serverTimestamp(),
+                    note: reason || ''
+                },
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            await logAudit(t, 'REQUEST_' + status.toUpperCase(), request.requestId, type, 'pending', status, reason, 'ADMIN');
+        });
+
         res.json({ success: true });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
+        if (err.message === 'REQUEST_ALREADY_PROCESSED') return res.status(409).json({ success: false, message: 'This request has already been updated.' });
+        if (err.message === 'INSUFFICIENT_BALANCE') return res.status(409).json({ success: false, message: 'Insufficient leave balance.' });
+        res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 /**
  * Endpoint: Master Reset - Clear All Attendance Data
@@ -3526,82 +3648,105 @@ app.get('/api/employee/finance', verifyEmployeeApp, async (req, res) => {
 
 app.get('/api/employee/leaves', verifyEmployeeApp, async (req, res) => {
     try {
-        const reqSnapshot = await db.leave_requests().where('employeeId', '==', req.employeeId).get();
-        let requests = [];
-        if (!reqSnapshot.empty) {
-            requests = reqSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        let balanceDoc = await db.leave_balances().doc(req.employeeId).get();
+        if (!balanceDoc.exists) {
+            // Lazy init
+            const defaultBalance = {
+                employeeId: req.employeeId,
+                year: new Date().getFullYear(),
+                paid: { total: 12, used: 0, pending: 0, available: 12 },
+                sick: { total: 5, used: 0, pending: 0, available: 5 },
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            };
+            await db.leave_balances().doc(req.employeeId).set(defaultBalance);
+            balanceDoc = { data: () => defaultBalance };
         }
+
+        const reqSnapshot = await db.leave_requests().where('employeeId', '==', req.employeeId).get();
+        const swapSnap = await db.shift_swaps().where('employeeId', '==', req.employeeId).get();
+        
+        let requests = [];
+        reqSnapshot.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+        swapSnap.forEach(doc => requests.push({ id: doc.id, ...doc.data() }));
+        
+        requests.sort((a,b) => (b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt||b.date).getTime()) - (a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt||a.date).getTime()));
 
         res.json({
             success: true,
-            leaveBalance: 2, // Hardcoded standard
+            balances: balanceDoc.data(),
             requests
         });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
 app.post('/api/employee/leave-request', verifyEmployeeApp, async (req, res) => {
     try {
-        const { date, type, reason } = req.body;
-        if (!date) return res.status(400).json({ success: false, message: 'Date required' });
+        let { startDate, endDate, date, type, reason } = req.body;
+        // Support legacy 'date'
+        if (!startDate && date) { startDate = date; endDate = date; }
+        if (!startDate || !endDate) return res.status(400).json({ success: false, message: 'Start and End dates required' });
+
+        // Calculate days server-side securely
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (end < start) return res.status(400).json({ success: false, message: 'End date cannot be before start date' });
+        const diffTime = Math.abs(end - start);
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+
+        // Overlap check (basic)
+        const activeLeaves = await db.leave_requests().where('employeeId', '==', req.employeeId).where('status', 'in', ['pending', 'approved']).get();
+        for (const doc of activeLeaves.docs) {
+            const l = doc.data();
+            const lStart = new Date(l.startDate || l.date);
+            const lEnd = new Date(l.endDate || l.date);
+            if ((start >= lStart && start <= lEnd) || (end >= lStart && end <= lEnd)) {
+                return res.status(409).json({ success: false, message: 'Dates overlap with an existing request.' });
+            }
+        }
+
+        let newId = null;
+        await firestore.runTransaction(async (t) => {
+            newId = await getNextId('leave', t);
+        });
 
         const newRequest = {
+            requestId: newId,
             employeeId: req.employeeId,
-            date,
+            startDate,
+            endDate,
+            date: startDate, // legacy compatibility
+            days,
             type,
-            reason: reason || '',
+            reason: escapeHtml(reason || ''),
             status: 'pending',
-            createdAt: new Date().toISOString()
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        await db.leave_requests().add(newRequest);
+        // Update pending balance
+        await firestore.runTransaction(async (t) => {
+            const balanceRef = db.leave_balances().doc(req.employeeId);
+            const balDoc = await t.get(balanceRef);
+            if (balDoc.exists) {
+                const bal = balDoc.data();
+                const lType = type === 'sick' ? 'sick' : 'paid';
+                if (bal[lType]) {
+                    bal[lType].pending += days;
+                    bal[lType].available = bal[lType].total - bal[lType].used - bal[lType].pending;
+                    if (bal[lType].available < 0) throw new Error('Insufficient leave balance available.');
+                    t.update(balanceRef, { [lType]: bal[lType], updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                }
+            }
+            const reqRef = db.leave_requests().doc();
+            t.set(reqRef, newRequest);
+            await logAudit(t, 'REQUEST_CREATED', requestId, 'leave', null, 'pending', reason, req.employeeId);
+        });
 
         res.json({ success: true, message: 'Request submitted' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
-
-app.get('/api/employee/coworkers', verifyEmployeeApp, async (req, res) => {
-    try {
-        const empSnapshot = await db.employees().get();
-        let coworkers = [];
-        empSnapshot.forEach(doc => {
-            if (doc.id !== req.employeeId) {
-                coworkers.push({ id: doc.id, name: doc.data().name || doc.data().username });
-            }
-        });
-        res.json({ success: true, coworkers });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
-    }
-});
-
-app.post('/api/employee/shift-swap', verifyEmployeeApp, async (req, res) => {
-    try {
-        const { date, coworkerId, reason } = req.body;
-        if (!date || !coworkerId) return res.status(400).json({ success: false, message: 'Missing fields' });
-
-        const swapReq = {
-            employeeId: req.employeeId,
-            coworkerId,
-            date,
-            reason: reason || '',
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        };
-
-        await db.shift_swaps().add(swapReq);
-        res.json({ success: true, message: 'Swap request submitted to Admin' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

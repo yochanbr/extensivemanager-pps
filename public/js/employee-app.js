@@ -269,29 +269,63 @@ async function loadLeavesData() {
         });
         const data = await response.json();
         if (data.success) {
-            document.getElementById('leaves-balance-display').innerText = data.leaveBalance || '0';
+            let balText = '0';
+            if (data.balances) {
+                // Show paid leave available as primary
+                balText = `${data.balances.paid?.available || 0}`;
+            }
+            document.getElementById('leaves-balance-display').innerText = balText;
             
             const historyList = document.getElementById('leaves-history-list');
             if (data.requests && data.requests.length > 0) {
-                historyList.innerHTML = data.requests.map(r => `
-                    <div class="report-item">
-                        <div class="report-info">
-                            <h4>${r.date}</h4>
-                            <p>${r.type.toUpperCase()}</p>
+                historyList.innerHTML = data.requests.map(r => {
+                    const isSwap = !!r.coworkerId;
+                    const title = isSwap ? `Shift Swap: ${r.date}` : `Leave: ${r.date}`;
+                    const subtitle = isSwap ? 'Shift Swap' : (r.type || 'Leave').toUpperCase();
+                    
+                    return `
+                    <div class="report-item" style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="report-info">
+                                <h4>${title}</h4>
+                                <p style="font-size:0.75rem; color:#666;">${r.requestId || 'Legacy ID'}</p>
+                                <p>${subtitle}</p>
+                            </div>
+                            <div class="report-status ${r.status === 'approved' ? 'verified' : r.status === 'rejected' ? 'danger' : 'pending'}">
+                                ${(r.status || 'pending').toUpperCase()}
+                            </div>
                         </div>
-                        <div class="report-status ${r.status === 'approved' ? 'verified' : r.status === 'rejected' ? 'danger' : 'pending'}">
-                            ${r.status}
-                        </div>
+                        <div style="font-size:0.8rem; color:#444;">${r.reason ? r.reason.replace(/</g, '&lt;') : 'No reason'}</div>
+                        ${r.status === 'pending' ? `<button onclick="cancelRequest('${r.id}')" style="margin-top:8px; background:#FEE2E2; color:#EF4444; border:none; border-radius:6px; padding:6px 12px; font-weight:600; font-size:12px; cursor:pointer; align-self:flex-start;">Cancel Request</button>` : ''}
                     </div>
-                `).join('');
+                `}).join('');
             } else {
-                historyList.innerHTML = '<div class="empty-state">No leave requests found.</div>';
+                historyList.innerHTML = '<div class="empty-state">No requests found.</div>';
             }
         }
     } catch (err) {
         console.error(err);
     }
 }
+
+window.cancelRequest = async function(id) {
+    if (!confirm('Are you sure you want to cancel this request?')) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/employee/leaves/${id}/cancel`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Request cancelled successfully');
+            loadLeavesData();
+        } else {
+            showToast(data.message || 'Failed to cancel request', 'error');
+        }
+    } catch (err) {
+        showToast('Network error', 'error');
+    }
+};
 
 // Leave Request UI Logic
 const btnRequestLeave = document.getElementById('btn-request-leave');
@@ -346,7 +380,8 @@ btnCancelSwap.addEventListener('click', () => {
 
 // Leave Submit
 btnSubmitLeave.addEventListener('click', async () => {
-    const date = document.getElementById('leave-date').value;
+    const startDate = document.getElementById('leave-start-date').value;
+const endDate = document.getElementById('leave-end-date').value;
     const type = document.getElementById('leave-type').value;
     const reason = document.getElementById('leave-reason').value;
 
@@ -360,7 +395,7 @@ btnSubmitLeave.addEventListener('click', async () => {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ date, type, reason })
+            body: JSON.stringify({ startDate, endDate, type, reason })
         });
         const data = await response.json();
         if (data.success) {

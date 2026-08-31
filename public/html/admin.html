@@ -1988,6 +1988,26 @@
     </div>
 
 
+    <!-- Request Detail Drawer -->
+    <div id="request-detail-drawer" class="req-drawer-overlay" style="display:none; position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div class="req-drawer" style="position:absolute; right:0; top:0; bottom:0; width:450px; background:#fff; box-shadow:-5px 0 20px rgba(0,0,0,0.1); display:flex; flex-direction:column; animation:slideInRight 0.3s forwards;">
+            <div style="padding:20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size:18px;">Request Details</h3>
+                <button onclick="document.getElementById('request-detail-drawer').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+            <div id="req-drawer-content" style="padding:20px; flex:1; overflow-y:auto; font-size:14px; line-height:1.6;">
+                <!-- Filled via JS -->
+            </div>
+            <div id="req-drawer-actions" style="padding:20px; border-top:1px solid #eee; display:flex; gap:10px;">
+                <!-- Filled via JS -->
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes slideInRight { from { transform:translateX(100%); } to { transform:translateX(0); } }
+    </style>
+
     <script src="../js/script.js"></script>
     <script src="../js/admin.js?v=20260726_LABEL_FIX"></script>
     <script src="../js/admin_reports.js"></script>
