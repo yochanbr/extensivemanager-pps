@@ -3702,11 +3702,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Attach Filter Event Listeners
-    document.querySelectorAll('.filter-pill').forEach(pill => {
-        pill.addEventListener('click', (e) => {
-            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.req-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.req-filter-btn').forEach(p => p.classList.remove('active'));
             e.target.classList.add('active');
-            window.adminRequestsCache.filter = e.target.dataset.filter;
+            window.adminRequestsCache.filter = e.target.textContent.toLowerCase().trim();
             window.renderAdminRequests();
         });
     });
