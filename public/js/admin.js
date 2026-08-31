@@ -5304,20 +5304,6 @@ window.renderAdminPayroll = function() {
                 <div style="position: relative; display: inline-block;" onclick="event.stopPropagation()">
                     <button onclick="window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#94A3B8; cursor:pointer; padding:4px 8px; font-size: 18px; line-height: 1;">&vellip;</button>
                     <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
-                        <div onclick="window.openPayslipDrawer('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer;">View Details</div>
-                        <div onclick="window.deletePayslip('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #DC2626; cursor: pointer; border-top: 1px solid #F1F5F9;">Delete</div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        `;
-    }).join('');
-};
-
-window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#64748B; cursor:pointer; padding:4px 8px; font-size: 16px;">
-                        &ctdot;
-                    </button>
-                    <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
                         <div onclick="window.openPayslipDrawer('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">View Details</div>
                         <div onclick="window.deletePayslip('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #DC2626; cursor: pointer; transition: background 0.1s; border-top: 1px solid #F1F5F9;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">Delete</div>
                     </div>
@@ -5332,18 +5318,15 @@ window.togglePayslipMenu = function(id) {
     const el = document.getElementById('payslip-menu-' + id);
     const isVisible = el.style.display === 'block';
     
-    // Hide all menus
     document.querySelectorAll('[id^="payslip-menu-"]').forEach(menu => menu.style.display = 'none');
     
-    // Toggle clicked
     if (!isVisible) {
-        el.style.display = 'block';
+        if(el) el.style.display = 'block';
     }
     
-    // Click outside to close
     setTimeout(() => {
         const closeMenu = (e) => {
-            el.style.display = 'none';
+            if (el) el.style.display = 'none';
             document.removeEventListener('click', closeMenu);
         };
         document.addEventListener('click', closeMenu);
@@ -5426,7 +5409,7 @@ window.openPayslipDrawer = function(id) {
     `;
     
     footer.innerHTML = `
-        <button class="pm-btn pm-btn-outline" style="flex:1; justify-content:center;"><i class="fas fa-download"></i> Download PDF</button>
+        <button class="pm-btn pm-btn-outline" style="flex:1; justify-content:center;" onclick="window.downloadPayslipPDF('${payslip.id}')"><i class="fas fa-download"></i> Download PDF</button>
         <button class="pm-btn pm-btn-danger-outline" style="flex:1; justify-content:center;" onclick="window.deletePayslip('${payslip.id}')"><i class="fas fa-trash"></i> Delete Payslip</button>
     `;
     
@@ -5439,7 +5422,7 @@ window.closePayslipDrawer = function() {
     setTimeout(() => { document.getElementById('payslip-drawer-overlay').style.display = 'none'; }, 300);
 };
 
-// Wizard Logic
+
 window.wizardGoToStep = function(step) {
     document.getElementById('payslip-step-1-ui').style.display = 'none';
     document.getElementById('payslip-step-2-ui').style.display = 'none';
