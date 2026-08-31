@@ -2,300 +2,219 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Strict mobile viewport constraints -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Extensive Manager | Employee Portal</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
+    <title>Employee App | Namma Mart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/employee-app.css">
+    <link rel="stylesheet" href="../css/employee-app.css?v=2">
 </head>
 <body>
-    
-    <!-- Toast Notification System -->
     <div id="toast-container"></div>
-
-    <!-- Mobile App Container -->
+    
     <div class="mobile-app-container">
         
-        <!-- View 1: Login Screen -->
+        <!-- App Loader -->
+        <div id="app-loader" style="display: none;">
+            <div class="spinner"></div>
+            <p style="font-weight: 500; color: var(--text-muted);">Syncing Profile...</p>
+        </div>
+
+        <!-- VIEW: LOGIN -->
         <section id="view-login" class="app-view active">
             <div class="login-wrapper">
-                <div class="login-header">
-                    <div class="logo-box" style="background: transparent; box-shadow: none;">
-                        <img src="/assets/logo.svg" alt="Logo" style="width: 60px; height: 60px; border-radius: 15px;">
-                    </div>
-                    <h1>Extensive Manager</h1>
-                    <p>By Pinpoint Startups</p>
+                <div class="logo-box">
+                    <img src="/assets/logo.svg" alt="Logo" style="width: 50px; height: 50px;">
                 </div>
+                <h1 style="font-size: 32px; font-family: 'Outfit'; font-weight: 800; margin-bottom: 8px;">Welcome Back</h1>
+                <p style="color: var(--text-muted); margin-bottom: 40px; font-size: 15px;">Sign in to your employee portal.</p>
                 
-                <form id="employee-login-form" class="login-form">
-                    <div class="input-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="login-username" placeholder="Employee ID or Username" required autocomplete="username">
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
-                        <i class="fas fa-eye-slash toggle-password" id="toggle-pwd-btn"></i>
-                    </div>
-                    <button type="submit" class="primary-btn" id="login-submit-btn">
-                        <span>Log In</span>
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+                <form id="employee-login-form">
+                    <input type="text" id="login-username" class="modern-input" placeholder="Employee ID" required>
+                    <input type="password" id="login-password" class="modern-input" placeholder="Password" required>
+                    <button type="submit" class="primary-btn" id="login-submit-btn" style="margin-top: 16px;">Log In <i class="fas fa-arrow-right"></i></button>
                 </form>
-                
-                <div class="login-footer">
-                    <p>Forgot password? Contact your Administrator.</p>
-                </div>
             </div>
         </section>
 
-        <!-- View 2: Main Dashboard -->
+        <!-- VIEW: DASHBOARD -->
         <section id="view-dashboard" class="app-view">
-            <!-- App Bar -->
-            <header class="app-bar">
+            <div class="app-header">
                 <div class="user-greeting">
-                    <img src="https://ui-avatars.com/api/?name=Emp&background=5B21B6&color=fff" id="nav-avatar" alt="Avatar">
+                    <img src="" id="nav-avatar" alt="Avatar">
                     <div>
                         <p class="greeting-text" id="greeting-time">Good Morning,</p>
-                        <h2 id="nav-employee-name">Loading...</h2>
+                        <h2 class="greeting-name" id="nav-employee-name">Loading...</h2>
                     </div>
                 </div>
-                <button class="icon-btn" id="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </header>
-
+                <button class="icon-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+            
             <div class="dashboard-scroll-area">
-                
-                <!-- Quick Stats -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
-                        <h3 id="stat-worked-days">--</h3>
-                        <p>Worked Days</p>
+                <div class="bento-grid">
+                    <div class="bento-card wide primary-grad">
+                        <p class="bento-label">Today's Shift</p>
+                        <h3 class="bento-value" id="db-shift-status">Not Started</h3>
+                        <p class="bento-desc" id="db-shift-time">09:00 AM - 06:00 PM</p>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fas fa-plane-departure"></i></div>
-                        <h3 id="stat-leave-balance">--</h3>
-                        <p>Leave Balance</p>
+                    <div class="bento-card">
+                        <p class="bento-label">Worked</p>
+                        <h3 class="bento-value" id="db-worked-days">0</h3>
+                        <p class="bento-desc">Days this month</p>
                     </div>
-                </div>
-
-                <!-- Shift Status Card -->
-                <div class="highlight-card">
-                    <div class="highlight-header">
-                        <h3>Today's Shift</h3>
-                        <span class="badge" id="shift-badge">Checking...</span>
-                    </div>
-                    <div class="shift-details">
-                        <div class="shift-time">
-                            <i class="far fa-clock"></i>
-                            <span id="shift-expected-time">--:-- to --:--</span>
-                        </div>
+                    <div class="bento-card" style="background: rgba(249, 90, 44, 0.05); border-color: rgba(249, 90, 44, 0.2);">
+                        <p class="bento-label" style="color: var(--secondary);">Leaves</p>
+                        <h3 class="bento-value" id="db-leave-balance" style="color: var(--secondary);">0</h3>
+                        <p class="bento-desc">Available balance</p>
                     </div>
                 </div>
 
-                <!-- Recent Activity / Reports -->
-                <div class="section-container">
-                    <div class="section-header">
-                        <h3>Recent Shift Reports</h3>
-                    </div>
-                    <div class="reports-list" id="recent-reports-list">
-                        <!-- Populated dynamically -->
-                        <div class="empty-state">Loading your reports...</div>
-                    </div>
+                <div class="list-header">
+                    <h3 class="list-title">Recent Reports</h3>
                 </div>
-
+                <div id="db-reports-list">
+                    <!-- Dynamic -->
+                </div>
             </div>
         </section>
 
-        <!-- View 3: Finance Screen -->
+        <!-- VIEW: FINANCE -->
         <section id="view-finance" class="app-view">
-            <header class="app-bar">
-                <h2>Financials</h2>
-            </header>
+            <div class="app-header">
+                <h2 class="greeting-name" style="font-size: 24px;">Financials</h2>
+            </div>
             <div class="dashboard-scroll-area">
-                <div class="highlight-card" style="background: linear-gradient(135deg, #10B981, #059669);">
-                    <div class="highlight-header">
-                        <h3>Live Salary Tracker</h3>
-                        <span class="badge" style="background: rgba(0,0,0,0.2)">This Month</span>
-                    </div>
-                    <div class="shift-details">
-                        <div style="font-size: 32px; font-weight: 800; font-family: 'Outfit';">
-                            ₹<span id="finance-live-salary">0</span>
-                        </div>
-                        <p style="font-size: 12px; margin-top: 5px;">Estimated based on clocked hours</p>
+                <div class="bento-grid">
+                    <div class="bento-card wide orange-grad">
+                        <p class="bento-label">Live Salary Estimate</p>
+                        <h3 class="bento-value">₹<span id="fin-live-salary">0</span></h3>
+                        <p class="bento-desc">Estimated base pay generated so far</p>
                     </div>
                 </div>
 
-                <div class="section-container">
-                    <div class="section-header">
-                        <h3>Shortages & Advances</h3>
-                    </div>
-                    <div class="reports-list" id="finance-ledger-list">
-                        <div class="empty-state">No pending deductions!</div>
-                    </div>
+                <div class="list-header">
+                    <h3 class="list-title">Payslips</h3>
                 </div>
-
-                <div class="section-container">
-                    <div class="section-header">
-                        <h3>Digital Payslips</h3>
-                    </div>
-                    <div class="reports-list" id="finance-payslips-list">
-                        <div class="empty-state">No payslips generated yet.</div>
-                    </div>
+                <div id="fin-payslips-list">
+                    <!-- Dynamic -->
                 </div>
             </div>
         </section>
 
-        <!-- View 4: Leaves Screen -->
+        <!-- VIEW: LEAVES -->
         <section id="view-leaves" class="app-view">
-            <header class="app-bar">
-                <h2>Leave Management</h2>
-            </header>
+            <div class="app-header">
+                <h2 class="greeting-name" style="font-size: 24px;">Time Off</h2>
+            </div>
             <div class="dashboard-scroll-area">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3 id="leaves-balance-display">2</h3>
-                        <p>Available Leaves</p>
-                        <button class="primary-btn" id="btn-request-leave" style="margin-top: 15px; padding: 10px; width: 100%; font-size: 12px;">
-                            <i class="fas fa-plus"></i> Request Leave
-                        </button>
+                <div class="bento-grid">
+                    <div class="bento-card primary-grad" onclick="openSheet('leave-sheet')" style="cursor: pointer;">
+                        <div class="item-icon" style="background: rgba(255,255,255,0.2); margin-bottom: 16px;"><i class="fas fa-calendar-plus"></i></div>
+                        <h3 class="bento-value" style="font-size: 20px;">Leave</h3>
+                        <p class="bento-desc">Request time off</p>
                     </div>
-                    <div class="stat-card">
-                        <h3 id="swaps-count-display">0</h3>
-                        <p>Pending Swaps</p>
-                        <button class="primary-btn" id="btn-request-swap" style="margin-top: 15px; padding: 10px; width: 100%; font-size: 12px; background: #f97316;">
-                            <i class="fas fa-exchange-alt"></i> Swap Shift
-                        </button>
+                    <div class="bento-card orange-grad" onclick="openSheet('swap-sheet')" style="cursor: pointer;">
+                        <div class="item-icon" style="background: rgba(255,255,255,0.2); margin-bottom: 16px;"><i class="fas fa-exchange-alt"></i></div>
+                        <h3 class="bento-value" style="font-size: 20px;">Swap</h3>
+                        <p class="bento-desc">Trade your shift</p>
                     </div>
                 </div>
 
-                <!-- Leave Request Form -->
-                <div class="section-container" id="leave-request-form-container" style="display: none;">
-                    <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                        <h4 style="font-family: 'Outfit';">New Leave Request</h4>
-                        
-    <div style="display:flex; gap:10px; width:100%;">
-        <div style="flex:1;">
-            <label style="font-size:12px; color:#666;">Start Date</label>
-            <input type="date" id="leave-start-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
-        </div>
-        <div style="flex:1;">
-            <label style="font-size:12px; color:#666;">End Date</label>
-            <input type="date" id="leave-end-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
-        </div>
-    </div>
-                        <select id="leave-type" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
-                            <option value="casual">Casual Leave</option>
-                            <option value="sick">Sick Leave</option>
-                        </select>
-                        <textarea id="leave-reason" placeholder="Reason for leave..." rows="2" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;"></textarea>
-                        <button class="primary-btn" id="btn-submit-leave" style="padding: 10px;">Submit Request</button>
-                        <button class="icon-btn" id="btn-cancel-leave" style="width: 100%; border-radius: 8px; margin-top: 5px;">Cancel</button>
-                    </div>
+                <div class="list-header">
+                    <h3 class="list-title">My Requests</h3>
                 </div>
-
-                <!-- Shift Swap Form -->
-                <div class="section-container" id="swap-request-form-container" style="display: none;">
-                    <div class="report-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                        <h4 style="font-family: 'Outfit';">Request Shift Swap</h4>
-                        <input type="date" id="swap-date" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
-                        <select id="swap-coworker" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;">
-                            <option value="">Select Coworker</option>
-                        </select>
-                        <textarea id="swap-reason" placeholder="Reason for swap..." rows="2" class="input-group" style="padding: 10px; width: 100%; border: 1px solid #E2E8F0; border-radius: 8px;"></textarea>
-                        <button class="primary-btn" id="btn-submit-swap" style="padding: 10px; background: #f97316;">Submit Swap</button>
-                        <button class="icon-btn" id="btn-cancel-swap" style="width: 100%; border-radius: 8px; margin-top: 5px;">Cancel</button>
-                    </div>
-                </div>
-
-                <div class="section-container">
-                    <div class="section-header">
-                        <h3>My Requests</h3>
-                    </div>
-                    <div class="reports-list" id="leaves-history-list">
-                        <div class="empty-state">No leave requests found.</div>
-                    </div>
+                <div id="leaves-history-list">
+                    <!-- Dynamic -->
                 </div>
             </div>
         </section>
 
         <!-- Bottom Navigation -->
-        <nav class="bottom-nav" id="app-bottom-nav" style="display: none;">
-            <button class="nav-item active" data-target="dashboard">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </button>
-            <button class="nav-item" data-target="finance">
-                <i class="fas fa-wallet"></i>
-                <span>Finance</span>
-            </button>
-            <button class="nav-item" data-target="leaves">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Leaves</span>
-            </button>
-        </nav>
+        <div class="bottom-nav-container" id="app-bottom-nav" style="display: none;">
+            <div class="bottom-nav">
+                <button class="nav-item active" data-target="dashboard">
+                    <i class="fas fa-home"></i><span>Home</span>
+                </button>
+                <button class="nav-item" data-target="finance">
+                    <i class="fas fa-wallet"></i><span>Finance</span>
+                </button>
+                <button class="nav-item" data-target="leaves">
+                    <i class="fas fa-calendar-alt"></i><span>Time Off</span>
+                </button>
+            </div>
+        </div>
 
-        <!-- Read-Only Report Modal -->
-        <div id="report-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end; justify-content: center;">
-            <div style="background: var(--card-bg); width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; padding-bottom: 40px; transform: translateY(0); transition: 0.3s; max-height: 85vh; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 id="report-modal-date" style="margin: 0; font-family: 'Outfit';">Shift Report</h3>
-                    <button class="icon-btn" id="btn-close-report"><i class="fas fa-times"></i></button>
-                </div>
-                
-                <div class="stat-card" style="margin-bottom: 15px; background: rgba(91, 33, 182, 0.05); border-color: rgba(91, 33, 182, 0.1);">
-                    <p style="color: var(--text-muted);">Total Sales</p>
-                    <h2 id="report-modal-sales" style="color: var(--primary); font-family: 'Outfit';">₹0</h2>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div class="stat-card" style="padding: 10px;">
-                        <p style="font-size: 11px;">UPI</p>
-                        <h4 id="report-modal-upi" style="margin:0;">₹0</h4>
+        <!-- BOTTOM SHEETS -->
+        <!-- Payslip Sheet -->
+        <div id="payslip-sheet" class="bottom-sheet-overlay">
+            <div class="bottom-sheet">
+                <div class="sheet-header">
+                    <div>
+                        <h3 class="sheet-title">Salary Slip</h3>
+                        <p id="ps-modal-month" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"></p>
                     </div>
-                    <div class="stat-card" style="padding: 10px;">
-                        <p style="font-size: 11px;">Cash</p>
-                        <h4 id="report-modal-cash" style="margin:0;">₹0</h4>
+                    <button class="icon-btn" onclick="closeSheet('payslip-sheet')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="sheet-body" id="ps-modal-content"></div>
+                <button class="secondary-btn" style="margin-top: 24px; color: var(--success); border-color: var(--success);" onclick="alert('Digital signature verified.')"><i class="fas fa-shield-alt"></i> Verified Document</button>
+            </div>
+        </div>
+
+        <!-- Report Sheet -->
+        <div id="report-sheet" class="bottom-sheet-overlay">
+            <div class="bottom-sheet">
+                <div class="sheet-header">
+                    <div>
+                        <h3 class="sheet-title">Shift Report</h3>
+                        <p id="rep-modal-date" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"></p>
+                    </div>
+                    <button class="icon-btn" onclick="closeSheet('report-sheet')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="sheet-body">
+                    <div style="background: #F8FAFC; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Sales</p>
+                        <h2 style="font-family: 'Outfit'; font-size: 32px; color: var(--primary); margin:0;" id="rep-modal-sales">₹0</h2>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="section-header" style="margin-top: 20px;"><h4>Cash Drops</h4></div>
-                <div id="report-modal-drops" style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;"></div>
-
-                <div class="section-header" style="margin-top: 20px;"><h4>Issues / Shortages</h4></div>
-                <div id="report-modal-issues" style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;"></div>
+        <!-- Request Leave Sheet -->
+        <div id="leave-sheet" class="bottom-sheet-overlay">
+            <div class="bottom-sheet">
+                <div class="sheet-header">
+                    <h3 class="sheet-title">Request Leave</h3>
+                    <button class="icon-btn" onclick="closeSheet('leave-sheet')"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="sheet-body">
+                    <div style="display: flex; gap: 12px;">
+                        <input type="date" id="leave-start" class="modern-input">
+                        <input type="date" id="leave-end" class="modern-input">
+                    </div>
+                    <select id="leave-type" class="modern-input"><option value="casual">Casual Leave</option><option value="sick">Sick Leave</option></select>
+                    <textarea id="leave-reason" class="modern-input" placeholder="Reason..." rows="3"></textarea>
+                    <button class="primary-btn" onclick="submitLeave()">Submit Request</button>
+                </div>
             </div>
         </div>
         
-    </div>
-
-    
-        <!-- Payslip Modal -->
-        <div id="payslip-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px);">
-            <div style="background: var(--card-bg); width: 100%; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 24px; padding-bottom: 40px; max-height: 90vh; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <div>
-                        <h3 style="margin: 0; font-family: 'Outfit'; font-size: 20px; color: var(--text-dark);">Salary Slip</h3>
-                        <p id="ps-modal-month" style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);"></p>
-                    </div>
-                    <button class="icon-btn" onclick="document.getElementById('payslip-modal').style.display='none'" style="background: var(--bg-color);"><i class="fas fa-times"></i></button>
+        <!-- Request Swap Sheet -->
+        <div id="swap-sheet" class="bottom-sheet-overlay">
+            <div class="bottom-sheet">
+                <div class="sheet-header">
+                    <h3 class="sheet-title">Swap Shift</h3>
+                    <button class="icon-btn" onclick="closeSheet('swap-sheet')"><i class="fas fa-times"></i></button>
                 </div>
-                
-                <div id="ps-modal-content"></div>
-                
-                <button class="btn btn-primary" onclick="alert('Digital signature verified. This is a valid system generated payslip.')" style="width: 100%; margin-top: 24px; border-radius: 12px;"><i class="fas fa-check-circle"></i> Verify Authenticity</button>
+                <div class="sheet-body">
+                    <input type="date" id="swap-date" class="modern-input">
+                    <select id="swap-coworker" class="modern-input"><option value="">Loading Coworkers...</option></select>
+                    <textarea id="swap-reason" class="modern-input" placeholder="Reason..." rows="3"></textarea>
+                    <button class="primary-btn" onclick="submitSwap()">Request Swap</button>
+                </div>
             </div>
         </div>
 
-    <!-- Scripts -->
-    <script src="../js/employee-app.js?v=20260831_NEW_PAYSLIP"></script>
+    </div>
+
+    <script src="../js/employee-app.js?v=20260831_BENTO"></script>
 </body>
 </html>
