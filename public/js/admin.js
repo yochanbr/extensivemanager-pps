@@ -5488,11 +5488,20 @@ window.openPayslipConfig = function() {
     document.getElementById('payslip-config-form').reset();
     document.getElementById('payslip-month-input').value = window.payrollState.currentMonth;
     window.wizardGoToStep(1);
-    document.getElementById('payslip-config-modal').style.display = 'flex';
+    const modal = document.getElementById('payslip-config-modal');
+    modal.style.display = 'flex';
+    // Small delay to allow display:flex to apply before adding class for CSS transition
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
 };
 
 window.closePayslipConfig = function() {
-    document.getElementById('payslip-config-modal').style.display = 'none';
+    const modal = document.getElementById('payslip-config-modal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
 };
 
 // Key bindings
