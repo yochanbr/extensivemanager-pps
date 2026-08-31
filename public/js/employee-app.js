@@ -242,17 +242,29 @@ async function loadFinanceData() {
             // Render Payslips
             const payslipsList = document.getElementById('finance-payslips-list');
             if (data.payslips && data.payslips.length > 0) {
-                payslipsList.innerHTML = data.payslips.map(p => `
-                    <div class="report-item" style="cursor: pointer;" onclick="alert('Viewing Payslip for ${p.month}')">
+                // Store globally for modal access
+                window.employeePayslips = data.payslips;
+                
+                payslipsList.innerHTML = data.payslips.map((p, index) => {
+                    const isNewFormat = !!p.earnings;
+                    const netPay = isNewFormat ? (p.earnings.basic + (p.earnings.allowances?.hra||0) + (p.earnings.allowances?.overtime||0) + (p.earnings.allowances?.other||0) - (p.deductions?.lop||0) - (p.deductions?.esi||0) - (p.deductions?.other||0)) : (p.netPay || 0);
+                    
+                    // Format month (e.g. 2026-08 -> August 2026)
+                    const dateObj = new Date(p.month + '-01');
+                    const monthName = dateObj.toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+                    
+                    return `
+                    <div class="report-item" style="cursor: pointer; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;" onclick="window.viewPayslip(\`${index}\`)">
                         <div class="report-info">
-                            <h4>Payslip: ${p.month}</h4>
-                            <p>Net Pay: ₹${p.netPay}</p>
+                            <h4 style="margin:0 0 4px 0; font-family:'Outfit'; font-size: 15px; color: var(--text-dark);">${monthName}</h4>
+                            <p style="margin:0; font-size: 14px; font-weight: 600; color: var(--primary);">₹${netPay.toLocaleString('en-IN')}</p>
                         </div>
-                        <div class="report-status verified">
-                            <i class="fas fa-file-pdf"></i> View
+                        <div class="report-status verified" style="background: rgba(37, 99, 235, 0.1); color: #2563EB; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-chevron-right"></i>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             } else {
                 payslipsList.innerHTML = '<div class="empty-state">No payslips available yet.</div>';
             }

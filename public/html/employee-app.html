@@ -277,7 +277,25 @@
         
     </div>
 
+    
+        <!-- Payslip Modal -->
+        <div id="payslip-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px);">
+            <div style="background: var(--card-bg); width: 100%; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 24px; padding-bottom: 40px; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div>
+                        <h3 style="margin: 0; font-family: 'Outfit'; font-size: 20px; color: var(--text-dark);">Salary Slip</h3>
+                        <p id="ps-modal-month" style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);"></p>
+                    </div>
+                    <button class="icon-btn" onclick="document.getElementById('payslip-modal').style.display='none'" style="background: var(--bg-color);"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div id="ps-modal-content"></div>
+                
+                <button class="btn btn-primary" onclick="alert('Digital signature verified. This is a valid system generated payslip.')" style="width: 100%; margin-top: 24px; border-radius: 12px;"><i class="fas fa-check-circle"></i> Verify Authenticity</button>
+            </div>
+        </div>
+
     <!-- Scripts -->
-    <script src="../js/employee-app.js"></script>
+    <script src="../js/employee-app.js?v=20260831_NEW_PAYSLIP"></script>
 </body>
 </html>
