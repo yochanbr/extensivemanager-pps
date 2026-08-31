@@ -1433,6 +1433,35 @@ app.post('/api/admin/payslips/publish', verifyAdmin, async (req, res) => {
     }
 });
 
+app.get('/api/admin/payslips', verifyAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.payslips().get();
+        if (snapshot.empty) return res.json({ payslips: [] });
+
+        const payslips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Sort by month descending, then by employee name
+        payslips.sort((a, b) => {
+            if (a.month !== b.month) return b.month.localeCompare(a.month);
+            return (a.employeeName || '').localeCompare(b.employeeName || '');
+        });
+
+        res.json({ payslips });
+    } catch (error) {
+        console.error("Error fetching payslips:", error);
+        res.status(500).json({ error: "Failed to fetch payslips" });
+    }
+});
+
+app.delete('/api/admin/payslips/:id', verifyAdmin, async (req, res) => {
+    try {
+        await db.payslips().doc(req.params.id).delete();
+        res.json({ message: "Payslip deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting payslip:", error);
+        res.status(500).json({ error: "Failed to delete payslip" });
+    }
+});
+
 // Get pending employee requests (Leaves & Swaps)
 // =========================
 // REQUEST ID GENERATOR & AUDIT

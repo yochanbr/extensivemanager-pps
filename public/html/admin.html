@@ -786,6 +786,60 @@
                     </div>
 
         <!-- ========================================== -->
+        <!-- VIEW: PAYROLL (Dashboard & History) -->
+        <!-- ========================================== -->
+        <section id="view-payroll" class="admin-view rq-view">
+            <!-- Page Header -->
+            <header class="rq-header">
+                <div class="rq-header-left">
+                    <div class="rq-header-icon" style="background: #FFF7ED; color: #EA580C;"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="rq-header-text">
+                        <h2 class="rq-title">Payroll & Compensation</h2>
+                        <p class="rq-subtitle">Manage employee salary and generate payslips</p>
+                    </div>
+                </div>
+                <div class="rq-header-actions">
+                    <button class="req-action-btn" onclick="window.openPayslipConfig()" style="background: #111827; color: white; border: none; font-weight: 600; padding: 10px 16px;">
+                        <i class="fas fa-plus"></i> Generate Payslip
+                    </button>
+                    <button class="req-action-btn" onclick="window.loadAdminPayroll()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats -->
+            <div class="req-stats-row">
+                <div class="req-stat-card">
+                    <div class="req-stat-icon green"><i class="fas fa-money-check-alt"></i></div>
+                    <div class="req-stat-content">
+                        <div class="req-stat-value" id="payroll-total-paid">₹0</div>
+                        <div class="req-stat-label">Total Payout (This Month)</div>
+                    </div>
+                </div>
+                <div class="req-stat-card">
+                    <div class="req-stat-icon blue"><i class="fas fa-file-pdf"></i></div>
+                    <div class="req-stat-content">
+                        <div class="req-stat-value" id="payroll-total-slips">0</div>
+                        <div class="req-stat-label">Generated Payslips</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List -->
+            <div class="rq-main-content">
+                <div class="rq-column">
+                    <div class="rq-column-header">
+                        <h3>Payslip History</h3>
+                    </div>
+                    <div class="rq-list" id="admin-payslip-history-list">
+                        <!-- Items will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
         <!-- VIEW: REQUESTS (Leaves & Swaps) -->
         <!-- ========================================== -->
         <section id="view-requests" class="admin-view rq-view">

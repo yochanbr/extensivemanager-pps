@@ -669,6 +669,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetView && targetView.id === 'view-requests') {
                     viewSubtitle.textContent = 'Manage employee leave requests and shift swaps';
                     viewSubtitle.style.display = 'block';
+                } else if (targetView && targetView.id === 'view-payroll') {
+                    viewSubtitle.textContent = 'Manage employee salary and generate payslips';
+                    viewSubtitle.style.display = 'block';
                 } else {
                     viewSubtitle.style.display = 'none';
                 }
@@ -690,6 +693,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetView && targetView.id === 'view-requests') {
             window.loadAdminRequests();
+        }
+        if (targetView && targetView.id === 'view-payroll') {
+            if (typeof window.loadAdminPayroll === 'function') window.loadAdminPayroll();
         }
     }
 
@@ -3815,6 +3821,93 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error(err);
             nammaModalSystem.alert('Network error loading requests');
+        }
+    };
+
+    // =====================================
+    // PAYROLL HISTORY DASHBOARD
+    // =====================================
+    window.loadAdminPayroll = async function() {
+        const listEl = document.getElementById('admin-payslip-history-list');
+        if (!listEl) return;
+        
+        listEl.innerHTML = '<div class="req-empty"><i class="fas fa-circle-notch fa-spin fa-2x"></i><h4 style="margin-top:10px;">Loading Payslips...</h4></div>';
+        
+        try {
+            const res = await fetch('/api/admin/payslips');
+            const data = await res.json();
+            const payslips = data.payslips || [];
+            
+            // Calculate stats
+            const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+            let totalPaidThisMonth = 0;
+            let slipsThisMonth = 0;
+            
+            payslips.forEach(p => {
+                if (p.month === currentMonth) {
+                    slipsThisMonth++;
+                    const netStr = (p.netPay || '0').replace(/,/g, '').replace('₹', '');
+                    totalPaidThisMonth += parseFloat(netStr) || 0;
+                }
+            });
+            
+            document.getElementById('payroll-total-paid').textContent = '₹' + totalPaidThisMonth.toLocaleString();
+            document.getElementById('payroll-total-slips').textContent = slipsThisMonth;
+            
+            if (payslips.length === 0) {
+                listEl.innerHTML = '<div class="req-empty"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:15px;"></i><h4>No Payslips Generated</h4><p style="color:#64748B;">Generate a payslip to see it here.</p></div>';
+                return;
+            }
+            
+            listEl.innerHTML = payslips.map(p => `
+                <div class="req-card">
+                    <div class="req-card-top">
+                        <div class="req-profile">
+                            <div class="req-avatar"><i class="fas fa-user"></i></div>
+                            <div>
+                                <h4 class="req-name">${p.employeeName || 'Unknown Employee'}</h4>
+                                <p class="req-role">Month: ${p.month}</p>
+                            </div>
+                        </div>
+                        <span class="req-status" style="background:#D1FAE5; color:#059669;">PUBLISHED</span>
+                    </div>
+                    <div class="req-details">
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Basic</span>
+                            <span class="req-detail-val">₹${p.basic || '0'}</span>
+                        </div>
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Net Pay</span>
+                            <span class="req-detail-val" style="color: #059669; font-weight:700;">₹${(p.netPay || '0').replace(/[^0-9]/g, '')}</span>
+                        </div>
+                    </div>
+                    <div class="req-actions" style="margin-top: 10px;">
+                        <button class="req-btn req-btn-reject" onclick="window.deletePayslip('${p.id}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+        } catch (err) {
+            console.error(err);
+            listEl.innerHTML = '<div class="req-empty" style="color:red;">Error loading payslips.</div>';
+        }
+    };
+    
+    window.deletePayslip = async function(id) {
+        if (!confirm('Are you sure you want to delete this payslip? It will be removed from the employee app.')) return;
+        
+        try {
+            const res = await fetch('/api/admin/payslips/' + id, { method: 'DELETE' });
+            if (res.ok) {
+                window.loadAdminPayroll(); // reload
+            } else {
+                alert('Failed to delete payslip.');
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Error deleting payslip.');
         }
     };
 
