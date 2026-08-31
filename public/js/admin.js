@@ -5274,6 +5274,17 @@ window.renderAdminPayroll = function() {
         return matchesSearch && matchesFilter;
     });
     
+    renderList.sort((a, b) => {
+        if (window.payrollState.sortBy === 'name_asc') {
+            return (a.employeeName || '').localeCompare(b.employeeName || '');
+        } else if (window.payrollState.sortBy === 'net_desc') {
+            return (b._normalized.net || 0) - (a._normalized.net || 0);
+        } else if (window.payrollState.sortBy === 'net_asc') {
+            return (a._normalized.net || 0) - (b._normalized.net || 0);
+        }
+        return 0;
+    });
+    
     document.getElementById('payroll-pagination-text').textContent = `Showing ${renderList.length > 0 ? 1 : 0} to ${renderList.length} of ${renderList.length} employees`;
     
     if (renderList.length === 0) {
@@ -5612,3 +5623,29 @@ document.addEventListener('keydown', function(e) {
         window.closePayslipConfig();
     }
 });
+
+
+
+window.payrollState.sortBy = 'name_asc';
+
+window.togglePayrollMoreFilters = function() {
+    const el = document.getElementById('payroll-more-filters-menu');
+    const isVisible = el.style.display === 'block';
+    
+    if (!isVisible) {
+        el.style.display = 'block';
+    }
+    
+    setTimeout(() => {
+        const closeMenu = (e) => {
+            if (el) el.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        };
+        document.addEventListener('click', closeMenu);
+    }, 0);
+};
+
+window.setPayrollSort = function(sortType) {
+    window.payrollState.sortBy = sortType;
+    window.renderAdminPayroll();
+};

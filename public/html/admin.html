@@ -964,9 +964,17 @@
                         <select class="pm-input" style="width: 150px; background: white; cursor: pointer;">
                             <option>All Departments</option>
                         </select>
-                        <button class="pm-btn pm-btn-outline">
-                            <i class="fas fa-filter"></i> More filters
-                        </button>
+                        <div style="position: relative;">
+                            <button class="pm-btn pm-btn-outline" onclick="window.togglePayrollMoreFilters()">
+                                <i class="fas fa-filter"></i> More filters
+                            </button>
+                            <div id="payroll-more-filters-menu" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:white; border:1px solid #E2E8F0; border-radius:12px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1); z-index:20; width: 220px; text-align: left; overflow:hidden;">
+                                <div style="padding: 12px 16px; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #F1F5F9; background: #F8FAFC;">Sort By</div>
+                                <div onclick="window.setPayrollSort('name_asc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Employee Name (A-Z)</div>
+                                <div onclick="window.setPayrollSort('net_desc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Net Pay (High to Low)</div>
+                                <div onclick="window.setPayrollSort('net_asc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Net Pay (Low to High)</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -2368,7 +2376,7 @@
     </style>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260831_FONTS"></script>
+    <script src="../js/admin.js?v=20260831_FILTERS"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
