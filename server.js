@@ -1405,24 +1405,58 @@ app.post('/api/end-shift', async (req, res) => {
 // Publish payslip to Employee App
 app.post('/api/admin/payslips/publish', verifyAdmin, async (req, res) => {
     try {
-        const { employeeId, month, basicSalary, lopAmount, netPay } = req.body;
+        const { 
+            employeeId, month, employeeName,
+            basicSalary, lopAmount, netPay,
+            earnings, deductions
+        } = req.body;
+        
         if (!employeeId || !month) return res.status(400).json({ success: false, message: 'Missing fields' });
 
+        const now = new Date().toISOString();
+        const adminName = req.user && req.user.username ? req.user.username : 'admin';
+
+        // Construct normalized payslip document
         const payslipDoc = {
             employeeId,
+            employeeName: employeeName || 'Unknown Employee',
             month, // YYYY-MM
-            basicSalary: basicSalary || 0,
-            lopAmount: lopAmount || 0,
+            
+            // Legacy flat fields for backward compatibility (in case old endpoints read them directly)
+            basicSalary: basicSalary || (earnings ? earnings.basic : 0),
+            lopAmount: lopAmount || (deductions ? deductions.lop : 0),
             netPay: netPay || 0,
-            published: true,
-            publishedAt: new Date().toISOString()
+            
+            // New structured fields
+            earnings: earnings || {
+                basic: basicSalary || 0,
+                allowances: {
+                    hra: 0,
+                    overtime: 0,
+                    other: 0
+                },
+                gross: basicSalary || 0
+            },
+            deductions: deductions || {
+                lop: lopAmount || 0,
+                esi: 0,
+                other: 0,
+                total: lopAmount || 0
+            },
+            
+            status: 'published',
+            publishedAt: now,
+            updatedAt: now,
+            publishedBy: adminName
         };
 
         // Upsert to ensure we don't have duplicate months
         const existing = await db.payslips().where('employeeId', '==', employeeId).where('month', '==', month).get();
         if (!existing.empty) {
+            payslipDoc.createdAt = existing.docs[0].data().createdAt || now;
             await db.payslips().doc(existing.docs[0].id).update(payslipDoc);
         } else {
+            payslipDoc.createdAt = now;
             await db.payslips().add(payslipDoc);
         }
 
@@ -1438,10 +1472,26 @@ app.get('/api/admin/payslips', verifyAdmin, async (req, res) => {
         const snapshot = await db.payslips().get();
         if (snapshot.empty) return res.json({ payslips: [] });
 
-        const payslips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Fetch employees to get names
+        const employeesSnap = await db.employees().get();
+        const employeeMap = {};
+        employeesSnap.docs.forEach(doc => {
+            const data = doc.data();
+            employeeMap[doc.id] = data.name || 'Unknown Employee';
+        });
+
+        const payslips = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                employeeName: employeeMap[data.employeeId] || 'Former Employee'
+            };
+        });
+
         // Sort by month descending, then by employee name
         payslips.sort((a, b) => {
-            if (a.month !== b.month) return b.month.localeCompare(a.month);
+            if (a.month !== b.month) return (b.month || '').localeCompare(a.month || '');
             return (a.employeeName || '').localeCompare(b.employeeName || '');
         });
 

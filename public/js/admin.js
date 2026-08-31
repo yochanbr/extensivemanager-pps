@@ -3513,49 +3513,6 @@ document.addEventListener('DOMContentLoaded', () => {
         html2pdf().set(opt).from(element).save();
     };
 
-    window.publishPayslipToApp = async function() {
-        // Scrape the DOM of the preview area to get the data
-        const element = document.getElementById('payslip-rendering-area');
-        if (!element) return;
-        
-        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
-        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
-        
-        // Find net pay from the element
-        const netPayEl = Array.from(element.querySelectorAll('td')).find(td => td.innerText.includes('Net Pay'));
-        const netPay = netPayEl ? netPayEl.nextElementSibling.innerText.replace(/[^0-9]/g, '') : 0;
-        
-        // Also get the raw inputs from the configuration form to save accurate structured data
-        const employeeId = document.getElementById('payslip-employee-select').value;
-        const month = document.getElementById('payslip-month-input').value; // YYYY-MM
-        const basic = document.getElementById('payslip-basic-input').value;
-        const lop = document.getElementById('payslip-lop-input').value;
-
-        try {
-            const res = await fetch('/api/admin/payslips/publish', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    employeeId,
-                    month,
-                    basicSalary: basic,
-                    lopAmount: lop,
-                    netPay: netPay,
-                    publishedDate: new Date().toISOString()
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                nammaModalSystem.alert(`Successfully sent the ${month} payslip to ${empName}'s app!`);
-            } else {
-                nammaModalSystem.alert('Error: ' + data.message);
-            }
-        } catch (err) {
-            console.error(err);
-            nammaModalSystem.alert('Network error publishing payslip.');
-        }
-    };
-
     // ==========================================
     // REQUESTS (LEAVES & SWAPS) LOGIC
     // ==========================================
@@ -3827,102 +3784,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // =====================================
     // PAYROLL HISTORY DASHBOARD
     // =====================================
-    window.loadAdminPayroll = async function() {
-        const listEl = document.getElementById('admin-payslip-history-list');
-        if (!listEl) return;
-        
-        listEl.innerHTML = '<div class="req-empty"><i class="fas fa-circle-notch fa-spin fa-2x"></i><h4 style="margin-top:10px;">Loading Payslips...</h4></div>';
-        
-        try {
-            const res = await fetch('/api/admin/payslips');
-            const data = await res.json();
-            const payslips = data.payslips || [];
-            
-            // Calculate stats
-            const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
-            let totalPaidThisMonth = 0;
-            let slipsThisMonth = 0;
-            
-            payslips.forEach(p => {
-                if (p.month === currentMonth) {
-                    slipsThisMonth++;
-                    const netStr = (p.netPay || '0').replace(/,/g, '').replace('₹', '');
-                    totalPaidThisMonth += parseFloat(netStr) || 0;
-                }
-            });
-            
-            document.getElementById('payroll-total-paid').textContent = '₹' + totalPaidThisMonth.toLocaleString();
-            document.getElementById('payroll-total-slips').textContent = slipsThisMonth;
-            
-            if (payslips.length === 0) {
-                listEl.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 48px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:15px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No Payslips Generated</h4><p style="margin:0; color:#64748B;">Generate a payslip to see it here.</p></td></tr>';
-                return;
-            }
-            
-            listEl.innerHTML = payslips.map(p => `
-                <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 16px 24px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
-                                ${(p.employeeName || 'U')[0].toUpperCase()}
-                            </div>
-                            <div style="font-weight: 600; color: #0F172A;">${p.employeeName || 'Unknown Employee'}</div>
-                        </div>
-                    </td>
-                    <td style="padding: 16px 24px; color: #475569; font-weight: 500;">
-                        ${new Date(p.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                    </td>
-                    <td style="padding: 16px 24px;">
-                        <div style="font-weight: 700; color: #059669; font-size: 15px;">₹${(p.netPay || '0').replace(/[^0-9]/g, '')}</div>
-                        <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Basic: ₹${p.basic || '0'}</div>
-                    </td>
-                    <td style="padding: 16px 24px;">
-                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 600; border: 1px solid #A7F3D0;">
-                            <i class="fas fa-check-circle" style="font-size: 10px;"></i> PUBLISHED
-                        </span>
-                    </td>
-                    <td style="padding: 16px 24px; text-align: right;">
-                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                            <button onclick="window.deletePayslip('${p.id}')" style="background: white; border: 1px solid #E2E8F0; color: #DC2626; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#FEF2F2'; this.style.borderColor='#FECACA';" onmouseout="this.style.background='white'; this.style.borderColor='#E2E8F0';" title="Delete Payslip">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-            
-        } catch (err) {
-            console.error(err);
-            listEl.innerHTML = '<div class="req-empty" style="color:red;">Error loading payslips.</div>';
-        }
-    };
-    
-    window.deletePayslip = async function(id) {
-        if (!confirm('Are you sure you want to delete this payslip? It will be removed from the employee app.')) return;
-        
-        try {
-            const res = await fetch('/api/admin/payslips/' + id, { method: 'DELETE' });
-            if (res.ok) {
-                window.loadAdminPayroll(); // reload
-            } else {
-                alert('Failed to delete payslip.');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Error deleting payslip.');
-        }
-    };
-
-    function escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return String(unsafe)
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
-    }
-
     window.updateRequestStatus = async function(type, id, status) {
         let reason = '';
         const drawer = document.getElementById('request-detail-drawer');
@@ -5254,3 +5115,533 @@ window.deleteShiftReport = async function(reportId, event) {
     }
 };
 
+
+
+
+// ==================== PAYROLL SPA LOGIC ====================
+
+window.payrollState = {
+    currentMonth: new Date().toISOString().substring(0, 7), // YYYY-MM
+    payslips: [],
+    employees: [],
+    search: '',
+    filter: 'all',
+    wizardData: {}
+};
+
+// Formatting utility
+window.formatINR = function(value) {
+    if (value === undefined || value === null || isNaN(value) || value === '') return '₹0';
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0
+    }).format(Number(value));
+};
+
+// Normalize legacy data vs new data
+window.normalizePayslip = function(raw) {
+    const isNewFormat = !!raw.earnings;
+    const basic = isNewFormat ? raw.earnings.basic : (raw.basicSalary || raw.basic || 0);
+    const allowances = isNewFormat ? (Number(raw.earnings.allowances?.hra||0) + Number(raw.earnings.allowances?.overtime||0) + Number(raw.earnings.allowances?.other||0)) : 0;
+    const lop = isNewFormat ? (raw.deductions?.lop || 0) : (raw.lopAmount || 0);
+    const deductions = isNewFormat ? (raw.deductions?.total || 0) : lop; // legacy only had LOP
+    const net = raw.netPay || 0;
+    const gross = isNewFormat ? (raw.earnings?.gross || 0) : (Number(basic) + Number(allowances));
+    
+    return {
+        ...raw,
+        _normalized: {
+            basic: Number(basic),
+            allowances: Number(allowances),
+            deductions: Number(deductions),
+            lop: Number(lop),
+            net: Number(net),
+            gross: Number(gross),
+            esi: isNewFormat ? (raw.deductions?.esi || 0) : null
+        }
+    };
+};
+
+window.changePayrollMonth = function(delta) {
+    const current = new Date(window.payrollState.currentMonth + '-01');
+    current.setMonth(current.getMonth() + delta);
+    const newMonth = current.toISOString().substring(0, 7);
+    window.setPayrollMonth(newMonth);
+};
+
+window.setPayrollMonth = function(monthStr) {
+    if (!monthStr) return;
+    window.payrollState.currentMonth = monthStr;
+    const dateObj = new Date(monthStr + '-01');
+    const monthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('payroll-current-month-display').textContent = monthName;
+    document.getElementById('payroll-month-selector').value = monthStr;
+    
+    // Also update the wizard default
+    document.getElementById('payslip-month-input').value = monthStr;
+    
+    window.renderAdminPayroll();
+};
+
+window.loadAdminPayroll = async function() {
+    console.log("Loading premium payroll UI");
+    const listEl = document.getElementById('admin-payslip-history-list');
+    listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#94A3B8;"></i></td></tr>';
+    
+    try {
+        // Fetch payslips
+        const res = await fetch('/api/admin/payslips');
+        const data = await res.json();
+        const allPayslips = data.payslips || [];
+        
+        // Fetch active employees
+        const empRes = await fetch('/api/admin/employees');
+        const empData = await empRes.json();
+        
+        window.payrollState.payslips = allPayslips.map(window.normalizePayslip);
+        window.payrollState.employees = empData.employees || [];
+        
+        // Set initial month display
+        window.setPayrollMonth(window.payrollState.currentMonth);
+        
+        // Populate wizard employee dropdown
+        const empSelect = document.getElementById('payslip-employee-select');
+        empSelect.innerHTML = '<option value="">Select Employee...</option>' + 
+            window.payrollState.employees.map(e => `<option value="${e.id}">${e.name} (${e.employeeId || 'ID Pending'})</option>`).join('');
+            
+    } catch (err) {
+        console.error(err);
+        listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px; color: #DC2626;">Unable to load payroll. Something went wrong. <button onclick="window.loadAdminPayroll()" style="margin-top:10px; display:block; margin-left:auto; margin-right:auto;">Retry</button></td></tr>';
+    }
+};
+
+window.filterAdminPayroll = function() {
+    window.payrollState.search = document.getElementById('payroll-search-input').value.toLowerCase();
+    window.payrollState.filter = document.getElementById('payroll-status-filter').value;
+    window.renderAdminPayroll();
+};
+
+window.renderAdminPayroll = function() {
+    const listEl = document.getElementById('admin-payslip-history-list');
+    const { payslips, employees, currentMonth, search, filter } = window.payrollState;
+    
+    // Filter to currently selected month FIRST
+    const monthSlips = payslips.filter(p => p.month === currentMonth);
+    
+    // Stats calculation based ONLY on selected month
+    let totalNet = 0;
+    monthSlips.forEach(p => { totalNet += p._normalized.net; });
+    
+    const activeEmployeesCount = employees.length;
+    
+    // Deduplicate employees paid (though db shouldn't have dupes for same month)
+    const paidEmployeeIds = new Set(monthSlips.map(p => p.employeeId));
+    const paidCount = paidEmployeeIds.size;
+    const pendingCount = Math.max(0, activeEmployeesCount - paidCount);
+    
+    const avgNet = paidCount > 0 ? (totalNet / paidCount) : 0;
+    
+    // Update stats UI
+    document.getElementById('payroll-stat-total').textContent = window.formatINR(totalNet);
+    document.getElementById('payroll-stat-paid').textContent = `${paidCount} / ${activeEmployeesCount}`;
+    document.getElementById('payroll-stat-slips').textContent = monthSlips.length;
+    document.getElementById('payroll-stat-avg').textContent = window.formatINR(avgNet);
+    
+    const statusEl = document.getElementById('payroll-stat-status');
+    const statusIcon = document.getElementById('payroll-status-icon');
+    const statusText = document.getElementById('payroll-status-text');
+    
+    if (activeEmployeesCount === 0) {
+        statusText.textContent = "No Staff";
+        statusIcon.style.color = "#94A3B8";
+        statusEl.style.color = "#64748B";
+    } else if (paidCount === 0) {
+        statusText.textContent = "Draft";
+        statusIcon.style.color = "#94A3B8";
+        statusEl.style.color = "#64748B";
+    } else if (pendingCount === 0) {
+        statusText.textContent = "Published";
+        statusIcon.style.color = "#059669";
+        statusEl.style.color = "#059669";
+    } else {
+        statusText.textContent = "Processing";
+        statusIcon.style.color = "#F59E0B";
+        statusEl.style.color = "#D97706";
+    }
+    
+    // Further filter for rendering ledger
+    let renderList = monthSlips.filter(p => {
+        const matchesSearch = p.employeeName.toLowerCase().includes(search) || (p.employeeId && p.employeeId.toLowerCase().includes(search));
+        const matchesFilter = filter === 'all' || p.status === filter || (filter === 'published' && !p.status); // fallback for old records
+        return matchesSearch && matchesFilter;
+    });
+    
+    if (renderList.length === 0) {
+        if (monthSlips.length === 0) {
+            listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 64px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:16px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No payslips yet</h4><p style="margin:0; color:#64748B;">Generate your first payslip for this payroll period.</p><button onclick="window.openPayslipConfig()" style="margin-top:16px; background:#0F172A; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Generate Payslip</button></td></tr>';
+        } else {
+            listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px; color:#64748B;">No employees found matching your search.</td></tr>';
+        }
+        return;
+    }
+    
+    listEl.innerHTML = renderList.map(p => {
+        const initial = (p.employeeName || 'U')[0].toUpperCase();
+        return `
+        <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'" onclick="window.openPayslipDrawer('${p.id}')">
+            <td style="padding: 16px 24px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                        ${initial}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #0F172A;">${p.employeeName}</div>
+                        <div style="font-size: 12px; color: #64748B;">${p.employeeId.substring(0, 8)}...</div>
+                    </div>
+                </div>
+            </td>
+            <td style="padding: 16px 24px; text-align: right; color: #475569; font-variant-numeric: tabular-nums;">
+                ${window.formatINR(p._normalized.basic)}
+            </td>
+            <td style="padding: 16px 24px; text-align: right; color: #475569; font-variant-numeric: tabular-nums;">
+                ${window.formatINR(p._normalized.allowances)}
+            </td>
+            <td style="padding: 16px 24px; text-align: right; color: #DC2626; font-variant-numeric: tabular-nums;">
+                ${window.formatINR(p._normalized.deductions)}
+            </td>
+            <td style="padding: 16px 24px; text-align: right; color: #DC2626; font-variant-numeric: tabular-nums;">
+                ${p._normalized.lop > 0 ? window.formatINR(p._normalized.lop) : '-'}
+            </td>
+            <td style="padding: 16px 24px; text-align: right; font-weight: 700; color: #059669; font-variant-numeric: tabular-nums; font-size: 14px;">
+                ${window.formatINR(p._normalized.net)}
+            </td>
+            <td style="padding: 16px 24px;">
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 600; border: 1px solid #A7F3D0;">
+                    <i class="fas fa-circle" style="font-size: 8px;"></i> PUBLISHED
+                </span>
+            </td>
+            <td style="padding: 16px 24px; text-align: center;">
+                <div style="position: relative; display: inline-block;" onclick="event.stopPropagation()">
+                    <button onclick="window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#64748B; cursor:pointer; padding:4px 8px; font-size: 16px;">
+                        &ctdot;
+                    </button>
+                    <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
+                        <div onclick="window.openPayslipDrawer('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">View Details</div>
+                        <div onclick="window.deletePayslip('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #DC2626; cursor: pointer; transition: background 0.1s; border-top: 1px solid #F1F5F9;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">Delete</div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+};
+
+window.togglePayslipMenu = function(id) {
+    const el = document.getElementById('payslip-menu-' + id);
+    const isVisible = el.style.display === 'block';
+    
+    // Hide all menus
+    document.querySelectorAll('[id^="payslip-menu-"]').forEach(menu => menu.style.display = 'none');
+    
+    // Toggle clicked
+    if (!isVisible) {
+        el.style.display = 'block';
+    }
+    
+    // Click outside to close
+    setTimeout(() => {
+        const closeMenu = (e) => {
+            el.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        };
+        document.addEventListener('click', closeMenu);
+    }, 0);
+};
+
+window.openPayslipDrawer = function(id) {
+    const payslip = window.payrollState.payslips.find(p => p.id === id);
+    if (!payslip) return;
+    
+    const content = document.getElementById('payslip-drawer-content');
+    
+    content.innerHTML = `
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 20px; font-weight: 700; color: #0F172A;">${payslip.employeeName}</div>
+            <div style="font-size: 13px; color: #64748B; font-family: monospace;">ID: ${payslip.employeeId}</div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-bottom: 32px;">
+            <div style="flex: 1; padding: 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
+                <div style="font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase;">Month</div>
+                <div style="font-size: 14px; font-weight: 600; color: #0F172A; margin-top: 4px;">${new Date(payslip.month+'-01').toLocaleDateString('en-US', {month:'long', year:'numeric'})}</div>
+            </div>
+            <div style="flex: 1; padding: 12px; background: #ECFDF5; border-radius: 8px; border: 1px solid #A7F3D0;">
+                <div style="font-size: 11px; font-weight: 600; color: #059669; text-transform: uppercase;">Net Pay</div>
+                <div style="font-size: 14px; font-weight: 700; color: #059669; margin-top: 4px;">${window.formatINR(payslip._normalized.net)}</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-bottom: 12px;">Earnings</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">Basic Pay</span>
+                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip._normalized.basic)}</span>
+            </div>
+            ${payslip.earnings?.allowances?.hra ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">HRA / Allowances</span>
+                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.hra)}</span>
+            </div>` : ''}
+            ${payslip.earnings?.allowances?.overtime ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">Overtime</span>
+                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.overtime)}</span>
+            </div>` : ''}
+            ${payslip.earnings?.allowances?.other ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">Other Earnings</span>
+                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip.earnings.allowances.other)}</span>
+            </div>` : ''}
+            ${!payslip.earnings && payslip._normalized.allowances > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">Allowances (Legacy)</span>
+                <span style="font-weight: 500; color: #0F172A;">${window.formatINR(payslip._normalized.allowances)}</span>
+            </div>` : ''}
+            <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0; font-size: 14px; font-weight: 700;">
+                <span style="color: #0F172A;">Gross Earnings</span>
+                <span style="color: #0F172A;">${window.formatINR(payslip._normalized.gross)}</span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-bottom: 12px;">Deductions</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">LOP / Shortage</span>
+                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip._normalized.lop)}</span>
+            </div>
+            ${payslip._normalized.esi !== null ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">ESI</span>
+                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip._normalized.esi)}</span>
+            </div>` : `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">ESI</span>
+                <span style="color: #94A3B8; font-style: italic;">Not recorded</span>
+            </div>`}
+            ${payslip.deductions?.other ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                <span style="color: #475569;">Other Deductions</span>
+                <span style="font-weight: 500; color: #DC2626;">${window.formatINR(payslip.deductions.other)}</span>
+            </div>` : ''}
+            <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0; font-size: 14px; font-weight: 700;">
+                <span style="color: #0F172A;">Total Deductions</span>
+                <span style="color: #DC2626;">${window.formatINR(payslip._normalized.deductions)}</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 32px; padding: 16px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
+            <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-bottom: 8px;">Metadata</div>
+            <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Published At:</span>
+                <span style="font-family: monospace;">${new Date(payslip.publishedAt || payslip.createdAt || Date.now()).toLocaleString()}</span>
+            </div>
+            <div style="font-size: 12px; color: #475569; display: flex; justify-content: space-between;">
+                <span>Published By:</span>
+                <span style="font-family: monospace;">${payslip.publishedBy || 'admin'}</span>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('payslip-drawer-overlay').style.display = 'block';
+    setTimeout(() => { document.getElementById('payslip-detail-drawer').style.right = '0'; }, 10);
+};
+
+window.closePayslipDrawer = function() {
+    document.getElementById('payslip-detail-drawer').style.right = '-500px';
+    setTimeout(() => { document.getElementById('payslip-drawer-overlay').style.display = 'none'; }, 300);
+};
+
+// Wizard Logic
+window.wizardGoToStep = function(step) {
+    document.getElementById('payslip-step-1-ui').style.display = 'none';
+    document.getElementById('payslip-step-2-ui').style.display = 'none';
+    document.getElementById('payslip-step-3-ui').style.display = 'none';
+    document.getElementById('payslip-step-4-ui').style.display = 'none';
+    
+    document.getElementById('pw-step-1').style.color = '#64748B';
+    document.getElementById('pw-step-2').style.color = '#64748B';
+    document.getElementById('pw-step-3').style.color = '#64748B';
+    document.getElementById('pw-step-4').style.color = '#64748B';
+    
+    document.getElementById('payslip-step-' + step + '-ui').style.display = 'block';
+    document.getElementById('pw-step-' + step).style.color = '#2563EB';
+    
+    if (step === 4) {
+        window.wizardCalculateNet();
+    }
+};
+
+window.wizardAutofill = function() {
+    const empId = document.getElementById('payslip-employee-select').value;
+    const emp = window.payrollState.employees.find(e => e.id === empId);
+    if (emp) {
+        // Just fill basic if available
+        if (emp.salary) document.getElementById('payslip-basic-input').value = emp.salary;
+    }
+};
+
+window.wizardCalculateNet = function() {
+    const basic = Number(document.getElementById('payslip-basic-input').value) || 0;
+    const allow = Number(document.getElementById('payslip-allowance-input').value) || 0;
+    const ot = Number(document.getElementById('payslip-ot-input').value) || 0;
+    const otherEarn = Number(document.getElementById('payslip-other-earn-input').value) || 0;
+    
+    const lop = Number(document.getElementById('payslip-lop-input').value) || 0;
+    const esi = Number(document.getElementById('payslip-esi-input').value) || 0;
+    const otherDed = Number(document.getElementById('payslip-other-deduct-input').value) || 0;
+    
+    const gross = basic + allow + ot + otherEarn;
+    const deduct = lop + esi + otherDed;
+    const net = gross - deduct;
+    
+    const empId = document.getElementById('payslip-employee-select').value;
+    const emp = window.payrollState.employees.find(e => e.id === empId) || { name: 'Employee', employeeId: '' };
+    const month = document.getElementById('payslip-month-input').value;
+    
+    document.getElementById('payslip-review-content').innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 4px;">${emp.name}</div>
+        <div style="margin-bottom: 16px; color: #64748B;">ID: ${emp.employeeId} | ${month}</div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Basic</span><span>${window.formatINR(basic)}</span></div>
+        ${allow ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Allowances</span><span>${window.formatINR(allow)}</span></div>` : ''}
+        ${ot ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Overtime</span><span>${window.formatINR(ot)}</span></div>` : ''}
+        ${otherEarn ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Other Earnings</span><span>${window.formatINR(otherEarn)}</span></div>` : ''}
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px dashed #CBD5E1; padding-top: 8px; font-weight: 700;">
+            <span>Gross</span><span>${window.formatINR(gross)}</span>
+        </div>
+        
+        <div style="margin-top: 16px; margin-bottom: 4px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; font-weight: 700;">Deductions</div>
+        ${lop ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>LOP / Shortage</span><span>${window.formatINR(lop)}</span></div>` : ''}
+        ${esi ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>ESI</span><span>${window.formatINR(esi)}</span></div>` : ''}
+        ${otherDed ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>Other</span><span>${window.formatINR(otherDed)}</span></div>` : ''}
+        ${(!lop && !esi && !otherDed) ? `<div style="color: #64748B;">No deductions</div>` : ''}
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 16px; border-top: 2px solid #0F172A; padding-top: 12px; font-weight: 800; font-size: 18px; color: #059669;">
+            <span>NET PAY</span><span>${window.formatINR(net)}</span>
+        </div>
+    `;
+    
+    // Store data for publish
+    window.payrollState.wizardData = {
+        basic, allow, ot, otherEarn, gross,
+        lop, esi, otherDed, deduct, net
+    };
+};
+
+window.publishPayslipToApp = async function() {
+    const btn = document.getElementById('publish-payslip-btn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+    btn.disabled = true;
+    
+    const employeeId = document.getElementById('payslip-employee-select').value;
+    const month = document.getElementById('payslip-month-input').value;
+    const emp = window.payrollState.employees.find(e => e.id === employeeId);
+    
+    if (!employeeId || !month) {
+        alert("Please select employee and month");
+        btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
+        btn.disabled = false;
+        return;
+    }
+    
+    // Warning for upsert
+    const existing = window.payrollState.payslips.find(p => p.employeeId === employeeId && p.month === month);
+    if (existing) {
+        if (!confirm(`A payslip already exists for ${emp.name} in ${month}. Do you want to replace it?`)) {
+            btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    const wData = window.payrollState.wizardData;
+
+    try {
+        const payload = {
+            employeeId: employeeId,
+            employeeName: emp ? emp.name : 'Unknown Employee',
+            month: month,
+            basicSalary: wData.basic,
+            lopAmount: wData.lop,
+            netPay: wData.net,
+            earnings: {
+                basic: wData.basic,
+                allowances: {
+                    hra: wData.allow,
+                    overtime: wData.ot,
+                    other: wData.otherEarn
+                },
+                gross: wData.gross
+            },
+            deductions: {
+                lop: wData.lop,
+                esi: wData.esi,
+                other: wData.otherDed,
+                total: wData.deduct
+            }
+        };
+
+        const res = await fetch('/api/admin/payslips/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            window.closePayslipConfig();
+            // Refresh
+            await window.loadAdminPayroll();
+            setTimeout(() => alert('Payslip published successfully!'), 100);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Network error publishing payslip.');
+    } finally {
+        btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
+        btn.disabled = false;
+    }
+};
+
+window.deletePayslip = async function(id) {
+    if (!confirm('Delete Payslip?\n\nThis will permanently remove this published payslip. This action cannot be undone.\n\nAre you sure you want to delete it?')) return;
+    
+    try {
+        const res = await fetch(`/api/admin/payslips/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            await window.loadAdminPayroll();
+        } else {
+            alert('Failed to delete: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Failed to delete payslip');
+    }
+};
+
+// Ensure modal reset
+window.openPayslipConfig = function() {
+    document.getElementById('payslip-config-form').reset();
+    document.getElementById('payslip-month-input').value = window.payrollState.currentMonth;
+    window.wizardGoToStep(1);
+    document.getElementById('payslip-config-modal').style.display = 'flex';
+};
+
+window.closePayslipConfig = function() {
+    document.getElementById('payslip-config-modal').style.display = 'none';
+};
+
+// Key bindings
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        window.closePayslipDrawer();
+        window.closePayslipConfig();
+    }
+});
