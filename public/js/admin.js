@@ -3382,139 +3382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // PAYSLIP SYSTEM LOGIC
     // ==========================================
 
-    window.openPayslipConfig = async function () {
-        const modal = document.getElementById('payslip-config-modal');
-        const select = document.getElementById('payslip-employee-select');
-
-        if (!modal || !select) return;
-
-        // Reset and Load Employees
-        select.innerHTML = '<option value="">Loading employees...</option>';
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
-
-        try {
-            const res = await fetch('/api/employees');
-            const data = await res.json();
-
-            // Fix: Handle array response correctly
-            const employees = Array.isArray(data) ? data : (data.employees || []);
-
-            if (employees.length > 0) {
-                select.innerHTML = '<option value="">Choose Employee...</option>';
-                employees.forEach(emp => {
-                    const opt = document.createElement('option');
-                    opt.value = emp.id;
-                    opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
-                    select.appendChild(opt);
-                });
-            } else {
-                select.innerHTML = '<option value="">No staff found</option>';
-            }
-        } catch (err) {
-            console.error('Error loading employees for payslip:', err);
-            select.innerHTML = '<option value="">Error loading staff</option>';
-        }
-
-        // Always reset to step 1
-        window.backToPayslipStep1();
-
-        const now = new Date();
-        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('payslip-month-input').value = monthStr;
-    };
-
-    window.toPayslipStep2 = async function () {
-        const employeeId = document.getElementById('payslip-employee-select').value;
-        const month = document.getElementById('payslip-month-input').value;
-        if (!employeeId || !month) return nammaModalSystem.alert('Choose employee and month first.');
-
-        // AUTO-PREFILL FROM EMPLOYEE DATA AND RECONCILE REPORTS
-        try {
-            // 1. Employee Profile (Salary, Location, ESI)
-            const res = await fetch(`/api/employees/${employeeId}`);
-            const data = await res.json();
-            const emp = data.employee || data;
-
-            if (emp) {
-                if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
-                // DO NOT pre-fill ESI code into amount field
-                document.getElementById('payslip-esi-input').value = 0; 
-                if (emp.location) document.getElementById('payslip-location-input').value = emp.location || 'SULLIA, KARNATAKA';
-            }
-
-            // 2. Reconcile Billing and Attendance
-            const reconRes = await fetch(`/api/admin/payroll-reconcile?employeeId=${employeeId}&month=${month}`);
-            const reconData = await reconRes.json();
-            
-            if (reconData.success) {
-                document.getElementById('payslip-billing-diff-input').value = reconData.billingDifference || 0;
-                document.getElementById('payslip-worked-days-input').value = reconData.workedDays || 0;
-                document.getElementById('payslip-lop-days-input').value = reconData.lopDays || 0;
-                document.getElementById('payslip-lop-input').value = Math.round(reconData.lopAmount || 0);
-            }
-
-            // --- AUTO-GENERATE MODAL ---
-            // Instead of showing Step 2, we trigger the submit handler directly!
-            const form = document.getElementById('payslip-config-form');
-            if (form) {
-                // We dispatch a submit event or just call the logic
-                // For safety and clean flow, let's just trigger the form submit
-                const submitEvent = new Event('submit', { cancelable: true, bubbles: true });
-                form.dispatchEvent(submitEvent);
-            }
-
-        } catch (err) {
-            console.warn('Failed to auto-generate payslip:', err);
-            // Fallback to step 2 if something goes wrong so they can manually fix
-            document.getElementById('payslip-step-1').style.display = 'none';
-            document.getElementById('payslip-step-2').style.display = 'block';
-        }
-    };
-
-    window.backToPayslipStep1 = function () {
-        document.getElementById('payslip-step-1').style.display = 'block';
-        document.getElementById('payslip-step-2').style.display = 'none';
-    };
-
-    window.closePayslipConfig = function () {
-        const modal = document.getElementById('payslip-config-modal');
-        if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    };
-
-    window.closePayslipPreview = function () {
-        const modal = document.getElementById('payslip-preview-modal');
-        if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    };
-
-    window.downloadPayslip = function () {
-        const element = document.getElementById('payslip-rendering-area');
-        if (!element) return;
-        
-        // Try to get employee name and month for filename
-        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
-        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
-        const cleanName = empName.trim().replace(/\s+/g, '_');
-        
-        const opt = {
-            margin: 0,
-            filename: `Payslip_${cleanName}_${Date.now()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save();
-    };
-
-    // ==========================================
-    // REQUESTS (LEAVES & SWAPS) LOGIC
+        // REQUESTS (LEAVES & SWAPS) LOGIC
     // ==========================================
     
     window.adminRequestsCache = { leaves: { data: [] }, swaps: { data: [] }, filter: 'pending', search: '', sort: 'newest' };
@@ -5458,7 +5326,18 @@ window.wizardAutofill = function() {
     const emp = window.payrollState.employees.find(e => e.id === empId);
     if (emp) {
         // Just fill basic if available
-        if (emp.salary) document.getElementById('payslip-basic-input').value = emp.salary;
+        let basic = emp.basicSalary || emp['basic-salary'] || emp.basic || 0;
+        if (basic) {
+            document.getElementById('payslip-basic-input').value = basic;
+        }
+        document.getElementById('payslip-allowance-input').value = 0;
+        document.getElementById('payslip-ot-input').value = 0;
+        document.getElementById('payslip-other-earn-input').value = 0;
+        document.getElementById('payslip-lop-input').value = 0;
+        document.getElementById('payslip-esi-input').value = 0;
+        document.getElementById('payslip-other-deduct-input').value = 0;
+        
+        window.wizardCalculateNet();
     }
 };
 
