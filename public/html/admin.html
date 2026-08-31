@@ -652,7 +652,7 @@
 
                             <!-- Admin Summary Panel -->
                             <div class="summary-grid"
-                                style="margin-bottom: 32px; grid-template-columns: repeat(6, 1fr);">
+                                style="margin-bottom: 32px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
                                 <div class="summary-card">
                                     <div class="stat-info">
                                         <span class="stat-label">Total Emps</span>
@@ -849,16 +849,7 @@
                 .pm-detail-value { font-weight: 600; color: #0F172A; }
             </style>
 
-            <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
-                <div>
-                    <h2 style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: #0F172A; margin-bottom: 6px;">Payroll & Compensation</h2>
-                    <p style="font-size: 14px; color: #64748B;">Manage employee salaries, payslips and monthly payroll</p>
-                </div>
-                <button class="pm-btn pm-btn-primary" onclick="window.openPayslipConfig()">
-                    <i class="fas fa-plus"></i> Generate Payslip
-                </button>
-            </div>
+            
 
             <!-- Controls Row -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -872,9 +863,14 @@
                     <button class="pm-month-btn" onclick="window.changePayrollMonth(1)"><i class="fas fa-chevron-right"></i></button>
                 </div>
                 
-                <button class="pm-btn pm-btn-outline" onclick="window.loadAdminPayroll()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
+                <div style="display: flex; gap: 12px;">
+                    <button class="pm-btn pm-btn-outline" onclick="window.loadAdminPayroll()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="pm-btn pm-btn-primary" onclick="window.openPayslipConfig()">
+                        <i class="fas fa-plus"></i> Generate Payslip
+                    </button>
+                </div>
             </div>
 
             <!-- Stats Grid -->
@@ -2064,7 +2060,7 @@
 
     <!-- PAYSLIP SELECTION MODAL -->
     
-    <div class="modal-overlay" id="payslip-config-modal" style="display: none; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index:99999; justify-content:center; align-items:center;">
+    <div class="modal-overlay" id="payslip-config-modal" style="display: none; background: rgba(15, 23, 42, 0.7);  z-index:99999; justify-content:center; align-items:center;">
         <div class="modern-modal" style="width: 500px; max-width: 95%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
             <div class="modern-modal-header" style="background: #F8FAFC; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0F172A;"><i class="fas fa-magic" style="color: #F95A2C; margin-right: 8px;"></i> Payslip Wizard</h2>
@@ -2376,7 +2372,7 @@
     </style>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260831_AUTOFILL"></script>
+    <script src="../js/admin.js?v=20260831_NO_LAG"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
