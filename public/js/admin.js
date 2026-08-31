@@ -5196,7 +5196,7 @@ window.loadAdminPayroll = async function() {
         const allPayslips = data.payslips || [];
         
         // Fetch active employees
-        const empRes = await fetch('/api/admin/employees');
+        const empRes = await fetch('/api/employees');
         const empData = await empRes.json();
         
         window.payrollState.payslips = allPayslips.map(window.normalizePayslip);
