@@ -1600,7 +1600,7 @@ app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
             t.update(reqRef, {
                 status,
                 decision: {
-                    by: req.user ? req.user.username : 'admin',
+                    by: (req.user && req.user.username) ? req.user.username : 'admin',
                     at: admin.firestore.FieldValue.serverTimestamp(),
                     note: reason || '',
                     overrideFrom: prevStatus !== 'pending' ? prevStatus : null

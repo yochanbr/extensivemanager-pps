@@ -41,7 +41,7 @@ const nammaModalSystem = (() => {
                     <div id="namma-modal-box">
                         <div id="namma-modal-icon" class="${iconClass}">${iconHTML}</div>
                         <div id="namma-modal-message">${message}</div>
-                        ${type === 'prompt' ? `<input type="password" id="namma-modal-input" placeholder="${options.placeholder || ''}" style="width: 100%; padding: 14px 16px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; margin-bottom: 24px; outline: none; font-size: 16px; text-align: center;">` : ''}
+                        ${type === 'prompt' ? `<textarea id="namma-modal-input" placeholder="${options.placeholder || 'Enter your response…'}" rows="3" style="width: 100%; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; margin-bottom: 24px; outline: none; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box; color: #0F172A; transition: border-color 0.15s;" onfocus="this.style.borderColor='#6366F1'; this.style.background='#fff'" onblur="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'"></textarea>` : ''}
                         <div id="namma-modal-buttons">
                             ${(type === 'confirm' || type === 'prompt') ? `<button class="namma-btn namma-btn-cancel" id="namma-modal-cancel">Cancel</button>` : ''}
                             <button class="namma-btn ${options.theme === 'danger' ? 'namma-btn-danger' : 'namma-btn-confirm'}" id="namma-modal-confirm">
@@ -83,7 +83,8 @@ const nammaModalSystem = (() => {
                     else btnConfirm.click();
                     document.removeEventListener('keydown', handleKey);
                 }
-                if (e.key === 'Enter') {
+                // Only submit on Enter for alert/confirm, not for prompt (textarea needs Enter for newlines)
+                if (e.key === 'Enter' && type !== 'prompt') {
                     btnConfirm.click();
                     document.removeEventListener('keydown', handleKey);
                 }
