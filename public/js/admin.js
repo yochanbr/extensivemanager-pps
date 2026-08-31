@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkForUpdates, 5 * 60 * 1000);
 
     // Settings / Update button click handler is now handled by switchSpaView
+    const payslipConfigForm = document.getElementById('payslip-config-form');
 
     // Function to show update details modal
     const showUpdateDetailsModal = () => {
@@ -635,11 +636,18 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('attendance-view'),
             document.getElementById('settings-view'),
             document.getElementById('master-reports-hub-v2'),
-            document.getElementById('bill-report-view')
+            document.getElementById('bill-report-view'),
+            document.getElementById('view-payroll'),
+            document.getElementById('view-requests')
         ];
 
         const masterBtn = document.querySelector('.master-report-btn');
-        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterBtn];
+        const buttons = [
+            dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn,
+            attendanceBtn, settingsBtn, masterBtn,
+            document.querySelector('[data-target="view-payroll"]'),
+            document.querySelector('[data-target="view-requests"]')
+        ];
 
         views.forEach(v => { if (v) v.style.display = 'none'; });
         buttons.forEach(b => { if (b) b.classList.remove('active'); });
@@ -679,6 +687,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetView && targetView.id === 'settings-view') {
             if (typeof refreshSystemStatus === 'function') refreshSystemStatus();
             if (typeof fetchSettings === 'function') fetchSettings();
+        }
+        if (targetView && targetView.id === 'view-requests') {
+            window.loadAdminRequests();
         }
     }
 
@@ -3883,14 +3894,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // Ensure requests load when tab is clicked
-    if (viewRequestsBtn) {
-        viewRequestsBtn.addEventListener('click', () => {
-            loadAdminRequests();
-        });
-    }
-
-    const payslipConfigForm = document.getElementById('payslip-config-form');
     if (payslipConfigForm) {
         payslipConfigForm.addEventListener('submit', async (e) => {
             e.preventDefault();
