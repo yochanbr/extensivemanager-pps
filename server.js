@@ -1423,8 +1423,8 @@ app.post('/api/admin/payslips/publish', verifyAdmin, async (req, res) => {
 app.get('/api/admin/requests', verifyAdmin, async (req, res) => {
     try {
         const [leavesSnap, swapsSnap] = await Promise.all([
-            db.leave_requests().where('status', '==', 'pending').get(),
-            db.shift_swaps().where('status', '==', 'pending').get()
+            db.leave_requests().get(),
+            db.shift_swaps().get()
         ]);
         
         // Fetch all employees to map names

@@ -3542,6 +3542,162 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // REQUESTS (LEAVES & SWAPS) LOGIC
     // ==========================================
+    window.adminRequestsCache = { leaves: [], swaps: [], filter: 'pending', search: '', sort: 'newest' };
+
+    window.renderAdminRequests = function() {
+        const leavesList = document.getElementById('admin-leave-requests-list');
+        const swapsList = document.getElementById('admin-swap-requests-list');
+        if (!leavesList || !swapsList) return;
+
+        let { leaves, swaps, filter, search, sort } = window.adminRequestsCache;
+
+        // Apply filter
+        if (filter !== 'all') {
+            leaves = leaves.filter(r => r.status === filter);
+            swaps = swaps.filter(r => r.status === filter);
+        }
+
+        // Apply search
+        if (search) {
+            const s = search.toLowerCase();
+            leaves = leaves.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)));
+            swaps = swaps.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.coworkerName && r.coworkerName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)));
+        }
+
+        // Apply sort
+        leaves.sort((a,b) => {
+            const timeA = new Date(a.createdAt || a.date).getTime();
+            const timeB = new Date(b.createdAt || b.date).getTime();
+            return sort === 'newest' ? timeB - timeA : timeA - timeB;
+        });
+        swaps.sort((a,b) => {
+            const timeA = new Date(a.createdAt || a.date).getTime();
+            const timeB = new Date(b.createdAt || b.date).getTime();
+            return sort === 'newest' ? timeB - timeA : timeA - timeB;
+        });
+
+        // Update stats
+        const pendingLeaves = window.adminRequestsCache.leaves.filter(r=>r.status==='pending').length;
+        const pendingSwaps = window.adminRequestsCache.swaps.filter(r=>r.status==='pending').length;
+        const totalReqs = window.adminRequestsCache.leaves.length + window.adminRequestsCache.swaps.length;
+        const approvedCount = window.adminRequestsCache.leaves.filter(r=>r.status==='approved').length + window.adminRequestsCache.swaps.filter(r=>r.status==='approved').length;
+        
+        const sLeaves = document.getElementById('stat-pending-leaves');
+        const sSwaps = document.getElementById('stat-pending-swaps');
+        const sTotal = document.getElementById('stat-total-reqs');
+        const sApproved = document.getElementById('stat-approved');
+        const badgeLeaves = document.getElementById('badge-pending-leaves');
+        const badgeSwaps = document.getElementById('badge-pending-swaps');
+        
+        if (sLeaves) sLeaves.textContent = pendingLeaves;
+        if (sSwaps) sSwaps.textContent = pendingSwaps;
+        if (sTotal) sTotal.textContent = totalReqs;
+        if (sApproved) sApproved.textContent = approvedCount;
+        if (badgeLeaves) badgeLeaves.textContent = leaves.length + (filter === 'all' ? ' total' : ' ' + filter);
+        if (badgeSwaps) badgeSwaps.textContent = swaps.length + (filter === 'all' ? ' total' : ' ' + filter);
+
+        const emptyLeaveHtml = `
+            <div class="req-empty">
+                <div class="req-empty-icon"><i class="fas fa-calendar-times"></i></div>
+                <h4 class="req-empty-title">No ${filter !== 'all' ? filter : ''} leave requests</h4>
+                <p class="req-empty-desc">Nothing to show here based on current filters.</p>
+            </div>`;
+
+        const emptySwapHtml = `
+            <div class="req-empty">
+                <div class="req-empty-icon"><i class="fas fa-exchange-alt"></i></div>
+                <h4 class="req-empty-title">No ${filter !== 'all' ? filter : ''} shift swaps</h4>
+                <p class="req-empty-desc">Nothing to show here based on current filters.</p>
+            </div>`;
+
+        // Render Leaves
+        if (leaves.length === 0) {
+            leavesList.innerHTML = emptyLeaveHtml;
+        } else {
+            leavesList.innerHTML = leaves.map(req => {
+                const initials = (req.employeeName || 'U').substring(0,2).toUpperCase();
+                let statusColor = req.status === 'approved' ? '#10B981' : (req.status === 'rejected' ? '#EF4444' : '#D97706');
+                let statusBg = req.status === 'approved' ? '#D1FAE5' : (req.status === 'rejected' ? '#FEE2E2' : '#FEF3C7');
+                
+                return `
+                <div class="req-card">
+                    <div class="req-card-top">
+                        <div class="req-profile">
+                            <div class="req-avatar">${initials}</div>
+                            <div>
+                                <h4 class="req-name">${req.employeeName}</h4>
+                                <p class="req-role">Employee</p>
+                            </div>
+                        </div>
+                        <div class="req-status" style="background:${statusBg}; color:${statusColor}">${(req.status || 'pending').toUpperCase()}</div>
+                    </div>
+                    <div class="req-details">
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Type</span>
+                            <span class="req-detail-val" style="text-transform: capitalize;">${req.type} Leave</span>
+                        </div>
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Date</span>
+                            <span class="req-detail-val">${req.date}</span>
+                        </div>
+                    </div>
+                    <div class="req-reason-box">
+                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
+                        ${req.reason || 'No reason provided.'}
+                    </div>
+                    ${req.status === 'pending' ? `
+                    <div class="req-actions">
+                        <button class="req-btn req-btn-reject" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
+                        <button class="req-btn req-btn-approve" onclick="updateRequestStatus('leave', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
+                    </div>` : ''}
+                </div>
+            `}).join('');
+        }
+
+        // Render Swaps
+        if (swaps.length === 0) {
+            swapsList.innerHTML = emptySwapHtml;
+        } else {
+            swapsList.innerHTML = swaps.map(req => {
+                const initials = (req.employeeName || 'U').substring(0,2).toUpperCase();
+                let statusColor = req.status === 'approved' ? '#10B981' : (req.status === 'rejected' ? '#EF4444' : '#D97706');
+                let statusBg = req.status === 'approved' ? '#D1FAE5' : (req.status === 'rejected' ? '#FEE2E2' : '#FEF3C7');
+                return `
+                <div class="req-card">
+                    <div class="req-card-top">
+                        <div class="req-profile">
+                            <div class="req-avatar">${initials}</div>
+                            <div>
+                                <h4 class="req-name">${req.employeeName}</h4>
+                                <p class="req-role">Employee</p>
+                            </div>
+                        </div>
+                        <div class="req-status" style="background:${statusBg}; color:${statusColor}">${(req.status || 'pending').toUpperCase()}</div>
+                    </div>
+                    <div class="req-details">
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Swap With</span>
+                            <span class="req-detail-val">${req.coworkerName}</span>
+                        </div>
+                        <div class="req-detail-item">
+                            <span class="req-detail-label">Date</span>
+                            <span class="req-detail-val">${req.date}</span>
+                        </div>
+                    </div>
+                    <div class="req-reason-box">
+                        <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
+                        ${req.reason || 'No reason provided.'}
+                    </div>
+                    ${req.status === 'pending' ? `
+                    <div class="req-actions">
+                        <button class="req-btn req-btn-reject" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
+                        <button class="req-btn req-btn-approve" onclick="updateRequestStatus('swap', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
+                    </div>` : ''}
+                </div>
+            `}).join('');
+        }
+    };
+
     window.loadAdminRequests = async function() {
         const leavesList = document.getElementById('admin-leave-requests-list');
         const swapsList = document.getElementById('admin-swap-requests-list');
@@ -3564,116 +3720,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if (data.success) {
-                // Update Stats
-                const pendingLeaves = data.leaves.length;
-                const pendingSwaps = data.swaps.length;
-                const totalReqs = pendingLeaves + pendingSwaps;
-                
-                const sLeaves = document.getElementById('stat-pending-leaves');
-                const sSwaps = document.getElementById('stat-pending-swaps');
-                const sTotal = document.getElementById('stat-total-reqs');
-                const badgeLeaves = document.getElementById('badge-pending-leaves');
-                const badgeSwaps = document.getElementById('badge-pending-swaps');
-                
-                if (sLeaves) sLeaves.textContent = pendingLeaves;
-                if (sSwaps) sSwaps.textContent = pendingSwaps;
-                if (sTotal) sTotal.textContent = totalReqs;
-                if (badgeLeaves) badgeLeaves.textContent = pendingLeaves + ' pending';
-                if (badgeSwaps) badgeSwaps.textContent = pendingSwaps + ' pending';
-
-                const emptyLeaveHtml = `
-                    <div class="req-empty">
-                        <div class="req-empty-icon"><i class="fas fa-calendar-times"></i></div>
-                        <h4 class="req-empty-title">No pending leave requests</h4>
-                        <p class="req-empty-desc">Leave requests will appear here when employees submit them.</p>
-                    </div>`;
-
-                const emptySwapHtml = `
-                    <div class="req-empty">
-                        <div class="req-empty-icon"><i class="fas fa-exchange-alt"></i></div>
-                        <h4 class="req-empty-title">No pending shift swaps</h4>
-                        <p class="req-empty-desc">Shift swap requests will appear here when employees submit them.</p>
-                    </div>`;
-
-                // Render Leaves
-                if (pendingLeaves === 0) {
-                    leavesList.innerHTML = emptyLeaveHtml;
-                } else {
-                    leavesList.innerHTML = data.leaves.map(req => {
-                        const initials = req.employeeName.substring(0,2).toUpperCase();
-                        return `
-                        <div class="req-card">
-                            <div class="req-card-top">
-                                <div class="req-profile">
-                                    <div class="req-avatar">${initials}</div>
-                                    <div>
-                                        <h4 class="req-name">${req.employeeName}</h4>
-                                        <p class="req-role">Employee</p>
-                                    </div>
-                                </div>
-                                <div class="req-status">PENDING</div>
-                            </div>
-                            <div class="req-details">
-                                <div class="req-detail-item">
-                                    <span class="req-detail-label">Type</span>
-                                    <span class="req-detail-val" style="text-transform: capitalize;">${req.type} Leave</span>
-                                </div>
-                                <div class="req-detail-item">
-                                    <span class="req-detail-label">Date</span>
-                                    <span class="req-detail-val">${req.date}</span>
-                                </div>
-                            </div>
-                            <div class="req-reason-box">
-                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
-                                ${req.reason || 'No reason provided.'}
-                            </div>
-                            <div class="req-actions">
-                                <button class="req-btn req-btn-reject" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
-                                <button class="req-btn req-btn-approve" onclick="updateRequestStatus('leave', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
-                            </div>
-                        </div>
-                    `}).join('');
-                }
-
-                // Render Swaps
-                if (pendingSwaps === 0) {
-                    swapsList.innerHTML = emptySwapHtml;
-                } else {
-                    swapsList.innerHTML = data.swaps.map(req => {
-                        const initials = req.employeeName.substring(0,2).toUpperCase();
-                        return `
-                        <div class="req-card">
-                            <div class="req-card-top">
-                                <div class="req-profile">
-                                    <div class="req-avatar">${initials}</div>
-                                    <div>
-                                        <h4 class="req-name">${req.employeeName}</h4>
-                                        <p class="req-role">Employee</p>
-                                    </div>
-                                </div>
-                                <div class="req-status">PENDING</div>
-                            </div>
-                            <div class="req-details">
-                                <div class="req-detail-item">
-                                    <span class="req-detail-label">Swap With</span>
-                                    <span class="req-detail-val">${req.coworkerName}</span>
-                                </div>
-                                <div class="req-detail-item">
-                                    <span class="req-detail-label">Date</span>
-                                    <span class="req-detail-val">${req.date}</span>
-                                </div>
-                            </div>
-                            <div class="req-reason-box">
-                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
-                                ${req.reason || 'No reason provided.'}
-                            </div>
-                            <div class="req-actions">
-                                <button class="req-btn req-btn-reject" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
-                                <button class="req-btn req-btn-approve" onclick="updateRequestStatus('swap', '${req.id}', 'approved')"><i class="fas fa-check"></i> Approve</button>
-                            </div>
-                        </div>
-                    `}).join('');
-                }
+                window.adminRequestsCache.leaves = data.leaves;
+                window.adminRequestsCache.swaps = data.swaps;
+                window.renderAdminRequests();
             } else {
                 nammaModalSystem.alert('Failed to load requests');
             }
@@ -3682,6 +3731,47 @@ document.addEventListener('DOMContentLoaded', () => {
             nammaModalSystem.alert('Network error loading requests');
         }
     };
+
+    // Attach Filter Event Listeners
+    const initRequestFilters = () => {
+        const filterBtns = document.querySelectorAll('.req-filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active class
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update filter and render
+                const f = btn.textContent.toLowerCase();
+                window.adminRequestsCache.filter = f;
+                window.renderAdminRequests();
+            });
+        });
+        
+        // Search & Sort attach
+        const actionBtns = document.querySelectorAll('.req-action-btn');
+        if (actionBtns.length >= 3) {
+            // Search
+            actionBtns[0].addEventListener('click', () => {
+                const s = prompt('Search by name or reason:');
+                if (s !== null) {
+                    window.adminRequestsCache.search = s;
+                    window.renderAdminRequests();
+                }
+            });
+            // Filter (Clear search)
+            actionBtns[1].addEventListener('click', () => {
+                window.adminRequestsCache.search = '';
+                window.renderAdminRequests();
+            });
+            // Sort
+            actionBtns[2].addEventListener('click', () => {
+                window.adminRequestsCache.sort = window.adminRequestsCache.sort === 'newest' ? 'oldest' : 'newest';
+                window.renderAdminRequests();
+            });
+        }
+    };
+    initRequestFilters();
 
     window.updateRequestStatus = async function(type, id, status) {
         if (!await nammaModalSystem.confirm(`Are you sure you want to ${status} this request?`)) return;
