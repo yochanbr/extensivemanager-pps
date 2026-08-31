@@ -1458,17 +1458,17 @@ async function getNextId(type) {
 async function logAudit(t, action, requestId, requestType, previousStatus, newStatus, note, performedBy) {
     const logRef = db.request_audit_logs().doc();
     const log = {
-        requestId,
-        requestType,
-        action,
+        requestId: requestId || 'LEGACY',
+        requestType: requestType || 'unknown',
+        action: action || 'UNKNOWN',
         performedBy: performedBy || 'SYSTEM',
-        previousStatus,
-        newStatus,
+        previousStatus: previousStatus || null,
+        newStatus: newStatus || null,
         note: note || '',
         timestamp: admin.firestore.FieldValue.serverTimestamp()
     };
-    if (t) t.set(logRef, log);
-    else await logRef.set(log);
+    if (t) t.set(logRef, sanitizeForFirestore(log));
+    else await logRef.set(sanitizeForFirestore(log));
 }
 
 async function initializeLeaveBalance(t, employeeId) {
@@ -1487,6 +1487,24 @@ async function initializeLeaveBalance(t, employeeId) {
     }
     return doc.data();
 }
+
+/**
+ * Recursively removes all undefined values from an object before writing to Firestore.
+ * Firestore rejects documents containing undefined values.
+ */
+function sanitizeForFirestore(obj) {
+    if (obj === null || typeof obj !== 'object' || obj instanceof Date) return obj;
+    if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+    // Check for Firestore sentinel values (FieldValue) — don't touch them
+    if (obj && typeof obj._methodName === 'string') return obj;
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (v === undefined) continue; // strip undefined
+        out[k] = sanitizeForFirestore(v);
+    }
+    return out;
+}
+
 
 // =========================
 // ADMIN API ENHANCED
@@ -1594,7 +1612,7 @@ app.put('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
                 // If status === 'rejected', no balance change needed
 
                 balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
+                t.set(db.leave_balances().doc(request.employeeId), sanitizeForFirestore(balance), { merge: true });
             }
 
             t.update(reqRef, {
@@ -1643,7 +1661,7 @@ app.delete('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
                 balance[leaveType].used = Math.max(0, (balance[leaveType].used || 0) - days);
                 balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - (balance[leaveType].pending || 0);
                 balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
+                t.set(db.leave_balances().doc(request.employeeId), sanitizeForFirestore(balance), { merge: true });
             }
             // If was pending leave, restore pending bucket
             if (type === 'leave' && request.status === 'pending') {
@@ -1653,7 +1671,7 @@ app.delete('/api/admin/requests/:type/:id', verifyAdmin, async (req, res) => {
                 balance[leaveType].pending = Math.max(0, (balance[leaveType].pending || 0) - days);
                 balance[leaveType].available = balance[leaveType].total - balance[leaveType].used - balance[leaveType].pending;
                 balance.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-                t.set(db.leave_balances().doc(request.employeeId), balance, { merge: true });
+                t.set(db.leave_balances().doc(request.employeeId), sanitizeForFirestore(balance), { merge: true });
             }
 
             await logAudit(t, 'REQUEST_DELETED', request.requestId, type, request.status, 'deleted', '', 'ADMIN');
