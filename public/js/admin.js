@@ -3543,161 +3543,247 @@ document.addEventListener('DOMContentLoaded', () => {
     // REQUESTS (LEAVES & SWAPS) LOGIC
     // ==========================================
     
-    window.adminRequestsCache = { data: [], filter: 'pending', type: 'all', search: '', sort: 'newest' };
+    window.adminRequestsCache = { leaves: { data: [] }, swaps: { data: [] }, filter: 'pending', search: '', sort: 'newest' };
 
     window.renderAdminRequests = function() {
         const leavesList = document.getElementById('admin-leave-requests-list');
         const swapsList = document.getElementById('admin-swap-requests-list');
         if (!leavesList || !swapsList) return;
 
-        let { data, filter, search, sort, type } = window.adminRequestsCache;
+        let leaves = window.adminRequestsCache.leaves.data || [];
+        let swaps = window.adminRequestsCache.swaps.data || [];
+        let { filter, search, sort } = window.adminRequestsCache;
 
-        // Apply Status Filter
-        let filtered = data;
+        // Apply filter
         if (filter !== 'all') {
-            filtered = filtered.filter(r => r.status === filter);
+            leaves = leaves.filter(r => r.status === filter);
+            swaps = swaps.filter(r => r.status === filter);
         }
 
-        // Apply Search
+        // Apply search
         if (search) {
             const s = search.toLowerCase();
-            filtered = filtered.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
+            leaves = leaves.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
+            swaps = swaps.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.coworkerName && r.coworkerName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
         }
-        
-        let leaves = filtered.filter(r => r.type); // type exists on leave
-        let swaps = filtered.filter(r => r.coworkerId);
 
-        // Update stats using ALL data (unfiltered)
-        const pendingLeaves = data.filter(r=>r.type && r.status==='pending').length;
-        const pendingSwaps = data.filter(r=>r.coworkerId && r.status==='pending').length;
-        const totalReqs = data.length;
-        const approvedCount = data.filter(r=>r.status==='approved').length;
+        // Sort is already handled by server for createdAt, but we sort client-side just in case
+        leaves.sort((a,b) => {
+            const timeA = new Date(a.createdAt || a.date).getTime();
+            const timeB = new Date(b.createdAt || b.date).getTime();
+            return sort === 'newest' ? timeB - timeA : timeA - timeB;
+        });
+        swaps.sort((a,b) => {
+            const timeA = new Date(a.createdAt || a.date).getTime();
+            const timeB = new Date(b.createdAt || b.date).getTime();
+            return sort === 'newest' ? timeB - timeA : timeA - timeB;
+        });
+
+        const pendingLeaves = window.adminRequestsCache.leaves.data.filter(r=>r.status==='pending').length;
+        const pendingSwaps = window.adminRequestsCache.swaps.data.filter(r=>r.status==='pending').length;
+        const totalReqs = window.adminRequestsCache.leaves.data.length + window.adminRequestsCache.swaps.data.length;
+        const approvedCount = window.adminRequestsCache.leaves.data.filter(r=>r.status==='approved').length + window.adminRequestsCache.swaps.data.filter(r=>r.status==='approved').length;
         
         const sLeaves = document.getElementById('stat-pending-leaves');
         const sSwaps = document.getElementById('stat-pending-swaps');
         const sTotal = document.getElementById('stat-total-reqs');
         const sApproved = document.getElementById('stat-approved');
+        const badgeLeaves = document.getElementById('badge-pending-leaves');
+        const badgeSwaps = document.getElementById('badge-pending-swaps');
         
         if (sLeaves) sLeaves.textContent = pendingLeaves;
         if (sSwaps) sSwaps.textContent = pendingSwaps;
         if (sTotal) sTotal.textContent = totalReqs;
         if (sApproved) sApproved.textContent = approvedCount;
 
-        const renderCard = (req, isSwap) => {
-            const initials = (req.employeeName || 'U').substring(0,2).toUpperCase();
-            let statusColor = req.status === 'approved' ? '#10B981' : (req.status === 'rejected' ? '#EF4444' : (req.status === 'cancelled' ? '#6B7280' : '#D97706'));
-            let statusBg = req.status === 'approved' ? '#D1FAE5' : (req.status === 'rejected' ? '#FEE2E2' : (req.status === 'cancelled' ? '#F3F4F6' : '#FEF3C7'));
-            
+        if (badgeLeaves) {
+            badgeLeaves.textContent = pendingLeaves;
+            badgeLeaves.style.display = pendingLeaves > 0 ? 'flex' : 'none';
+        }
+        if (badgeSwaps) {
+            badgeSwaps.textContent = pendingSwaps;
+            badgeSwaps.style.display = pendingSwaps > 0 ? 'flex' : 'none';
+        }
+
+        leavesList.innerHTML = '';
+        swapsList.innerHTML = '';
+
+        const generateCard = (r, isSwap) => {
+            const dateStr = isSwap ? r.date : (r.startDate && r.endDate ? `${r.startDate} to ${r.endDate} (${r.days} days)` : (r.date || 'N/A'));
+            const idStr = r.requestId || 'Legacy';
             return `
-            <div class="req-card" style="cursor:pointer; position:relative;" onclick="openRequestDrawer('${req.id}')">
-                <div class="req-card-top">
-                    <div class="req-profile">
-                        <div class="req-avatar">${initials}</div>
-                        <div>
-                            <h4 class="req-name">${req.employeeName}</h4>
-                            <p class="req-role" style="font-size:10px; color:#666;">${req.requestId || 'Legacy'}</p>
+                <div class="req-card" onclick='window.openRequestDrawer(${JSON.stringify(r).replace(/'/g, "&#39;")}, ${isSwap})'>
+                    <div class="req-card-header">
+                        <div class="req-user-info">
+                            <div class="req-avatar">${r.employeeName ? r.employeeName.charAt(0).toUpperCase() : '?'}</div>
+                            <div>
+                                <h4 style="margin:0; font-size:14px; font-weight:600; color:var(--text-primary);">${escapeHtml(r.employeeName)}</h4>
+                                <span style="font-size:12px; color:var(--text-secondary);">ID: ${idStr}</span>
+                            </div>
                         </div>
+                        <span class="req-badge req-badge-${r.status}">${r.status.toUpperCase()}</span>
                     </div>
-                    <div class="req-status" style="background:${statusBg}; color:${statusColor}">${(req.status || 'pending').toUpperCase()}</div>
-                </div>
-                <div class="req-details">
-                    <div class="req-detail-item">
-                        <span class="req-detail-label">${isSwap ? 'Swap With' : 'Type'}</span>
-                        <span class="req-detail-val" style="text-transform: capitalize;">${isSwap ? req.coworkerName : req.type + ' Leave'}</span>
-                    </div>
-                    <div class="req-detail-item">
-                        <span class="req-detail-label">Date</span>
-                        <span class="req-detail-val">${req.date}</span>
+                    <div class="req-card-body">
+                        <div class="req-detail"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
+                        ${isSwap ? `<div class="req-detail"><i class="fas fa-exchange-alt"></i> Swap with ${escapeHtml(r.coworkerName)}</div>` : 
+                                    `<div class="req-detail"><i class="fas fa-briefcase"></i> ${r.type} Leave</div>`}
                     </div>
                 </div>
-                <div class="req-reason-box">
-                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.05em;">Reason</div>
-                    ${req.reason ? req.reason.replace(/</g, '&lt;') : 'No reason'}
-                </div>
-            </div>`;
+            `;
         };
 
         if (leaves.length === 0) {
-            leavesList.innerHTML = '<div class="req-empty">No leave requests found based on current filters.</div>';
+            leavesList.innerHTML = `<div class="req-empty"><div class="req-empty-icon"><i class="fas fa-check-circle"></i></div><h4 class="req-empty-title">All caught up</h4><p class="req-empty-desc">No leave requests match your criteria.</p></div>`;
         } else {
-            leavesList.innerHTML = leaves.map(r => renderCard(r, false)).join('');
+            leavesList.innerHTML = leaves.map(r => generateCard(r, false)).join('');
         }
 
         if (swaps.length === 0) {
-            swapsList.innerHTML = '<div class="req-empty">No shift swaps found based on current filters.</div>';
+            swapsList.innerHTML = `<div class="req-empty"><div class="req-empty-icon"><i class="fas fa-check-circle"></i></div><h4 class="req-empty-title">All caught up</h4><p class="req-empty-desc">No shift swaps match your criteria.</p></div>`;
         } else {
-            swapsList.innerHTML = swaps.map(r => renderCard(r, true)).join('');
+            swapsList.innerHTML = swaps.map(r => generateCard(r, true)).join('');
         }
     };
 
-    window.openRequestDrawer = function(id) {
-        const req = window.adminRequestsCache.data.find(r => r.id === id);
-        if (!req) return;
-        
-        const isSwap = !!req.coworkerId;
+    window.openRequestDrawer = function(req, isSwap) {
         const drawer = document.getElementById('request-detail-drawer');
-        const content = document.getElementById('req-drawer-content');
-        const actions = document.getElementById('req-drawer-actions');
-        
-        const safeReason = req.reason ? req.reason.replace(/</g, '&lt;') : 'No reason provided';
-        const typeStr = isSwap ? 'shift_swap' : 'leave';
+        if (!drawer) return;
 
-        content.innerHTML = `
-            <h4 style="margin:0 0 10px 0; color:#333;">${req.employeeName}</h4>
-            <p style="color:#666; margin:0 0 20px 0;">ID: ${req.requestId || 'Legacy'} | ${isSwap ? 'Shift Swap' : req.type.toUpperCase() + ' Leave'}</p>
-            
-            <div style="background:#F7F8FA; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <div style="margin-bottom:10px;"><strong>Date:</strong> ${req.date}</div>
-                ${isSwap ? `<div style="margin-bottom:10px;"><strong>Target:</strong> ${req.coworkerName}</div>` : ''}
-                <div><strong>Reason:</strong> <br>${safeReason}</div>
+        document.getElementById('drawer-req-id').textContent = req.requestId || 'Legacy Request';
+        document.getElementById('drawer-req-status').textContent = req.status.toUpperCase();
+        document.getElementById('drawer-req-status').className = 'drawer-badge drawer-badge-' + req.status;
+
+        document.getElementById('drawer-emp-avatar').textContent = req.employeeName ? req.employeeName.charAt(0).toUpperCase() : '?';
+        document.getElementById('drawer-emp-name').textContent = req.employeeName || 'Unknown';
+        
+        let typeStr = isSwap ? 'Shift Swap' : (req.type + ' Leave');
+        let dateStr = isSwap ? req.date : (req.startDate && req.endDate ? `${req.startDate} to ${req.endDate} (${req.days} days)` : (req.date || 'N/A'));
+        
+        let detailsHtml = `
+            <div class="drawer-detail-item">
+                <div class="drawer-detail-label">Type</div>
+                <div class="drawer-detail-value">${typeStr}</div>
             </div>
-            
-            <div style="margin-bottom:20px;">
-                <strong>Current Status:</strong> ${(req.status||'pending').toUpperCase()}
+            <div class="drawer-detail-item">
+                <div class="drawer-detail-label">Date</div>
+                <div class="drawer-detail-value">${dateStr}</div>
             </div>
         `;
-        
-        if (req.status === 'pending') {
-            actions.innerHTML = `
-                <button onclick="updateRequestStatus('${typeStr}', '${req.id}', 'rejected')" style="flex:1; padding:10px; border:1px solid #EF4444; color:#EF4444; background:#FFF; border-radius:6px; cursor:pointer;">Reject</button>
-                <button onclick="updateRequestStatus('${typeStr}', '${req.id}', 'approved')" style="flex:1; padding:10px; border:none; color:#FFF; background:#10B981; border-radius:6px; cursor:pointer;">Approve</button>
+
+        if (isSwap) {
+            detailsHtml += `
+                <div class="drawer-detail-item">
+                    <div class="drawer-detail-label">Coworker</div>
+                    <div class="drawer-detail-value">${req.coworkerName || 'Unknown'}</div>
+                </div>
             `;
-            actions.style.display = 'flex';
-        } else {
-            actions.style.display = 'none';
         }
         
-        drawer.style.display = 'block';
+        document.getElementById('drawer-details-grid').innerHTML = detailsHtml;
+        document.getElementById('drawer-req-reason').textContent = req.reason || 'No reason provided.';
+
+        const actionArea = document.getElementById('drawer-action-area');
+        if (req.status === 'pending') {
+            actionArea.style.display = 'flex';
+            actionArea.innerHTML = `
+                <button class="drawer-btn btn-reject" onclick="window.updateRequestStatus('${isSwap ? 'shift_swap' : 'leave'}', '${req.id}', 'rejected')">Reject</button>
+                <button class="drawer-btn btn-approve" onclick="window.updateRequestStatus('${isSwap ? 'shift_swap' : 'leave'}', '${req.id}', 'approved')">Approve</button>
+            `;
+        } else {
+            actionArea.style.display = 'none';
+        }
+
+        drawer.classList.add('active');
     };
 
+    window.closeRequestDrawer = function() {
+        const drawer = document.getElementById('request-detail-drawer');
+        if (drawer) drawer.classList.remove('active');
+    };
+
+    // Attach Filter Event Listeners
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            e.target.classList.add('active');
+            window.adminRequestsCache.filter = e.target.dataset.filter;
+            window.renderAdminRequests();
+        });
+    });
+
+    const reqSearch = document.getElementById('req-search');
+    if (reqSearch) {
+        reqSearch.addEventListener('input', (e) => {
+            window.adminRequestsCache.search = e.target.value;
+            window.renderAdminRequests();
+        });
+    }
+
+    const reqSort = document.getElementById('req-sort');
+    if (reqSort) {
+        reqSort.addEventListener('change', (e) => {
+            window.adminRequestsCache.sort = e.target.value;
+            window.renderAdminRequests();
+        });
+    }
+
     window.loadAdminRequests = async function() {
+        const leavesList = document.getElementById('admin-leave-requests-list');
+        const swapsList = document.getElementById('admin-swap-requests-list');
+        
+        if (!leavesList || !swapsList) return;
+        
+        leavesList.innerHTML = `
+            <div class="req-empty">
+                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
+                <h4 class="req-empty-title">Loading...</h4>
+            </div>`;
+        swapsList.innerHTML = `
+            <div class="req-empty">
+                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
+                <h4 class="req-empty-title">Loading...</h4>
+            </div>`;
+
         try {
-            const res = await fetch('/api/admin/requests?pageSize=100');
-            const result = await res.json();
-            if (result.success) {
-                window.adminRequestsCache.data = result.data;
+            const res = await fetch('/api/admin/requests');
+            const data = await res.json();
+            
+            if (data.success) {
+                window.adminRequestsCache.leaves = data.leaves;
+                window.adminRequestsCache.swaps = data.swaps;
                 window.renderAdminRequests();
             } else {
-                showToast('Failed to load requests');
+                nammaModalSystem.alert('Failed to load requests');
             }
         } catch (err) {
             console.error(err);
+            nammaModalSystem.alert('Network error loading requests');
         }
     };
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return String(unsafe)
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
 
     window.updateRequestStatus = async function(type, id, status) {
         let reason = '';
         if (status === 'rejected') {
-            reason = prompt('Please enter a rejection reason (required):');
+            reason = await nammaModalSystem.prompt('Please enter a rejection reason (required):');
             if (!reason) {
-                alert('Rejection reason is required.');
+                await nammaModalSystem.alert('Rejection reason is required.');
                 return;
             }
         } else {
-            if (!confirm(`Are you sure you want to approve this request?`)) return;
+            if (!await nammaModalSystem.confirm(`Are you sure you want to approve this request?`)) return;
         }
         
-        document.getElementById('request-detail-drawer').style.display = 'none';
+        window.closeRequestDrawer();
         
         try {
             const endpointType = type === 'shift_swap' ? 'swap' : 'leave';
@@ -3708,13 +3794,1285 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (data.success) {
-                showToast(`Request ${status} successfully`);
-                loadAdminRequests();
+                window.loadAdminRequests();
             } else {
-                alert(data.message || 'Failed to update request');
+                await nammaModalSystem.alert(data.message || 'Failed to update request');
             }
         } catch (err) {
-            alert('Network error');
+            await nammaModalSystem.alert('Network error');
         }
     };
+
+    // Ensure requests load when tab is clicked
+    if (viewRequestsBtn) {
+        viewRequestsBtn.addEventListener('click', () => {
+            loadAdminRequests();
+        });
+    }
+
+    const payslipConfigForm = document.getElementById('payslip-config-form');
+    if (payslipConfigForm) {
+        payslipConfigForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const employeeId = document.getElementById('payslip-employee-select').value;
+            const month = document.getElementById('payslip-month-input').value; // YYYY-MM
+
+            if (!employeeId || !month) return;
+
+            const btn = e.target.querySelector('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating Attendance...';
+            btn.disabled = true;
+
+            try {
+                // 1. Fetch Employee Details
+                const empRes = await fetch(`/api/employees/${employeeId}`);
+                const empData = await empRes.json();
+                const employee = empData.employee || empData;
+
+                // 3. Gather Inputs
+                const basic = parseFloat(document.getElementById('payslip-basic-input').value) || 0;
+                const ot = parseFloat(document.getElementById('payslip-ot-input').value) || 0;
+                const esi = document.getElementById('payslip-esi-input').value || 'N/A';
+                const billingDiff = parseFloat(document.getElementById('payslip-billing-diff-input').value) || 0;
+                const lopAmount = parseFloat(document.getElementById('payslip-lop-input').value) || 0;
+                const lopDays = parseFloat(document.getElementById('payslip-lop-days-input').value) || 0;
+                const workedDays = parseFloat(document.getElementById('payslip-worked-days-input').value) || 0;
+                const leaveBalance = document.getElementById('payslip-leave-balance').value || 2;
+                const location = document.getElementById('payslip-location-input').value || 'SULLIA, KARNATAKA';
+                
+                const stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
+
+                // Calculations
+                const grossEarnings = basic + ot;
+                const esiValue = isNaN(parseFloat(esi)) ? 0 : parseFloat(esi);
+                const grossDeductions = esiValue + billingDiff + lopAmount;
+                const netSalary = Math.round(grossEarnings - grossDeductions);
+
+                // 4. Render Payslip
+                const monthName = new Date(month + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
+
+                const renderingArea = document.getElementById('payslip-rendering-area');
+                renderingArea.innerHTML = `
+                    <div class="payslip-container">
+                        <div class="payslip-header">Pay Slip for the month of ${monthName}</div>
+                        <div class="payslip-main-box">
+                            <div class="payslip-logo-section">
+                                <h1 style="margin:0; font-size: 24px; color: #5B21B6; letter-spacing: 2px;">NAMMA MART</h1>
+                                <p style="margin:0; font-size: 10px; font-weight: bold; color: #5B21B6;">SIGNATURE OF QUALITY -</p>
+                            </div>
+                            <div class="payslip-address-section">
+                                SULLIA, KARNATAKA - 574239<br>
+                                Ph: 08257-230230, 230231
+                            </div>
+
+                            <table class="payslip-table">
+                                <tr>
+                                    <td class="payslip-label">Employee ID</td>
+                                    <td class="payslip-value">${employee.username || employee['employee-id'] || 'N/A'}</td>
+                                    <td class="payslip-label">Location</td>
+                                    <td class="payslip-value">${employee.location || location}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Employee Name</td>
+                                    <td class="payslip-value" style="font-weight: bold; text-transform: uppercase;">${employee.name}</td>
+                                    <td class="payslip-label">STD Days</td>
+                                    <td class="payslip-value">${stdDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Joining Date</td>
+                                    <td class="payslip-value">${employee['joining-date'] || 'NOT SPECIFIED'}</td>
+                                    <td class="payslip-label">Worked Days</td>
+                                    <td class="payslip-value">${workedDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">ESI Number</td>
+                                    <td class="payslip-value">${employee.esi || 'NOT SPECIFIED'}</td>
+                                    <td class="payslip-label">LOP Days</td>
+                                    <td class="payslip-value">${lopDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">PF Number</td>
+                                    <td class="payslip-value">${employee['pf-number'] || 'N/A'}</td>
+                                    <td class="payslip-label">Leave Balance</td>
+                                    <td class="payslip-value">${leaveBalance}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Bank Name</td>
+                                    <td class="payslip-value">${employee['bank-name'] || 'N/A'}</td>
+                                    <td class="payslip-label">A/C Number</td>
+                                    <td class="payslip-value">${employee['account-number'] || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">PAN Number</td>
+                                    <td class="payslip-value">${employee['pan-number'] || 'N/A'}</td>
+                                    <td class="payslip-label">PF UAN Number</td>
+                                    <td class="payslip-value">${employee['uan-number'] || 'N/A'}</td>
+                                </tr>
+                            </table>
+
+                            <table class="payslip-table" style="margin-top: 20px;">
+                                <tr class="payslip-section-title">
+                                    <td style="width: 25%;">EARNINGS</td>
+                                    <td style="width: 25%;">AMOUNT</td>
+                                    <td style="width: 25%;">DEDUCTIONS</td>
+                                    <td style="width: 25%;">AMOUNT</td>
+                                </tr>
+                                <tr>
+                                    <td>Basic</td>
+                                    <td style="text-align: right;">${basic.toFixed(2)}</td>
+                                    <td>ESI</td>
+                                    <td style="text-align: right;">${esi}</td>
+                                </tr>
+                                <tr>
+                                    <td>Holiday Pay / OT</td>
+                                    <td style="text-align: right;">${ot.toFixed(2)}</td>
+                                    <td>Billing Difference</td>
+                                    <td style="text-align: right;">${billingDiff.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td>LOP</td>
+                                    <td style="text-align: right;">${lopAmount.toFixed(2)}</td>
+                                </tr>
+                                <tr class="payslip-total-row">
+                                    <td>Gross Earnings</td>
+                                    <td style="text-align: right;">${grossEarnings.toFixed(2)}</td>
+                                    <td>Gross Deductions</td>
+                                    <td style="text-align: right;">${grossDeductions.toFixed(2)}</td>
+                                </tr>
+                            </table>
+
+                            <div class="payslip-net-salary">
+                                NET SALARY: Rs. ${netSalary} /-<br>
+                                <span style="font-size: 10px; font-weight: normal;">(Rupees ${numberToWords(netSalary)} Only)</span>
+                            </div>
+
+                            <div class="payslip-signature-area">
+                                <div class="payslip-signature-line">Employer Signature</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; font-size: 9px; color: #666; margin-top: 10px;">
+                            This is a computer generated payslip and does not require a physical signature.
+                        </div>
+                    </div>
+                `;
+
+                // 5. Open Preview
+                window.closePayslipConfig();
+                const previewModal = document.getElementById('payslip-preview-modal');
+                previewModal.style.display = 'flex';
+                setTimeout(() => previewModal.classList.add('show'), 10);
+
+            } catch (err) {
+                console.error('Error generating payslip:', err);
+                await nammaModalSystem.alert('Failed to generate payslip. Please check console for details.');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+    }
+
+    function numberToWords(num) {
+        const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        if ((num = num.toString()).length > 9) return 'overflow';
+        let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{1})(\d{2})$/);
+        if (!n) return '';
+        let str = '';
+        str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+        str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+        str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Hundred ' : '';
+        str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + ' ' : '';
+        return str.trim();
+    }
+
+    window.addEventListener('error', function (e) {
+        const tbody = document.getElementById('attendance-logs-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
+    });
+
+
+
+    // --- SHIFT SUMMARY DASHBOARD LOGIC ---
+    window.loadShiftSummaries = async function (date = null) {
+        const grid = document.getElementById('shift-summary-grid');
+        if (!grid) return;
+
+        grid.innerHTML = `
+        <div class="loading-placeholder" style="grid-column: 1/-1; text-align: center; padding: 100px;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary-accent); margin-bottom: 16px;"></i>
+            <p style="color: #64748b;">Fetching cloud reports...</p>
+        </div>
+    `;
+
+        try {
+            const url = date ? `/api/shift-summary?date=${date}` : '/api/shift-summary';
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success && data.reports && data.reports.length > 0) {
+                grid.innerHTML = '';
+                data.reports.forEach(report => {
+                    const card = document.createElement('div');
+                    card.className = 'shift-summary-card';
+                    card.onclick = () => window.showShiftReportDetails(report.id);
+
+                    const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
+
+                    card.innerHTML = `
+                    <div class="shift-card-header">
+                        <div class="shift-card-user">
+                            <div class="shift-user-avatar">${avatarInitials}</div>
+                            <div class="shift-user-info">
+                                <h4>${report.employeeName || 'Unknown Employee'}</h4>
+                                <span>${report.date}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="shift-badge-id">#${report.shift_id || 'N/A'}</span>
+                            <button onclick="window.deleteShiftReport('${report.id}', event)" class="modern-btn" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" title="Delete Report" onmouseover="this.style.background='#fecaca'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#fee2e2'; this.style.transform='scale(1)';">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="shift-card-metrics">
+                        <div class="shift-metric">
+                            <span>Employee ID</span>
+                            <strong>${report.employeeId}</strong>
+                        </div>
+                        <div class="shift-metric">
+                            <span>Type</span>
+                            <strong>TEXT / CLOUD</strong>
+                        </div>
+                        <div class="shift-metric">
+                            <span>Status</span>
+                            <strong class="shift-status-encrypted"><i class="fas fa-lock"></i> SECURE</strong>
+                        </div>
+                    </div>
+                    <div class="shift-card-footer">
+                        <div class="secure-tag">
+                            <i class="fas fa-shield-alt"></i> 256-bit AES
+                        </div>
+                        <div class="open-link">
+                            Open Report <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                `;
+                    grid.appendChild(card);
+                });
+            } else {
+                grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 100px; background: rgba(255,255,255,0.5); border-radius: 20px; border: 1px dashed #cbd5e1;">
+                    <i class="fas fa-folder-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 16px;"></i>
+                    <p style="color: #64748b;">No shift reports found for this period.</p>
+                </div>
+            `;
+            }
+        } catch (error) {
+            console.error('Error loading summaries:', error);
+            grid.innerHTML = '<p style="color:red; text-align:center; grid-column:1/-1;">Error loading reports from cloud.</p>';
+        }
+    };
+
+    window.showShiftReportDetails = async function (reportId) {
+        const modal = document.getElementById('esr-detail-modal');
+        const textArea = document.getElementById('esr-detail-text');
+        const imageArea = document.getElementById('esr-detail-image');
+        const subtitle = document.getElementById('esr-detail-subtitle');
+
+        if (!modal) return;
+
+        // Reset and Show Modal
+        textArea.innerHTML = 'Decrypting secure report data...';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+
+        try {
+            // Fetch Text Report
+            const textResponse = await fetch(`/api/esr-reports/${reportId}`);
+            const textData = await textResponse.json();
+
+            if (textData.success) {
+                textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
+                subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
+
+                // If verified, append the management bar
+                if (textData.metadata.verified) {
+                    const ver = textData.metadata.verification_data || {};
+                    const hasRemarks = ver.remarks !== 'No';
+
+                    const mgmtBar = document.createElement('div');
+                    mgmtBar.className = 'esr-rendered-section';
+                    mgmtBar.style.marginTop = '24px';
+                    mgmtBar.style.border = '2px solid #F1F5F9';
+                    mgmtBar.style.background = '#FFFFFF';
+
+                    mgmtBar.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Audit Management</h4>
+                        <span class="pill ${hasRemarks ? 'absent' : 'working'}">${hasRemarks ? 'REMARKS PENDING' : 'AUDIT SOLVED'}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+                        <button class="modern-btn secondary" onclick="window.editBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
+                            <i class="fas fa-edit"></i> Edit Audit
+                        </button>
+                        ${hasRemarks ? `
+                        <button class="modern-btn" onclick="window.solveBillRemarks('${reportId}')" style="font-size:12px; padding:12px; background:#10B981; color:white; border:none;">
+                            <i class="fas fa-check-double"></i> Mark Solved
+                        </button>` : ''}
+                        <button class="modern-btn accent" onclick="window.deleteBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
+                            <i class="fas fa-trash-alt"></i> Delete Audit
+                        </button>
+                    </div>
+                `;
+                    textArea.appendChild(mgmtBar);
+                }
+            } else {
+                textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
+            }
+        } catch (error) {
+            console.error('Error showing report details:', error);
+            textArea.textContent = 'Critical error during decryption. Please check network.';
+        }
+    };
+
+    window.renderBeautifulEsr = function (text, metadata) {
+        if (!text) return '';
+
+        // Helper to extract values using regex
+        const extract = (pattern) => {
+            const match = text.match(pattern);
+            return match ? match[1].trim() : '0';
+        };
+
+        const details = {
+            name: metadata.employeeName || text.match(/Report for (.*)/)?.[1] || 'Guest',
+            start: extract(/- Start: (.*)/),
+            end: extract(/- End: (.*)/),
+            id: metadata.shift_id || extract(/- ID: (.*)/),
+            upiPinelab: extract(/- UPI Pinelab: ₹(.*)/),
+            cardPinelab: extract(/- Card Pinelab: ₹(.*)/),
+            upiPaytm: extract(/- UPI Paytm: ₹(.*)/),
+            cardPaytm: extract(/- Card Paytm: ₹(.*)/),
+            cash: extract(/- Cash: ₹(.*)/),
+            retail: extract(/- Retail Credit: ₹(.*)/),
+            added: extract(/- Added: (.*?),/),
+            edited: extract(/Edited: (.*?),/),
+            deleted: extract(/Deleted: (.*)/)
+        };
+
+        return `
+        <div class="esr-rendered-container">
+            <div class="esr-rendered-section">
+                <h4><i class="fas fa-info-circle"></i> Shift Details</h4>
+                <div class="esr-grid-details">
+                    <div class="esr-detail-item"><span class="esr-detail-label">Employee:</span> <span class="esr-detail-value">${details.name}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">Shift ID:</span> <span class="esr-detail-value">#${details.id}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">Start Time:</span> <span class="esr-detail-value">${details.start}</span></div>
+                    <div class="esr-detail-item"><span class="esr-detail-label">End Time:</span> <span class="esr-detail-value">${details.end}</span></div>
+                </div>
+            </div>
+
+            <div class="esr-rendered-section">
+                <h4><i class="fas fa-wallet"></i> Financial Summary</h4>
+                <div class="esr-grid-collections">
+                    <div class="esr-col-card esr-col-upi-pinelab">
+                        <div class="esr-col-label">UPI PINELAB</div>
+                        <div class="esr-col-value">₹${details.upiPinelab}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-card-pinelab">
+                        <div class="esr-col-label">CARD PINELAB</div>
+                        <div class="esr-col-value">₹${details.cardPinelab}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-cash">
+                        <div class="esr-col-label">CASH</div>
+                        <div class="esr-col-value">₹${details.cash}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-upi-paytm">
+                        <div class="esr-col-label">UPI PAYTM</div>
+                        <div class="esr-col-value">₹${details.upiPaytm}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-card-paytm">
+                        <div class="esr-col-label">CARD PAYTM</div>
+                        <div class="esr-col-value">₹${details.cardPaytm}</div>
+                    </div>
+                    <div class="esr-col-card esr-col-retail">
+                        <div class="esr-col-label">RETAIL CREDIT</div>
+                        <div class="esr-col-value">₹${details.retail}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="esr-rendered-section" style="margin-bottom: 0;">
+                <h4><i class="fas fa-chart-line"></i> Activity Audit</h4>
+                <div class="esr-metrics-row">
+                    <div class="esr-metric-item">
+                        <div class="m-val m-green">${details.added}</div>
+                        <div class="m-lbl">New Records</div>
+                    </div>
+                    <div class="esr-metric-item">
+                        <div class="m-val m-blue">${details.edited}</div>
+                        <div class="m-lbl">Edited</div>
+                    </div>
+                    <div class="esr-metric-item">
+                        <div class="m-val m-red">${details.deleted}</div>
+                        <div class="m-lbl">Deleted</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="esr-security-footer">
+                <i class="fas fa-shield-alt"></i> Decrypted Security Payload
+            </div>
+        </div>
+    `;
+    };
+
+    window.closeEsrDetailModal = function () {
+        const modal = document.getElementById('esr-detail-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    };
+
+    window.printCurrentEsr = function () {
+        const reportHtml = document.getElementById('esr-detail-text').innerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+        <html>
+            <head>
+                <title>Shift Report - ${formatIST(new Date()).split(',')[0]}</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <style>
+                    body { font-family: 'Inter', sans-serif; padding: 40px; position: relative; }
+                    .watermark {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%) rotate(-45deg);
+                        font-size: 80px;
+                        font-weight: 900;
+                        color: rgba(180, 180, 180, 0.12);
+                        z-index: 9999;
+                        white-space: nowrap;
+                        pointer-events: none;
+                        user-select: none;
+                        text-transform: uppercase;
+                    }
+                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; position: relative; }
+                    .esr-rendered-section h4 { margin: 0 0 16px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+                    .esr-grid-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
+                    .esr-detail-item { display: flex; justify-content: space-between; padding: 4px 0; }
+                    .esr-detail-label { color: #64748b; font-weight: 500; }
+                    .esr-detail-value { color: #1e293b; font-weight: 700; }
+                    .esr-grid-collections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+                    .esr-col-card { padding: 16px 12px; border-radius: 14px; text-align: center; border: 1px solid #e2e8f0; }
+                    .esr-col-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+                    .esr-col-value { font-size: 18px; font-weight: 800; }
+                    .esr-metrics-row { background: #f1f5f9; border-radius: 16px; padding: 16px; display: flex; justify-content: space-around; text-align: center; }
+                    .esr-metric-item .m-val { font-size: 24px; font-weight: 800; }
+                    .esr-metric-item .m-lbl { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; }
+                    .m-green { color: #10b981; } .m-blue { color: #3b82f6; } .m-red { color: #ef4444; }
+                    @media print {
+                        .watermark { -webkit-print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="watermark">Pinpointstartups</div>
+                <h1 style="text-align:center; font-size:24px; margin-bottom:40px; position: relative;">End Shift Report Summary</h1>
+                ${reportHtml}
+            </body>
+        </html>
+    `);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    };
+
+    // --- BILL VERIFICATION LOGIC ---
+    let currentBvReportId = null;
+    let currentBvStructuredData = null;
+
+    window.openBillVerification = function (reportId) {
+        currentBvReportId = reportId;
+        const overlay = document.getElementById('bill-verification-overlay');
+        const loading = document.getElementById('bv-loading');
+        const step1 = document.getElementById('bv-step-1');
+        const step2 = document.getElementById('bv-step-2');
+
+        overlay.classList.add('show');
+        loading.style.display = 'block';
+        step1.style.display = 'none';
+        step2.style.display = 'none';
+
+        // Fetch report to get structured data (for Pinelab/Paytem detection)
+        fetch('/api/esr-reports/' + reportId)
+            .then(res => res.json())
+            .then(data => {
+                loading.style.display = 'none';
+                step1.style.display = 'block';
+                currentBvStructuredData = data.structured_data || {};
+            })
+            .catch(() => {
+                loading.style.display = 'none';
+                step1.style.display = 'block';
+            });
+    };
+
+    window.closeBillVerification = function () {
+        const overlay = document.getElementById('bill-verification-overlay');
+        overlay.classList.remove('show');
+        // Reset form
+        document.getElementById('bv-step-1').style.display = 'block';
+        document.getElementById('bv-step-2').style.display = 'none';
+        document.getElementById('bv-type').value = '';
+        document.getElementById('bv-subtype').value = '';
+        document.getElementById('bv-bill-error-group').style.display = 'none';
+        document.getElementById('bv-differences-group').style.display = 'none';
+        document.getElementById('bv-manual-text-group').style.display = 'none';
+        document.getElementById('bv-diff-cash').value = '';
+        document.getElementById('bv-manual-text').value = '';
+    };
+
+    window.toBvStep2 = function () {
+        document.getElementById('bv-step-1').style.display = 'none';
+        document.getElementById('bv-step-2').style.display = 'block';
+    };
+
+    window.backToBvStep1 = function () {
+        document.getElementById('bv-step-1').style.display = 'block';
+        document.getElementById('bv-step-2').style.display = 'none';
+    };
+
+    window.handleBvTypeChange = function () {
+        const type = document.getElementById('bv-type').value;
+        const errorGroup = document.getElementById('bv-bill-error-group');
+        const manualGroup = document.getElementById('bv-manual-text-group');
+
+        errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
+        manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
+
+        if (type !== 'Bill Error') {
+            document.getElementById('bv-subtype').value = '';
+            document.getElementById('bv-differences-group').style.display = 'none';
+        }
+    };
+
+    window.handleBvSubtypeChange = function () {
+        const subtype = document.getElementById('bv-subtype').value;
+        const diffGroup = document.getElementById('bv-differences-group');
+        const upiRow = document.getElementById('bv-diff-upi-row');
+
+        if (subtype === 'Bill difference issue') {
+            diffGroup.style.display = 'block';
+            // Inject dynamic UPI inputs based on ESR
+            let upiHtml = '';
+            if (currentBvStructuredData) {
+                if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
+                    upiHtml += `<div class="input-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Pinelab)</label>
+                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                            <button type="button" onclick="window.toggleDiffType('pinelab', 'shortage')" id="btn-pinelab-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                            <button type="button" onclick="window.toggleDiffType('pinelab', 'excess')" id="btn-pinelab-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                        </div>
+                    </div>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                        <input type="number" id="bv-diff-pinelab" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="hidden" id="bv-type-pinelab" value="excess">
+                    </div>
+                </div>`;
+                }
+                if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
+                    upiHtml += `<div class="input-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Paytm)</label>
+                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                            <button type="button" onclick="window.toggleDiffType('paytm', 'shortage')" id="btn-paytm-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                            <button type="button" onclick="window.toggleDiffType('paytm', 'excess')" id="btn-paytm-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                        </div>
+                    </div>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                        <input type="number" id="bv-diff-paytm" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="hidden" id="bv-type-paytm" value="excess">
+                    </div>
+                </div>`;
+                }
+            }
+            // Fallback if no specific data detected
+            if (!upiHtml) {
+                upiHtml = `<div class="input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (General)</label>
+                    <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
+                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'shortage')" id="btn-upi-gen-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
+                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'excess')" id="btn-upi-gen-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
+                    </div>
+                </div>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
+                    <input type="number" id="bv-diff-upi-gen" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <input type="hidden" id="bv-type-upi-gen" value="excess">
+                </div>
+            </div>`;
+            }
+            upiRow.innerHTML = upiHtml;
+        } else {
+            diffGroup.style.display = 'none';
+        }
+    };
+
+    window.saveBillVerification = async function (remarkChoice) {
+        let payload = {
+            reportId: currentBvReportId,
+            remarks: remarkChoice
+        };
+
+        if (remarkChoice === 'Yes') {
+            payload.type = document.getElementById('bv-type').value;
+            payload.subType = document.getElementById('bv-subtype').value;
+            payload.manualText = document.getElementById('bv-manual-text').value;
+
+            const getDiffValue = (idBase) => {
+                const el = document.getElementById(`bv-diff-${idBase}`);
+                if (!el) return 0;
+                let val = parseFloat(el.value) || 0;
+                const typeEl = document.getElementById(`bv-type-${idBase}`);
+                if (typeEl && typeEl.value === 'shortage') val = -val;
+                return val;
+            };
+
+            payload.differences = {
+                cash: getDiffValue('cash')
+            };
+
+            const pinelabVal = getDiffValue('pinelab');
+            if (pinelabVal !== 0 || document.getElementById('bv-diff-pinelab')) payload.differences.pinelab = pinelabVal;
+            
+            const paytmVal = getDiffValue('paytm');
+            if (paytmVal !== 0 || document.getElementById('bv-diff-paytm')) payload.differences.paytm = paytmVal;
+            
+            const upiGenVal = getDiffValue('upi-gen');
+            if (upiGenVal !== 0 || document.getElementById('bv-diff-upi-gen')) payload.differences.upi_general = upiGenVal;
+        }
+
+        try {
+            const res = await fetch('/api/admin/verify-bill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if (result.success) {
+                await nammaModalSystem.alert("Bill verification saved successfully!");
+                window.closeBillVerification();
+                window.loadDashboardData(); // Refresh notifications
+                if (document.getElementById('bill-report-view').style.display === 'block') {
+                    window.loadBillVerificationReports();
+                }
+            } else {
+                await nammaModalSystem.alert("Error: " + result.message);
+            }
+        } catch (err) {
+            await nammaModalSystem.alert("Failed to connect to server.");
+        }
+    };
+
+    window.toggleDiffType = function(idBase, type) {
+        document.getElementById(`bv-type-${idBase}`).value = type;
+        const btnShortage = document.getElementById(`btn-${idBase}-shortage`);
+        const btnExcess = document.getElementById(`btn-${idBase}-excess`);
+        
+        if (type === 'shortage') {
+            btnShortage.style.background = '#FFFFFF';
+            btnShortage.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+            btnShortage.style.color = '#DC2626'; // Red
+            
+            btnExcess.style.background = 'transparent';
+            btnExcess.style.boxShadow = 'none';
+            btnExcess.style.color = '#16A34A';
+        } else {
+            btnExcess.style.background = '#FFFFFF';
+            btnExcess.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+            btnExcess.style.color = '#16A34A'; // Green
+            
+            btnShortage.style.background = 'transparent';
+            btnShortage.style.boxShadow = 'none';
+            btnShortage.style.color = '#9A3412';
+        }
+    };
+
+    // --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
+        window.deleteBillVerification = async function (reportId) {
+            const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
+                confirmText: "Yes, Delete",
+                cancelText: "Keep it",
+                theme: "danger"
+            });
+            if (!proceed) return;
+
+            try {
+                const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    await nammaModalSystem.alert("Verification deleted successfully.");
+                    window.closeEsrDetailModal();
+                    window.loadBillVerificationReports();
+                } else {
+                    await nammaModalSystem.alert("Error deleting verification: " + result.message);
+                }
+            } catch (err) {
+                await nammaModalSystem.alert("Failed to connect to server.");
+            }
+        };
+
+        window.solveBillRemarks = async function (reportId) {
+            const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
+                confirmText: "Mark Solved",
+                cancelText: "Cancel"
+            });
+            if (!proceed) return;
+
+            try {
+                // Fetch existing data first to preserve differences
+                const res1 = await fetch(`/api/esr-reports/${reportId}`);
+                const data1 = await res1.json();
+                const existing = data1.metadata.verification_data || {};
+
+                const payload = {
+                    reportId,
+                    remarks: "No",
+                    type: existing.type || "Other",
+                    subType: existing.subType || "",
+                    differences: existing.differences || {},
+                    manualText: existing.manualText || "Marked as solved by Admin"
+                };
+
+                const res2 = await fetch('/api/admin/verify-bill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res2.json();
+                if (result.success) {
+                    await nammaModalSystem.alert("Audit solved successfully.");
+                    window.showShiftReportDetails(reportId); // Refresh the modal
+                    window.loadBillVerificationReports(); // Refresh the table
+                }
+            } catch (err) {
+                await nammaModalSystem.alert("Failed to solve remarks.");
+            }
+        };
+
+        window.editBillVerification = async function (reportId) {
+            // 1. Close the current detail modal
+            window.closeEsrDetailModal();
+
+            // 2. Open the verification overlay
+            window.openBillVerification(reportId);
+
+            // 3. Pre-fill existing data
+            try {
+                const res = await fetch(`/api/esr-reports/${reportId}`);
+                const data = await res.json();
+                if (data.metadata && data.metadata.verification_data) {
+                    const v = data.metadata.verification_data;
+                    setTimeout(() => {
+                        document.getElementById('bv-type').value = v.type || '';
+                        window.handleBvTypeChange();
+                        document.getElementById('bv-subtype').value = v.subType || '';
+                        window.handleBvSubtypeChange();
+                        if (v.differences) {
+                            if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
+                            if (v.differences.pinelab) {
+                                const pl = document.getElementById('bv-diff-pinelab');
+                                if (pl) pl.value = v.differences.pinelab;
+                            }
+                            if (v.differences.paytm) {
+                                const pt = document.getElementById('bv-diff-paytm');
+                                if (pt) pt.value = v.differences.paytm;
+                            }
+                            if (v.differences.upi_general) {
+                                const ug = document.getElementById('bv-diff-upi-gen');
+                                if (ug) ug.value = v.differences.upi_general;
+                            }
+                        }
+                        document.getElementById('bv-manual-text').value = v.manualText || '';
+                    }, 500); // Wait for openBillVerification fetch to finish
+                }
+            } catch (e) {
+                console.error("Error pre-filling edit form", e);
+            }
+        };
+
+        const BV_SAVE_PARITY = true;
+
+        // --- BILL REPORTING Logic ---
+        window.loadBillVerificationReports = async function () {
+            try {
+                const res = await fetch('/api/admin/bill-verification-reports');
+                const data = await res.json();
+                const tbody = document.getElementById('bill-reports-tbody');
+                if (!tbody) return;
+
+                // Upgrade to modern-table styling
+                const table = tbody.closest('table');
+                if (table) {
+                    table.className = 'modern-table';
+                    table.style.marginTop = '0';
+                }
+
+                if (!data.success || data.history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.history.map(rep => {
+                    const ver = rep.verification_data || {};
+                    const diffs = ver.differences || {};
+                    let diffStr = [];
+                    if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
+                    if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
+                    if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
+                    if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
+
+                    const hasRemarks = ver.remarks !== 'No';
+
+                    return `
+                <tr>
+                    <td>
+                        <div style="font-weight:800; color:#0f172a; font-size:14px;">${rep.employeeName}</div>
+                        <div style="font-size:11px; color:#64748b; margin-top:2px; font-weight:600;">Shift ID: ${rep.id.slice(-6).toUpperCase()}</div>
+                    </td>
+                    <td style="font-weight:700; color:#475569; font-size:13px;">${rep.date}</td>
+                    <td>
+                        <span class="pill ${hasRemarks ? 'absent' : 'working'}" style="font-size:10px; padding:6px 12px; letter-spacing:0.5px; font-weight:800;">
+                            ${hasRemarks ? 'HAS REMARKS' : 'NO REMARKS'}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-weight:700; font-size:12px; color:#1e293b;">${ver.type || '-'}</div>
+                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.subType || ''}</div>
+                    </td>
+                    <td style="font-family:'Inter', sans-serif;">
+                        ${diffStr.join('') || '<span style="color:#cbd5e1;">-</span>'}
+                    </td>
+                    <td>
+                        <div style="font-weight:700; font-size:13px; color:#0f172a;">${ver.verifiedBy || '-'}</div>
+                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : ''}</div>
+                    </td>
+                    <td>
+                        <button class="action-btn secondary" onclick="window.viewShiftReport('${rep.id}')" style="width:36px; height:36px; padding:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border:none; transition: all 0.2s ease;">
+                            <i class="fas fa-eye" style="font-size:14px; color:#1e293b;"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.showBillReportingView = function () {
+            const billView = document.getElementById('bill-report-view');
+            const masterBtn = document.querySelector('.master-report-btn');
+
+            if (billView) {
+                // Use central SPA switcher to hide others correctly
+                window.switchSpaView(billView, masterBtn);
+                window.loadBillVerificationReports();
+            }
+        };
+
+        window.backToStudioHub = function () {
+            const hub = document.getElementById('master-reports-hub-v2');
+            const masterBtn = document.querySelector('.master-report-btn');
+            if (hub) {
+                window.switchSpaView(hub, masterBtn);
+            }
+        };
+
+        window.viewShiftReport = function (id) {
+            if (typeof window.showShiftReportDetails === 'function') {
+                window.showShiftReportDetails(id);
+            }
+        };
+
+    });// --- DRAGGABLE POPUP LOGIC ---
+window.makeDraggable = function(panelId, headerSelector) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const header = panel.querySelector(headerSelector);
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) return; // Ignore close button clicks
+        
+        isDragging = true;
+        panel.classList.add('dragging');
+        
+        // Get initial mouse position
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const rect = panel.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        // Set inline positions based on current rect so it doesn't jump
+        panel.style.left = initialLeft + 'px';
+        panel.style.top = initialTop + 'px';
+        panel.style.transform = 'none';
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        
+        panel.style.left = (initialLeft + dx) + 'px';
+        panel.style.top = (initialTop + dy) + 'px';
+    }
+
+    function onMouseUp() {
+        if (isDragging) {
+            isDragging = false;
+            panel.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if(window.makeDraggable) {
+            window.makeDraggable('add-employee-panel', '.side-panel-header');
+            window.makeDraggable('edit-employee-panel', '.side-panel-header');
+        }
+        
+        // Wrap the open functions to reset inline styles
+        const _openAdd = window.openAddEmployeePanel;
+        window.openAddEmployeePanel = function() {
+            const p = document.getElementById('add-employee-panel');
+            if(p) {
+                p.style.left = '';
+                p.style.top = '';
+                p.style.transform = '';
+            }
+            if(_openAdd) _openAdd();
+        };
+
+        const _openEdit = window.openEditEmployeePanel;
+        window.openEditEmployeePanel = function(id) {
+            const p = document.getElementById('edit-employee-panel');
+            if(p) {
+                p.style.left = '';
+                p.style.top = '';
+                p.style.transform = '';
+            }
+            if(_openEdit) _openEdit(id);
+        };
+    }, 1000);
+});
+// --- EDIT EMPLOYEE STORY MODE LOGIC ---
+let currentEditStep = 1;
+const maxEditSteps = 3;
+
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if(!form) return;
+    
+    // Update steps
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        if ((i + 1) === currentEditStep) {
+            s.classList.add('active');
+        } else {
+            s.classList.remove('active');
+        }
+    });
+
+    // Update stepper dots
+    const stepper = document.getElementById('edit-stepper');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            if (stepNum === currentEditStep) {
+                d.classList.add('active');
+                d.classList.remove('completed');
+            } else if (stepNum < currentEditStep) {
+                d.classList.remove('active');
+                d.classList.add('completed');
+            } else {
+                d.classList.remove('active', 'completed');
+            }
+        });
+    }
+
+    // Update buttons
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+
+    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'block';
+    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'block';
+    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'block' : 'none';
+};
+
+window.nextEditStep = function() {
+    if (currentEditStep < maxEditSteps) {
+        currentEditStep++;
+        window.updateEditStepUI();
+    }
+};
+
+window.prevEditStep = function() {
+    if (currentEditStep > 1) {
+        currentEditStep--;
+        window.updateEditStepUI();
+    }
+};
+
+// Reset step on open
+const _originalOpenEdit = window.openEditEmployeePanel;
+window.openEditEmployeePanel = function(id) {
+    currentEditStep = 1;
+    if(window.updateEditStepUI) window.updateEditStepUI();
+    if(_originalOpenEdit) _originalOpenEdit(id);
+};
+// =============================================
+// UPDATED EDIT STEP UI - with line animation
+// =============================================
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if(!form) return;
+    
+    // Update steps
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentEditStep);
+    });
+
+    // Update stepper dots + lines
+    const stepper = document.getElementById('edit-stepper');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentEditStep) d.classList.add('active');
+            else if (stepNum < currentEditStep) d.classList.add('completed');
+        });
+        // Animate lines
+        const line1 = document.getElementById('edit-line-1');
+        const line2 = document.getElementById('edit-line-2');
+        if(line1) line1.classList.toggle('completed', currentEditStep > 1);
+        if(line2) line2.classList.toggle('completed', currentEditStep > 2);
+    }
+
+    // Update buttons
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
+    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
+    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
+};
+
+// =============================================
+// UPDATED ADD STEP UI - with line animation
+// =============================================
+window._updateAddStepUIEnhanced = function() {
+    const maxAdd = 4;
+    const stepper = document.querySelector('#add-employee-panel .stepper-minimal');
+    if(stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentAddStep) d.classList.add('active');
+            else if (stepNum < currentAddStep) d.classList.add('completed');
+        });
+        for(let i = 1; i <= 3; i++) {
+            const line = document.getElementById('add-line-' + i);
+            if(line) line.classList.toggle('completed', currentAddStep > i);
+        }
+    }
+};
+
+// Patch the existing updateAddStepUI
+const _baseUpdateAdd = window.updateAddStepUI;
+window.updateAddStepUI = function() {
+    if(_baseUpdateAdd) _baseUpdateAdd();
+    if(window._updateAddStepUIEnhanced) window._updateAddStepUIEnhanced();
+};
+// =============================================
+// FIX: Scope spa-step selectors per panel
+// =============================================
+
+// Override updateAddStepUI to scope ONLY to add-employee-form
+window.updateAddStepUI = function() {
+    const form = document.getElementById('spa-add-employee-form');
+    if (!form) return;
+
+    // Show/hide steps scoped to add form only
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentAddStep);
+    });
+
+    // Stepper dots in add panel
+    const addPanel = document.getElementById('add-employee-panel');
+    if (addPanel) {
+        addPanel.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentAddStep) d.classList.add('active');
+            else if (stepNum < currentAddStep) d.classList.add('completed');
+        });
+        for (let i = 1; i <= 3; i++) {
+            const line = document.getElementById('add-line-' + i);
+            if (line) line.classList.toggle('completed', currentAddStep > i);
+        }
+    }
+
+    // Buttons
+    const prevBtn = document.getElementById('spa-btn-prev');
+    const nextBtn = document.getElementById('spa-btn-next');
+    const submitBtn = document.getElementById('spa-btn-submit');
+    if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'inline-flex';
+    if (currentAddStep === 4) {
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+    } else {
+        if (nextBtn) nextBtn.style.display = 'inline-flex';
+        if (submitBtn) submitBtn.style.display = 'none';
+    }
+};
+
+// Override updateEditStepUI to scope ONLY to edit-employee-form  
+window.updateEditStepUI = function() {
+    const form = document.getElementById('spa-edit-employee-form');
+    if (!form) return;
+
+    form.querySelectorAll('.spa-step').forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === currentEditStep);
+    });
+
+    const stepper = document.getElementById('edit-stepper');
+    if (stepper) {
+        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
+            const stepNum = i + 1;
+            d.classList.remove('active', 'completed');
+            if (stepNum === currentEditStep) d.classList.add('active');
+            else if (stepNum < currentEditStep) d.classList.add('completed');
+        });
+        const line1 = document.getElementById('edit-line-1');
+        const line2 = document.getElementById('edit-line-2');
+        if (line1) line1.classList.toggle('completed', currentEditStep > 1);
+        if (line2) line2.classList.toggle('completed', currentEditStep > 2);
+    }
+
+    const prevBtn = document.getElementById('spa-edit-prev-btn');
+    const nextBtn = document.getElementById('spa-edit-next-btn');
+    const saveBtn = document.getElementById('spa-edit-save-btn');
+    if (prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
+    if (nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
+    if (saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
+};
+
+// DOB Age validation for Marital Status
+document.addEventListener('DOMContentLoaded', () => {
+    function handleDobChange(dobInput, maritalGroup) {
+        if (!dobInput || !maritalGroup) return;
+        
+        const validateAge = () => {
+            if (!dobInput.value) {
+                maritalGroup.style.display = 'block';
+                return;
+            }
+            const dob = new Date(dobInput.value);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            
+            if (age < 18) {
+                maritalGroup.style.display = 'none';
+                if (window.nammaModalSystem && typeof window.nammaModalSystem.alert === 'function') {
+                    window.nammaModalSystem.alert('Child labouring is illegal. Employee is under 18.');
+                } else {
+                    alert('Child labouring is illegal. Employee is under 18.');
+                }
+            } else {
+                maritalGroup.style.display = 'block';
+            }
+        };
+
+        dobInput.addEventListener('change', validateAge);
+    }
+
+    const editDob = document.getElementById('spa-edit-dob');
+    const editMaritalGroup = document.getElementById('spa-edit-marital-group');
+    if (editDob && editMaritalGroup) handleDobChange(editDob, editMaritalGroup);
+
+    const addForm = document.getElementById('spa-add-employee-form');
+    if (addForm) {
+        const addDob = addForm.querySelector('input[name="dob"]');
+        const addMaritalGroup = document.getElementById('spa-add-marital-group');
+        if (addDob && addMaritalGroup) handleDobChange(addDob, addMaritalGroup);
+    }
+});
+
+window.deleteShiftReport = async function(reportId, event) {
+    event.stopPropagation();
+    if (window.nammaModalSystem && window.nammaModalSystem.confirm) {
+        const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
+        if (!confirmed) return;
+        await processDelete();
+    } else {
+        // Fallback (though native confirm seems to be disabled)
+        try {
+            const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
+            if (!confirmed) return;
+        } catch(e) {
+            // Very last resort if somehow nammaModalSystem isn't ready
+        }
+        await processDelete();
+    }
+
+    async function processDelete() {
+        try {
+            const response = await fetch(`/api/shift-summary/${reportId}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                const dateFilter = document.getElementById('shift-summary-date-filter');
+                window.loadShiftSummaries(dateFilter ? dateFilter.value : null);
+            } else {
+                if (window.nammaModalSystem && window.nammaModalSystem.alert) {
+                    window.nammaModalSystem.alert("Failed to delete report: " + data.message);
+                } else {
+                    alert("Failed to delete report: " + data.message);
+                }
+            }
+        } catch (err) {
+            console.error("Error deleting report:", err);
+        }
+    }
+};
 
