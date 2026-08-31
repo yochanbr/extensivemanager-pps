@@ -3726,6 +3726,122 @@ const verifyEmployeeApp = (req, res, next) => {
     });
 };
 
+app.get('/api/employee/bootstrap', verifyEmployeeApp, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 1. Employee Data
+        const empDoc = await db.employees().doc(req.employeeId).get();
+        if (!empDoc.exists) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+        const empData = empDoc.data();
+        
+        // 2. Today's Session
+        const sessionSnapshot = await db.daily_sessions()
+            .where('employeeId', '==', req.employeeId)
+            .where('date', '==', today)
+            .get();
+        let todayShift = sessionSnapshot.empty ? null : sessionSnapshot.docs[0].data();
+        
+        // 3. Recent Reports (Limit 5) - prefer server-side ordering/limit to reduce reads
+        let recentReports = [];
+        try {
+            const repSnap = await db.esr_reports()
+                .where('employee_id', '==', req.employeeId)
+                .orderBy('date', 'desc')
+                .limit(5)
+                .get();
+            recentReports = repSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (err) {
+            console.warn('Bootstrap reports orderBy failed, falling back to client-side sort:', err.message);
+            const reportsSnapshot = await db.esr_reports().where('employee_id', '==', req.employeeId).get();
+            let reports = reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+            recentReports = reports.slice(0, 5);
+        }
+        
+        // 4. Finance Data
+        let liveSalary = 0;
+        const basicSalary = parseFloat(empData.basicSalary || empData['basic-salary'] || 0);
+        if (basicSalary > 0) {
+            liveSalary = Math.round(basicSalary * 0.7); 
+        }
+        
+        let ledger = [];
+        if (empData.issue && empData.issue.length > 0) {
+            empData.issue.forEach(i => {
+                ledger.push({ date: i.date, description: 'Store Issue', amount: i.amount });
+            });
+        }
+        ledger.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const payslipsSnapshot = await db.payslips()
+            .where('employeeId', '==', req.employeeId)
+            .where('published', '==', true)
+            .get();
+            
+        let payslips = [];
+        if (!payslipsSnapshot.empty) {
+            payslips = payslipsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            payslips.sort((a, b) => b.month.localeCompare(a.month));
+        }
+        
+        // 5. Leaves Data
+        const leavesSnapshot = await db.leave_requests()
+            .where('employeeId', '==', req.employeeId)
+            .get();
+            
+        let requests = [];
+        if (!leavesSnapshot.empty) {
+            requests = leavesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        
+        const swapsSnapshot = await db.swap_requests()
+            .where('employeeId', '==', req.employeeId)
+            .get();
+            
+        if (!swapsSnapshot.empty) {
+            const swaps = swapsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isSwap: true }));
+            requests = [...requests, ...swaps];
+        }
+        
+        requests.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        const pendingSwaps = requests.filter(r => r.isSwap && r.status === 'pending').length;
+        
+        // Final payload
+        res.json({
+            success: true,
+            data: {
+                employee: {
+                    name: empData.name,
+                    employeeId: empData.employeeId || empData['employee-id'],
+                    avatarUrl: empData.avatarUrl || null,
+                    fullTime: empData.fullTime || empData['full-time'] || 'yes',
+                    leaveBalance: empData.availableLeaves || 0
+                },
+                dashboard: {
+                    todayShift,
+                    recentReports,
+                    workedDays: todayShift ? 1 : 0 
+                },
+                finance: {
+                    liveSalary,
+                    ledger,
+                    payslips
+                },
+                leaves: {
+                    requests,
+                    pendingSwaps
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Bootstrap error:', err);
+        res.status(500).json({ success: false, message: 'Failed to load app data' });
+    }
+});
+
 app.get('/api/employee/dashboard', verifyEmployeeApp, async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -3740,19 +3856,22 @@ app.get('/api/employee/dashboard', verifyEmployeeApp, async (req, res) => {
             todayShift = sessionSnapshot.docs[0].data();
         }
 
-        const reportsSnapshot = await db.esr_reports()
-            .where('employee_id', '==', req.employeeId)
-            .get();
-            
-        // Manual sort & limit due to missing composite index on Vercel sometimes
-        let reports = reportsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            date: doc.data().date,
-            verified: doc.data().verified
-        }));
-        
-        reports.sort((a, b) => new Date(b.date) - new Date(a.date));
-        reports = reports.slice(0, 5);
+        // Prefer server-side ordered+limited query to reduce reads
+        let reports = [];
+        try {
+            const repSnap = await db.esr_reports()
+                .where('employee_id', '==', req.employeeId)
+                .orderBy('date', 'desc')
+                .limit(5)
+                .get();
+            reports = repSnap.docs.map(doc => ({ id: doc.id, date: doc.data().date, verified: doc.data().verified }));
+        } catch (err) {
+            console.warn('Dashboard reports orderBy failed, falling back to client-side sort:', err.message);
+            const reportsSnapshot = await db.esr_reports().where('employee_id', '==', req.employeeId).get();
+            reports = reportsSnapshot.docs.map(doc => ({ id: doc.id, date: doc.data().date, verified: doc.data().verified }));
+            reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+            reports = reports.slice(0, 5);
+        }
 
         res.json({
             success: true,
