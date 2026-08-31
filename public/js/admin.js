@@ -3855,38 +3855,40 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('payroll-total-slips').textContent = slipsThisMonth;
             
             if (payslips.length === 0) {
-                listEl.innerHTML = '<div class="req-empty"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:15px;"></i><h4>No Payslips Generated</h4><p style="color:#64748B;">Generate a payslip to see it here.</p></div>';
+                listEl.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 48px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:15px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No Payslips Generated</h4><p style="margin:0; color:#64748B;">Generate a payslip to see it here.</p></td></tr>';
                 return;
             }
             
             listEl.innerHTML = payslips.map(p => `
-                <div class="req-card">
-                    <div class="req-card-top">
-                        <div class="req-profile">
-                            <div class="req-avatar"><i class="fas fa-user"></i></div>
-                            <div>
-                                <h4 class="req-name">${p.employeeName || 'Unknown Employee'}</h4>
-                                <p class="req-role">Month: ${p.month}</p>
+                <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px 24px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">
+                                ${(p.employeeName || 'U')[0].toUpperCase()}
                             </div>
+                            <div style="font-weight: 600; color: #0F172A;">${p.employeeName || 'Unknown Employee'}</div>
                         </div>
-                        <span class="req-status" style="background:#D1FAE5; color:#059669;">PUBLISHED</span>
-                    </div>
-                    <div class="req-details">
-                        <div class="req-detail-item">
-                            <span class="req-detail-label">Basic</span>
-                            <span class="req-detail-val">₹${p.basic || '0'}</span>
+                    </td>
+                    <td style="padding: 16px 24px; color: #475569; font-weight: 500;">
+                        ${new Date(p.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </td>
+                    <td style="padding: 16px 24px;">
+                        <div style="font-weight: 700; color: #059669; font-size: 15px;">₹${(p.netPay || '0').replace(/[^0-9]/g, '')}</div>
+                        <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">Basic: ₹${p.basic || '0'}</div>
+                    </td>
+                    <td style="padding: 16px 24px;">
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 600; border: 1px solid #A7F3D0;">
+                            <i class="fas fa-check-circle" style="font-size: 10px;"></i> PUBLISHED
+                        </span>
+                    </td>
+                    <td style="padding: 16px 24px; text-align: right;">
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button onclick="window.deletePayslip('${p.id}')" style="background: white; border: 1px solid #E2E8F0; color: #DC2626; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#FEF2F2'; this.style.borderColor='#FECACA';" onmouseout="this.style.background='white'; this.style.borderColor='#E2E8F0';" title="Delete Payslip">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
-                        <div class="req-detail-item">
-                            <span class="req-detail-label">Net Pay</span>
-                            <span class="req-detail-val" style="color: #059669; font-weight:700;">₹${(p.netPay || '0').replace(/[^0-9]/g, '')}</span>
-                        </div>
-                    </div>
-                    <div class="req-actions" style="margin-top: 10px;">
-                        <button class="req-btn req-btn-reject" onclick="window.deletePayslip('${p.id}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `).join('');
             
         } catch (err) {

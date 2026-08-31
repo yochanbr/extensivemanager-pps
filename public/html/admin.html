@@ -790,51 +790,62 @@
         <!-- ========================================== -->
         <section id="view-payroll" class="admin-view rq-view">
             <!-- Page Header -->
-            <header class="rq-header">
+            <header class="rq-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 24px; margin-bottom: 24px;">
                 <div class="rq-header-left">
-                    <div class="rq-header-icon" style="background: #FFF7ED; color: #EA580C;"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="rq-header-icon" style="background: linear-gradient(135deg, #F95A2C 0%, #D9381E 100%); color: white; box-shadow: 0 4px 12px rgba(249, 90, 44, 0.25);"><i class="fas fa-file-invoice-dollar"></i></div>
                     <div class="rq-header-text">
-                        <h2 class="rq-title">Payroll & Compensation</h2>
-                        <p class="rq-subtitle">Manage employee salary and generate payslips</p>
+                        <h2 class="rq-title" style="font-size: 24px; letter-spacing: -0.02em;">Payroll & Compensation</h2>
+                        <p class="rq-subtitle" style="font-size: 14px;">Manage employee salary disbursements and historical records</p>
                     </div>
                 </div>
                 <div class="rq-header-actions">
-                    <button class="req-action-btn" onclick="window.openPayslipConfig()" style="background: #111827; color: white; border: none; font-weight: 600; padding: 10px 16px;">
-                        <i class="fas fa-plus"></i> Generate Payslip
-                    </button>
-                    <button class="req-action-btn" onclick="window.loadAdminPayroll()">
+                    <button class="req-action-btn" onclick="window.loadAdminPayroll()" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;">
                         <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="req-action-btn" onclick="window.openPayslipConfig()" style="background: #090B10; color: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <i class="fas fa-plus"></i> Generate Payslip
                     </button>
                 </div>
             </header>
 
             <!-- Stats -->
-            <div class="req-stats-row">
-                <div class="req-stat-card">
-                    <div class="req-stat-icon green"><i class="fas fa-money-check-alt"></i></div>
+            <div class="req-stats-row" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                <div class="req-stat-card" style="background: linear-gradient(to right, #ffffff, #fafafa); border: 1px solid #E2E8F0; padding: 24px;">
+                    <div class="req-stat-icon" style="background: #ECFDF5; color: #059669; width: 56px; height: 56px; font-size: 24px;"><i class="fas fa-money-check-alt"></i></div>
                     <div class="req-stat-content">
-                        <div class="req-stat-value" id="payroll-total-paid">₹0</div>
-                        <div class="req-stat-label">Total Payout (This Month)</div>
+                        <div class="req-stat-label" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Total Payout (This Month)</div>
+                        <div class="req-stat-value" id="payroll-total-paid" style="font-size: 32px; font-weight: 800; letter-spacing: -0.02em;">₹0</div>
                     </div>
                 </div>
-                <div class="req-stat-card">
-                    <div class="req-stat-icon blue"><i class="fas fa-file-pdf"></i></div>
+                <div class="req-stat-card" style="background: linear-gradient(to right, #ffffff, #fafafa); border: 1px solid #E2E8F0; padding: 24px;">
+                    <div class="req-stat-icon" style="background: #EFF6FF; color: #2563EB; width: 56px; height: 56px; font-size: 24px;"><i class="fas fa-file-pdf"></i></div>
                     <div class="req-stat-content">
-                        <div class="req-stat-value" id="payroll-total-slips">0</div>
-                        <div class="req-stat-label">Generated Payslips</div>
+                        <div class="req-stat-label" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Generated Payslips</div>
+                        <div class="req-stat-value" id="payroll-total-slips" style="font-size: 32px; font-weight: 800; letter-spacing: -0.02em;">0</div>
                     </div>
                 </div>
             </div>
 
             <!-- List -->
-            <div class="rq-main-content">
-                <div class="rq-column">
-                    <div class="rq-column-header">
-                        <h3>Payslip History</h3>
-                    </div>
-                    <div class="rq-list" id="admin-payslip-history-list">
-                        <!-- Items will be injected here -->
-                    </div>
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);">
+                <div style="padding: 20px 24px; border-bottom: 1px solid #E2E8F0; background: #FAFAFA;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #0F172A;">Payslip Ledger</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="premium-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Employee</th>
+                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Period</th>
+                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Net Pay</th>
+                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+                                <th style="padding: 16px 24px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-payslip-history-list">
+                            <!-- Items will be injected here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
