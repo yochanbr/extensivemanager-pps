@@ -5068,7 +5068,7 @@ window.loadAdminPayroll = async function() {
         const empData = await empRes.json();
         
         window.payrollState.payslips = allPayslips.map(window.normalizePayslip);
-        window.payrollState.employees = empData.employees || [];
+        window.payrollState.employees = Array.isArray(empData) ? empData : (empData.employees || []);
         
         // Set initial month display
         window.setPayrollMonth(window.payrollState.currentMonth);
