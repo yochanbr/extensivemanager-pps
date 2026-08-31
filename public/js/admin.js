@@ -3552,17 +3552,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     leavesList.innerHTML = '<div class="empty-state">No pending leave requests.</div>';
                 } else {
                     leavesList.innerHTML = data.leaves.map(req => `
-                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div class="report-item" style="flex-direction: column; align-items: stretch; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: #f8fafc; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                 <div>
-                                    <h4 style="margin:0;">${req.employeeName}</h4>
-                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date} (${req.type})</p>
-                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 15px; color: var(--text-dark);">${req.employeeName}</h4>
+                                    <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e2e8f0; color: #475569; display: inline-block;">Leave: ${req.date} (${req.type})</span>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
-                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            <div style="background: #ffffff; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--text-muted); border: 1px solid #e2e8f0;">
+                                <strong>Reason:</strong> ${req.reason || 'No reason provided.'}
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'approved')" style="flex:1; background: #10b981; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')" style="flex:1; background: #ef4444; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Reject</button>
                             </div>
                         </div>
                     `).join('');
@@ -3573,17 +3575,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     swapsList.innerHTML = '<div class="empty-state">No pending shift swaps.</div>';
                 } else {
                     swapsList.innerHTML = data.swaps.map(req => `
-                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div class="report-item" style="flex-direction: column; align-items: stretch; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: #f8fafc; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                 <div>
-                                    <h4 style="margin:0;">${req.employeeName} requests to swap with ${req.coworkerName}</h4>
-                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date}</p>
-                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 15px; color: var(--text-dark);">${req.employeeName}</h4>
+                                    <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e0e7ff; color: #4338ca; display: inline-block;">Swap with ${req.coworkerName} on ${req.date}</span>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
-                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            <div style="background: #ffffff; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--text-muted); border: 1px solid #e2e8f0;">
+                                <strong>Reason:</strong> ${req.reason || 'No reason provided.'}
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'approved')" style="flex:1; background: #10b981; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')" style="flex:1; background: #ef4444; border: none; border-radius: 8px; font-size: 13px; padding: 8px;">Reject</button>
                             </div>
                         </div>
                     `).join('');

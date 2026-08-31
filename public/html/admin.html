@@ -782,13 +782,13 @@
                 </div>
             </header>
             
-            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
                 <div class="stat-card">
                     <div class="card-header">
                         <h3>Pending Leave Requests</h3>
                         <button class="icon-btn" onclick="loadAdminRequests()"><i class="fas fa-sync"></i></button>
                     </div>
-                    <div class="reports-list" id="admin-leave-requests-list" style="margin-top: 15px;">
+                    <div class="reports-list" id="admin-leave-requests-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
                         <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
@@ -797,7 +797,7 @@
                     <div class="card-header">
                         <h3>Pending Shift Swaps</h3>
                     </div>
-                    <div class="reports-list" id="admin-swap-requests-list" style="margin-top: 15px;">
+                    <div class="reports-list" id="admin-swap-requests-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
                         <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
