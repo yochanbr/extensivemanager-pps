@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260726_MODAL_UI">
+    <link rel="stylesheet" href="../css/admin.css?v=20260831_NAV_FIX">
     <link rel="stylesheet" href="../css/admin-overrides.css?v=20260831">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -41,17 +41,17 @@
                 <!-- Group 1 -->
                 <div class="nav-group-title">Core Operations</div>
                 <div class="nav-item-wrapper">
-                    <button class="nav-item dashboard-btn" onclick="location.reload()">
+                    <button class="nav-item dashboard-btn" onclick="location.reload()" style="background: transparent; color: #9CA3AF;">
                         <i class="fas fa-th-large"></i><span>Dashboard</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
-                    <button class="nav-item" data-target="view-payroll">
+                    <button class="nav-item payroll-btn" data-target="view-payroll" style="background: transparent; color: #9CA3AF;">
                         <i class="fas fa-file-invoice-dollar"></i><span>Payroll</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
-                    <button class="nav-item" data-target="view-requests">
+                    <button class="nav-item requests-btn" data-target="view-requests" style="background: transparent; color: #9CA3AF;">
                         <i class="fas fa-inbox"></i><span>Requests</span>
                     </button>
                 </div>
@@ -2120,7 +2120,7 @@
     </style>
 
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260726_LABEL_FIX"></script>
+    <script src="../js/admin.js?v=20260831_NAV_JS_FIX"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
