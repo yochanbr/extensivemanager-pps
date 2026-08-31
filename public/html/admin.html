@@ -782,22 +782,22 @@
                 </div>
             </header>
             
-            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
-                <div class="stat-card">
-                    <div class="card-header">
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; align-items: start; gap: 24px;">
+                <div class="live-status-section">
+                    <div class="section-header" style="justify-content: space-between; margin-bottom: 20px;">
                         <h3>Pending Leave Requests</h3>
-                        <button class="icon-btn" onclick="loadAdminRequests()"><i class="fas fa-sync"></i></button>
+                        <button class="icon-btn" onclick="loadAdminRequests()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fas fa-sync"></i></button>
                     </div>
-                    <div class="reports-list" id="admin-leave-requests-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+                    <div class="reports-list" id="admin-leave-requests-list" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="card-header">
+                <div class="live-status-section">
+                    <div class="section-header" style="margin-bottom: 20px;">
                         <h3>Pending Shift Swaps</h3>
                     </div>
-                    <div class="reports-list" id="admin-swap-requests-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px;">
+                    <div class="reports-list" id="admin-swap-requests-list" style="display: flex; flex-direction: column; gap: 12px;">
                         <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
