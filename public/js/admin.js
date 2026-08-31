@@ -101,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkForUpdates, 5 * 60 * 1000);
 
     // Settings / Update button click handler is now handled by switchSpaView
-    const payslipConfigForm = document.getElementById('payslip-config-form');
 
     // Function to show update details modal
     const showUpdateDetailsModal = () => {
@@ -636,18 +635,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('attendance-view'),
             document.getElementById('settings-view'),
             document.getElementById('master-reports-hub-v2'),
-            document.getElementById('bill-report-view'),
-            document.getElementById('view-payroll'),
-            document.getElementById('view-requests')
+            document.getElementById('bill-report-view')
         ];
 
         const masterBtn = document.querySelector('.master-report-btn');
-        const buttons = [
-            dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn,
-            attendanceBtn, settingsBtn, masterBtn,
-            document.querySelector('[data-target="view-payroll"]'),
-            document.querySelector('[data-target="view-requests"]')
-        ];
+        const buttons = [dashboardBtn, manageEmployeesBtn, viewReportBtn, viewEsrJpgsBtn, attendanceBtn, settingsBtn, masterBtn];
 
         views.forEach(v => { if (v) v.style.display = 'none'; });
         buttons.forEach(b => { if (b) b.classList.remove('active'); });
@@ -660,22 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (activeBtn) activeBtn.classList.add('active');
 
-        // Update Topbar Title and Subtitle
+        // Update Topbar Title
         const viewTitle = document.getElementById('view-title');
-        const viewSubtitle = document.getElementById('view-subtitle');
         if (viewTitle && activeBtn) {
             viewTitle.textContent = activeBtn.innerText.trim();
-            if (viewSubtitle) {
-                if (targetView && targetView.id === 'view-requests') {
-                    viewSubtitle.textContent = 'Manage employee leave requests and shift swaps';
-                    viewSubtitle.style.display = 'block';
-                } else if (targetView && targetView.id === 'view-payroll') {
-                    viewSubtitle.textContent = 'Manage employee salary and generate payslips';
-                    viewSubtitle.style.display = 'block';
-                } else {
-                    viewSubtitle.style.display = 'none';
-                }
-            }
         }
 
         // Refresh data based on view
@@ -691,29 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof refreshSystemStatus === 'function') refreshSystemStatus();
             if (typeof fetchSettings === 'function') fetchSettings();
         }
-        if (targetView && targetView.id === 'view-requests') {
-            window.loadAdminRequests();
-        }
-        if (targetView && targetView.id === 'view-payroll') {
-            if (typeof window.loadAdminPayroll === 'function') window.loadAdminPayroll();
-        }
     }
-
-    const viewReportsBtnEl = document.querySelector('.view-reports-btn');
-    const viewEsrJpgsBtnEl = document.querySelector('.view-esr-jpgs-btn');
-    const viewPayrollBtn = document.querySelector('[data-target="view-payroll"]');
-    const viewRequestsBtn = document.querySelector('[data-target="view-requests"]');
-
-    const payrollView = document.getElementById('view-payroll');
-    const requestsView = document.getElementById('view-requests');
 
     if (dashboardBtn) dashboardBtn.addEventListener('click', () => switchSpaView(dashboardView, dashboardBtn));
     if (manageEmployeesBtn) manageEmployeesBtn.addEventListener('click', () => switchSpaView(employeesView, manageEmployeesBtn));
-    if (viewReportsBtnEl) viewReportsBtnEl.addEventListener('click', () => switchSpaView(reportsView, viewReportsBtnEl));
-    if (viewEsrJpgsBtnEl) viewEsrJpgsBtnEl.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtnEl));
-    if (viewPayrollBtn) viewPayrollBtn.addEventListener('click', () => switchSpaView(payrollView, viewPayrollBtn));
-    if (viewRequestsBtn) viewRequestsBtn.addEventListener('click', () => switchSpaView(requestsView, viewRequestsBtn));
-    
+    if (viewReportBtn) viewReportBtn.addEventListener('click', () => switchSpaView(reportsView, viewReportBtn));
+    if (viewEsrJpgsBtn) viewEsrJpgsBtn.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtn));
     if (attendanceBtn) attendanceBtn.addEventListener('click', () => {
         switchSpaView(attendanceView, attendanceBtn);
         // Default to Sessions view (not Raw Logs) on every navigation
@@ -3382,264 +3345,240 @@ document.addEventListener('DOMContentLoaded', () => {
     // PAYSLIP SYSTEM LOGIC
     // ==========================================
 
-        // REQUESTS (LEAVES & SWAPS) LOGIC
-    // ==========================================
-    
-    window.adminRequestsCache = { leaves: { data: [] }, swaps: { data: [] }, filter: 'pending', search: '', sort: 'newest' };
+    window.openPayslipConfig = async function () {
+        const modal = document.getElementById('payslip-config-modal');
+        const select = document.getElementById('payslip-employee-select');
 
-    window.renderAdminRequests = function() {
-        const leavesList = document.getElementById('admin-leave-requests-list');
-        const swapsList = document.getElementById('admin-swap-requests-list');
-        if (!leavesList || !swapsList) return;
+        if (!modal || !select) return;
 
-        let leaves = window.adminRequestsCache.leaves.data || [];
-        let swaps = window.adminRequestsCache.swaps.data || [];
-        let { filter, search, sort } = window.adminRequestsCache;
+        // Reset and Load Employees
+        select.innerHTML = '<option value="">Loading employees...</option>';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
 
-        // Apply filter
-        if (filter !== 'all') {
-            leaves = leaves.filter(r => r.status === filter);
-            swaps = swaps.filter(r => r.status === filter);
+        try {
+            const res = await fetch('/api/employees');
+            const data = await res.json();
+
+            // Fix: Handle array response correctly
+            const employees = Array.isArray(data) ? data : (data.employees || []);
+
+            if (employees.length > 0) {
+                select.innerHTML = '<option value="">Choose Employee...</option>';
+                employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">No staff found</option>';
+            }
+        } catch (err) {
+            console.error('Error loading employees for payslip:', err);
+            select.innerHTML = '<option value="">Error loading staff</option>';
         }
 
-        // Apply search
-        if (search) {
-            const s = search.toLowerCase();
-            leaves = leaves.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
-            swaps = swaps.filter(r => (r.employeeName && r.employeeName.toLowerCase().includes(s)) || (r.coworkerName && r.coworkerName.toLowerCase().includes(s)) || (r.reason && r.reason.toLowerCase().includes(s)) || (r.requestId && r.requestId.toLowerCase().includes(s)));
+        // Always reset to step 1
+        window.backToPayslipStep1();
+
+        const now = new Date();
+        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('payslip-month-input').value = monthStr;
+    };
+
+    window.toPayslipStep2 = async function () {
+        const employeeId = document.getElementById('payslip-employee-select').value;
+        const month = document.getElementById('payslip-month-input').value;
+        if (!employeeId || !month) return nammaModalSystem.alert('Choose employee and month first.');
+
+        // AUTO-PREFILL FROM EMPLOYEE DATA AND RECONCILE REPORTS
+        try {
+            // 1. Employee Profile (Salary, Location, ESI)
+            const res = await fetch(`/api/employees/${employeeId}`);
+            const data = await res.json();
+            const emp = data.employee || data;
+
+            if (emp) {
+                if (emp.basicSalary) document.getElementById('payslip-basic-input').value = emp.basicSalary;
+                // DO NOT pre-fill ESI code into amount field
+                document.getElementById('payslip-esi-input').value = 0; 
+                if (emp.location) document.getElementById('payslip-location-input').value = emp.location || 'SULLIA, KARNATAKA';
+            }
+
+            // 2. Reconcile Billing and Attendance
+            const reconRes = await fetch(`/api/admin/payroll-reconcile?employeeId=${employeeId}&month=${month}`);
+            const reconData = await reconRes.json();
+            
+            if (reconData.success) {
+                document.getElementById('payslip-billing-diff-input').value = reconData.billingDifference || 0;
+                document.getElementById('payslip-worked-days-input').value = reconData.workedDays || 0;
+                document.getElementById('payslip-lop-days-input').value = reconData.lopDays || 0;
+                document.getElementById('payslip-lop-input').value = Math.round(reconData.lopAmount || 0);
+            }
+
+            // --- AUTO-GENERATE MODAL ---
+            // Instead of showing Step 2, we trigger the submit handler directly!
+            const form = document.getElementById('payslip-config-form');
+            if (form) {
+                // We dispatch a submit event or just call the logic
+                // For safety and clean flow, let's just trigger the form submit
+                const submitEvent = new Event('submit', { cancelable: true, bubbles: true });
+                form.dispatchEvent(submitEvent);
+            }
+
+        } catch (err) {
+            console.warn('Failed to auto-generate payslip:', err);
+            // Fallback to step 2 if something goes wrong so they can manually fix
+            document.getElementById('payslip-step-1').style.display = 'none';
+            document.getElementById('payslip-step-2').style.display = 'block';
         }
+    };
 
-        // Sort is already handled by server for createdAt, but we sort client-side just in case
-        leaves.sort((a,b) => {
-            const timeA = new Date(a.createdAt || a.date).getTime();
-            const timeB = new Date(b.createdAt || b.date).getTime();
-            return sort === 'newest' ? timeB - timeA : timeA - timeB;
-        });
-        swaps.sort((a,b) => {
-            const timeA = new Date(a.createdAt || a.date).getTime();
-            const timeB = new Date(b.createdAt || b.date).getTime();
-            return sort === 'newest' ? timeB - timeA : timeA - timeB;
-        });
+    window.backToPayslipStep1 = function () {
+        document.getElementById('payslip-step-1').style.display = 'block';
+        document.getElementById('payslip-step-2').style.display = 'none';
+    };
 
-        const pendingLeaves = window.adminRequestsCache.leaves.data.filter(r=>r.status==='pending').length;
-        const pendingSwaps = window.adminRequestsCache.swaps.data.filter(r=>r.status==='pending').length;
-        const totalReqs = window.adminRequestsCache.leaves.data.length + window.adminRequestsCache.swaps.data.length;
-        const approvedCount = window.adminRequestsCache.leaves.data.filter(r=>r.status==='approved').length + window.adminRequestsCache.swaps.data.filter(r=>r.status==='approved').length;
+    window.closePayslipConfig = function () {
+        const modal = document.getElementById('payslip-config-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    };
+
+    window.closePayslipPreview = function () {
+        const modal = document.getElementById('payslip-preview-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    };
+
+    window.downloadPayslip = function () {
+        const element = document.getElementById('payslip-rendering-area');
+        if (!element) return;
         
-        const sLeaves = document.getElementById('stat-pending-leaves');
-        const sSwaps = document.getElementById('stat-pending-swaps');
-        const sTotal = document.getElementById('stat-total-reqs');
-        const sApproved = document.getElementById('stat-approved');
-        const badgeLeaves = document.getElementById('badge-pending-leaves');
-        const badgeSwaps = document.getElementById('badge-pending-swaps');
+        // Try to get employee name and month for filename
+        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
+        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
+        const cleanName = empName.trim().replace(/\s+/g, '_');
         
-        if (sLeaves) sLeaves.textContent = pendingLeaves;
-        if (sSwaps) sSwaps.textContent = pendingSwaps;
-        if (sTotal) sTotal.textContent = totalReqs;
-        if (sApproved) sApproved.textContent = approvedCount;
-
-        if (badgeLeaves) {
-            badgeLeaves.textContent = pendingLeaves;
-            badgeLeaves.style.display = pendingLeaves > 0 ? 'flex' : 'none';
-        }
-        if (badgeSwaps) {
-            badgeSwaps.textContent = pendingSwaps;
-            badgeSwaps.style.display = pendingSwaps > 0 ? 'flex' : 'none';
-        }
-
-        leavesList.innerHTML = '';
-        swapsList.innerHTML = '';
-
-        const generateCard = (r, isSwap) => {
-            const dateStr = isSwap ? r.date : (r.startDate && r.endDate ? `${r.startDate} → ${r.endDate} (${r.days} day${r.days !== 1 ? 's' : ''})` : (r.date || 'N/A'));
-            const idStr = r.requestId || 'Legacy';
-            const typeLabel = isSwap ? 'Shift Swap' : `${r.type ? r.type.charAt(0).toUpperCase() + r.type.slice(1) : ''} Leave`;
-            const avatarLetter = r.employeeName ? r.employeeName.charAt(0).toUpperCase() : '?';
-            return `
-                <div class="rq-card" onclick='window.openRequestDrawer(${JSON.stringify(r).replace(/'/g, "&#39;")}, ${isSwap})'>
-                    <div class="rq-card-top">
-                        <div class="rq-card-user">
-                            <div class="rq-card-avatar">${avatarLetter}</div>
-                            <div>
-                                <p class="rq-card-name">${escapeHtml(r.employeeName)}</p>
-                                <p class="rq-card-id">${idStr}</p>
-                            </div>
-                        </div>
-                        <span class="rq-status-pill rq-status-${r.status}">${r.status}</span>
-                    </div>
-                    <div class="rq-card-meta">
-                        <div class="rq-card-meta-row"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
-                        <div class="rq-card-meta-row"><i class="fas ${isSwap ? 'fa-exchange-alt' : 'fa-briefcase'}"></i> ${typeLabel}${isSwap ? ` · with ${escapeHtml(r.coworkerName || 'Unknown')}` : ''}</div>
-                        ${r.reason ? `<div class="rq-card-meta-row" style="color:#94A3B8; font-style:italic;"><i class="fas fa-comment-alt"></i> ${escapeHtml(r.reason).substring(0, 50)}${r.reason.length > 50 ? '…' : ''}</div>` : ''}
-                    </div>
-                </div>
-            `;
+        const opt = {
+            margin: 0,
+            filename: `Payslip_${cleanName}_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
 
-        if (leaves.length === 0) {
-            leavesList.innerHTML = `<div class="rq-empty-state"><div class="rq-empty-icon"><i class="fas fa-calendar-check"></i></div><h4>All caught up!</h4><p>No leave requests match your current filter.</p></div>`;
-        } else {
-            leavesList.innerHTML = leaves.map(r => generateCard(r, false)).join('');
-        }
+        html2pdf().set(opt).from(element).save();
+    };
 
-        if (swaps.length === 0) {
-            swapsList.innerHTML = `<div class="rq-empty-state"><div class="rq-empty-icon"><i class="fas fa-people-arrows"></i></div><h4>All caught up!</h4><p>No shift swaps match your current filter.</p></div>`;
-        } else {
-            swapsList.innerHTML = swaps.map(r => generateCard(r, true)).join('');
+    window.publishPayslipToApp = async function() {
+        // Scrape the DOM of the preview area to get the data
+        const element = document.getElementById('payslip-rendering-area');
+        if (!element) return;
+        
+        const empName = element.querySelector('.payslip-value[style*="font-weight: bold"]')?.innerText || 'Employee';
+        const monthHeader = element.querySelector('div[style*="font-weight: bold"]')?.innerText || 'Month';
+        
+        // Find net pay from the element
+        const netPayEl = Array.from(element.querySelectorAll('td')).find(td => td.innerText.includes('Net Pay'));
+        const netPay = netPayEl ? netPayEl.nextElementSibling.innerText.replace(/[^0-9]/g, '') : 0;
+        
+        // Also get the raw inputs from the configuration form to save accurate structured data
+        const employeeId = document.getElementById('payslip-employee-select').value;
+        const month = document.getElementById('payslip-month-input').value; // YYYY-MM
+        const basic = document.getElementById('payslip-basic-input').value;
+        const lop = document.getElementById('payslip-lop-input').value;
+
+        try {
+            const res = await fetch('/api/admin/payslips/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                body: JSON.stringify({
+                    employeeId,
+                    month,
+                    basicSalary: basic,
+                    lopAmount: lop,
+                    netPay: netPay,
+                    publishedDate: new Date().toISOString()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                nammaModalSystem.alert(`Successfully sent the ${month} payslip to ${empName}'s app!`);
+            } else {
+                nammaModalSystem.alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            console.error(err);
+            nammaModalSystem.alert('Network error publishing payslip.');
         }
     };
 
-    window.openRequestDrawer = function(req, isSwap) {
-        const drawer = document.getElementById('request-detail-drawer');
-        if (!drawer) return;
-
-        // Store current request on drawer for reference
-        drawer._currentReq = req;
-        drawer._isSwap = isSwap;
-
-        document.getElementById('drawer-req-id').textContent = req.requestId || 'Legacy Request';
-        const statusEl = document.getElementById('drawer-req-status');
-        statusEl.textContent = req.status.charAt(0).toUpperCase() + req.status.slice(1);
-        statusEl.className = 'drawer-badge drawer-badge-' + req.status;
-
-        document.getElementById('drawer-emp-avatar').textContent = req.employeeName ? req.employeeName.charAt(0).toUpperCase() : '?';
-        document.getElementById('drawer-emp-name').textContent = req.employeeName || 'Unknown';
-
-        const typeStr = isSwap ? 'Shift Swap' : `${req.type ? req.type.charAt(0).toUpperCase() + req.type.slice(1) : ''} Leave`;
-        const dateStr = isSwap ? req.date : (req.startDate && req.endDate ? `${req.startDate} → ${req.endDate} (${req.days} day${req.days !== 1 ? 's' : ''})` : (req.date || 'N/A'));
-
-        let detailsHtml = `
-            <div class="drawer-detail-item">
-                <div class="drawer-detail-label">Type</div>
-                <div class="drawer-detail-value">${typeStr}</div>
-            </div>
-            <div class="drawer-detail-item">
-                <div class="drawer-detail-label">Date</div>
-                <div class="drawer-detail-value">${dateStr}</div>
-            </div>
-            <div class="drawer-detail-item">
-                <div class="drawer-detail-label">Employee</div>
-                <div class="drawer-detail-value">${req.employeeName || 'Unknown'}</div>
-            </div>
-            <div class="drawer-detail-item">
-                <div class="drawer-detail-label">Status</div>
-                <div class="drawer-detail-value" style="text-transform:capitalize;">${req.status}</div>
-            </div>
-        `;
-
-        if (isSwap) {
-            detailsHtml += `
-                <div class="drawer-detail-item">
-                    <div class="drawer-detail-label">Swap With</div>
-                    <div class="drawer-detail-value">${req.coworkerName || 'Unknown'}</div>
-                </div>
-            `;
-        }
-
-        if (req.decision && req.decision.by) {
-            detailsHtml += `
-                <div class="drawer-detail-item">
-                    <div class="drawer-detail-label">Decided By</div>
-                    <div class="drawer-detail-value">${req.decision.by}</div>
-                </div>
-            `;
-        }
-
-        document.getElementById('drawer-details-grid').innerHTML = detailsHtml;
-        document.getElementById('drawer-req-reason').textContent = req.reason || 'No reason provided.';
-
-        const reqType = isSwap ? 'shift_swap' : 'leave';
-        const endpointType = isSwap ? 'swap' : 'leave';
-        const actionArea = document.getElementById('drawer-action-area');
-        actionArea.style.display = 'flex';
-        actionArea.style.flexDirection = 'column';
-        actionArea.style.gap = '10px';
-
-        let actionsHtml = '';
-
-        // Row 1: Approve / Reject — show the opposite(s) of current status
-        let decisionBtns = '';
-        if (req.status !== 'approved') {
-            decisionBtns += `<button class="drawer-btn btn-approve" onclick="window.updateRequestStatus('${endpointType}', '${req.id}', 'approved')">
-                <i class="fas fa-check"></i> ${req.status === 'rejected' ? 'Override: Approve' : 'Approve'}
-            </button>`;
-        }
-        if (req.status !== 'rejected') {
-            decisionBtns += `<button class="drawer-btn btn-reject" onclick="window.updateRequestStatus('${endpointType}', '${req.id}', 'rejected')">
-                <i class="fas fa-times"></i> ${req.status === 'approved' ? 'Override: Reject' : 'Reject'}
-            </button>`;
-        }
-        if (decisionBtns) {
-            actionsHtml += `<div style="display:flex; gap:10px; flex:1;">${decisionBtns}</div>`;
-        }
-
-        // Row 2: Delete button (always available)
-        actionsHtml += `<button class="drawer-btn btn-delete" onclick="window.deleteRequest('${endpointType}', '${req.id}')">
-            <i class="fas fa-trash-alt"></i> Delete Request
-        </button>`;
-
-        actionArea.innerHTML = actionsHtml;
-        drawer.classList.add('active');
-    };
-
-
-    window.closeRequestDrawer = function() {
-        const drawer = document.getElementById('request-detail-drawer');
-        if (drawer) drawer.classList.remove('active');
-    };
-
-    // Attach Filter Event Listeners
-    document.querySelectorAll('.req-filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const target = e.target.closest('.req-filter-btn');
-            document.querySelectorAll('.req-filter-btn').forEach(p => p.classList.remove('active'));
-            target.classList.add('active');
-            window.adminRequestsCache.filter = target.dataset.filter || target.textContent.trim().toLowerCase();
-            window.renderAdminRequests();
-        });
-    });
-
-    const reqSearch = document.getElementById('req-search');
-    if (reqSearch) {
-        reqSearch.addEventListener('input', (e) => {
-            window.adminRequestsCache.search = e.target.value;
-            window.renderAdminRequests();
-        });
-    }
-
-    const reqSort = document.getElementById('req-sort');
-    if (reqSort) {
-        reqSort.addEventListener('change', (e) => {
-            window.adminRequestsCache.sort = e.target.value;
-            window.renderAdminRequests();
-        });
-    }
-
+    // ==========================================
+    // REQUESTS (LEAVES & SWAPS) LOGIC
+    // ==========================================
     window.loadAdminRequests = async function() {
         const leavesList = document.getElementById('admin-leave-requests-list');
         const swapsList = document.getElementById('admin-swap-requests-list');
         
         if (!leavesList || !swapsList) return;
         
-        leavesList.innerHTML = `
-            <div class="req-empty">
-                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
-                <h4 class="req-empty-title">Loading...</h4>
-            </div>`;
-        swapsList.innerHTML = `
-            <div class="req-empty">
-                <div class="req-empty-icon" style="animation: pulse 1.5s infinite;"><i class="fas fa-circle-notch fa-spin"></i></div>
-                <h4 class="req-empty-title">Loading...</h4>
-            </div>`;
+        leavesList.innerHTML = '<div class="empty-state">Loading...</div>';
+        swapsList.innerHTML = '<div class="empty-state">Loading...</div>';
 
         try {
-            const res = await fetch('/api/admin/requests');
+            const res = await fetch('/api/admin/requests', {
+                headers: { 'Authorization': `Bearer ${getCookie('accessToken')}` }
+            });
             const data = await res.json();
             
             if (data.success) {
-                window.adminRequestsCache.leaves = data.leaves;
-                window.adminRequestsCache.swaps = data.swaps;
-                window.renderAdminRequests();
+                // Render Leaves
+                if (data.leaves.length === 0) {
+                    leavesList.innerHTML = '<div class="empty-state">No pending leave requests.</div>';
+                } else {
+                    leavesList.innerHTML = data.leaves.map(req => `
+                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <h4 style="margin:0;">${req.employeeName}</h4>
+                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date} (${req.type})</p>
+                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('leave', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Swaps
+                if (data.swaps.length === 0) {
+                    swapsList.innerHTML = '<div class="empty-state">No pending shift swaps.</div>';
+                } else {
+                    swapsList.innerHTML = data.swaps.map(req => `
+                        <div class="report-item" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <h4 style="margin:0;">${req.employeeName} requests to swap with ${req.coworkerName}</h4>
+                                    <p style="margin:0; font-size:12px; color:var(--text-muted);">${req.date}</p>
+                                    <p style="margin:2px 0 0 0; font-size:13px;">Reason: ${req.reason || 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'approved')" style="flex:1; background: var(--success); padding: 5px;">Approve</button>
+                                <button class="primary-btn" onclick="updateRequestStatus('swap', '${req.id}', 'rejected')" style="flex:1; background: var(--danger); padding: 5px;">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
             } else {
                 nammaModalSystem.alert('Failed to load requests');
             }
@@ -3649,75 +3588,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // =====================================
-    // PAYROLL HISTORY DASHBOARD
-    // =====================================
     window.updateRequestStatus = async function(type, id, status) {
-        let reason = '';
-        const drawer = document.getElementById('request-detail-drawer');
-        const req = drawer && drawer._currentReq;
-        const isOverride = req && req.status !== 'pending';
-
-        if (status === 'rejected') {
-            reason = await nammaModalSystem.prompt(isOverride
-                ? `Override: Enter rejection reason for this ${req.status} request:`
-                : 'Please enter a rejection reason (required):');
-            if (!reason) {
-                await nammaModalSystem.alert('Rejection reason is required.');
-                return;
-            }
-        } else {
-            const confirmMsg = isOverride
-                ? `Override decision? This request was previously ${req ? req.status : ''}. Approve anyway?`
-                : 'Are you sure you want to approve this request?';
-            if (!await nammaModalSystem.confirm(confirmMsg)) return;
-        }
-
-        window.closeRequestDrawer();
-
+        if (!await nammaModalSystem.confirm(`Are you sure you want to ${status} this request?`)) return;
+        
         try {
             const res = await fetch(`/api/admin/requests/${type}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status, reason })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getCookie('accessToken')}` },
+                body: JSON.stringify({ status })
             });
             const data = await res.json();
             if (data.success) {
-                window.loadAdminRequests();
+                loadAdminRequests(); // refresh
             } else {
-                await nammaModalSystem.alert(data.message || 'Failed to update request');
+                nammaModalSystem.alert('Failed to update request');
             }
         } catch (err) {
-            await nammaModalSystem.alert('Network error');
+            console.error(err);
+            nammaModalSystem.alert('Network error');
         }
     };
 
-    window.deleteRequest = async function(type, id) {
-        const confirmed = await nammaModalSystem.confirm(
-            'Delete this request permanently? Leave balances will be corrected automatically.',
-            { theme: 'danger' }
-        );
-        if (!confirmed) return;
-
-        window.closeRequestDrawer();
-
-        try {
-            const res = await fetch(`/api/admin/requests/${type}/${id}`, {
-                method: 'DELETE'
-            });
-            const data = await res.json();
-            if (data.success) {
-                window.loadAdminRequests();
-            } else {
-                await nammaModalSystem.alert(data.message || 'Failed to delete request');
+    // Ensure requests load when tab is clicked
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (btn.getAttribute('data-target') === 'view-requests') {
+                loadAdminRequests();
             }
-        } catch (err) {
-            await nammaModalSystem.alert('Network error during deletion');
-        }
-    };
+        });
+    });
 
-
-
+    const payslipConfigForm = document.getElementById('payslip-config-form');
     if (payslipConfigForm) {
         payslipConfigForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -4983,557 +4884,3 @@ window.deleteShiftReport = async function(reportId, event) {
     }
 };
 
-
-
-
-// ==================== PAYROLL SPA LOGIC ====================
-
-window.payrollState = {
-    currentMonth: new Date().toISOString().substring(0, 7), // YYYY-MM
-    payslips: [],
-    employees: [],
-    search: '',
-    filter: 'all',
-    wizardData: {}
-};
-
-// Formatting utility
-window.formatINR = function(value) {
-    if (value === undefined || value === null || isNaN(value) || value === '') return '₹0';
-    return new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 0
-    }).format(Number(value));
-};
-
-// Normalize legacy data vs new data
-window.normalizePayslip = function(raw) {
-    const isNewFormat = !!raw.earnings;
-    const basic = isNewFormat ? raw.earnings.basic : (raw.basicSalary || raw.basic || 0);
-    const allowances = isNewFormat ? (Number(raw.earnings.allowances?.hra||0) + Number(raw.earnings.allowances?.overtime||0) + Number(raw.earnings.allowances?.other||0)) : 0;
-    const lop = isNewFormat ? (raw.deductions?.lop || 0) : (raw.lopAmount || 0);
-    const deductions = isNewFormat ? (raw.deductions?.total || 0) : lop; // legacy only had LOP
-    const net = raw.netPay || 0;
-    const gross = isNewFormat ? (raw.earnings?.gross || 0) : (Number(basic) + Number(allowances));
-    
-    return {
-        ...raw,
-        _normalized: {
-            basic: Number(basic),
-            allowances: Number(allowances),
-            deductions: Number(deductions),
-            lop: Number(lop),
-            net: Number(net),
-            gross: Number(gross),
-            esi: isNewFormat ? (raw.deductions?.esi || 0) : null
-        }
-    };
-};
-
-window.changePayrollMonth = function(delta) {
-    const current = new Date(window.payrollState.currentMonth + '-01');
-    current.setMonth(current.getMonth() + delta);
-    const newMonth = current.toISOString().substring(0, 7);
-    window.setPayrollMonth(newMonth);
-};
-
-window.setPayrollMonth = function(monthStr) {
-    if (!monthStr) return;
-    window.payrollState.currentMonth = monthStr;
-    const dateObj = new Date(monthStr + '-01');
-    const monthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    document.getElementById('payroll-current-month-display').textContent = monthName;
-    document.getElementById('payroll-month-selector').value = monthStr;
-    
-    // Also update the wizard default
-    document.getElementById('payslip-month-input').value = monthStr;
-    
-    window.renderAdminPayroll();
-};
-
-window.loadAdminPayroll = async function() {
-    console.log("Loading premium payroll UI");
-    const listEl = document.getElementById('admin-payslip-history-list');
-    listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#94A3B8;"></i></td></tr>';
-    
-    try {
-        // Fetch payslips
-        const res = await fetch('/api/admin/payslips');
-        const data = await res.json();
-        const allPayslips = data.payslips || [];
-        
-        // Fetch active employees
-        const empRes = await fetch('/api/employees');
-        const empData = await empRes.json();
-        
-        window.payrollState.payslips = allPayslips.map(window.normalizePayslip);
-        window.payrollState.employees = Array.isArray(empData) ? empData : (empData.employees || []);
-        
-        // Set initial month display
-        window.setPayrollMonth(window.payrollState.currentMonth);
-        
-        // Populate wizard employee dropdown
-        const empSelect = document.getElementById('payslip-employee-select');
-        empSelect.innerHTML = '<option value="">Select Employee...</option>' + 
-            window.payrollState.employees.map(e => `<option value="${e.id}">${e.name} (${e.employeeId || 'ID Pending'})</option>`).join('');
-            
-    } catch (err) {
-        console.error(err);
-        listEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 48px; color: #DC2626;">Unable to load payroll. Something went wrong. <button onclick="window.loadAdminPayroll()" style="margin-top:10px; display:block; margin-left:auto; margin-right:auto;">Retry</button></td></tr>';
-    }
-};
-
-window.filterAdminPayroll = function() {
-    window.payrollState.search = document.getElementById('payroll-search-input').value.toLowerCase();
-    window.payrollState.filter = document.getElementById('payroll-status-filter').value;
-    window.renderAdminPayroll();
-};
-
-window.renderAdminPayroll = function() {
-    const listEl = document.getElementById('admin-payslip-history-list');
-    const { payslips, employees, currentMonth, search, filter } = window.payrollState;
-    
-    const monthSlips = payslips.filter(p => p.month === currentMonth);
-    let totalNet = 0;
-    monthSlips.forEach(p => { totalNet += p._normalized.net; });
-    
-    const activeEmployeesCount = employees.length;
-    const paidEmployeeIds = new Set(monthSlips.map(p => p.employeeId));
-    const paidCount = paidEmployeeIds.size;
-    const pendingCount = Math.max(0, activeEmployeesCount - paidCount);
-    
-    const avgNet = paidCount > 0 ? (totalNet / paidCount) : 0;
-    
-    document.getElementById('payroll-stat-total').textContent = window.formatINR(totalNet);
-    document.getElementById('payroll-stat-paid').textContent = `${paidCount} / ${activeEmployeesCount}`;
-    document.getElementById('payroll-stat-paid-sub').textContent = `${activeEmployeesCount > 0 ? Math.round((paidCount/activeEmployeesCount)*100) : 0}% processed`;
-    document.getElementById('payroll-stat-slips').textContent = monthSlips.length;
-    document.getElementById('payroll-stat-avg').textContent = window.formatINR(avgNet);
-    document.getElementById('payroll-stat-pending').textContent = pendingCount;
-    
-    const statusEl = document.getElementById('payroll-stat-status');
-    const statusDot = document.getElementById('payroll-status-dot');
-    const statusIcon = document.getElementById('payroll-status-icon');
-    const statusIconBg = document.getElementById('payroll-status-icon-bg');
-    const statusSub = document.getElementById('payroll-status-sub');
-    
-    if (activeEmployeesCount === 0) {
-        statusEl.textContent = "No Staff";
-        statusDot.style.color = "#94A3B8"; statusIconBg.style.background = "#F1F5F9"; statusIconBg.style.color = "#64748B";
-        statusSub.textContent = "-";
-    } else if (paidCount === 0) {
-        statusEl.textContent = "Draft";
-        statusDot.style.color = "#94A3B8"; statusIconBg.style.background = "#F1F5F9"; statusIconBg.style.color = "#64748B";
-        statusSub.textContent = "Not started";
-    } else if (pendingCount === 0) {
-        statusEl.textContent = "Ready";
-        statusDot.style.color = "#059669"; statusIconBg.style.background = "#ECFDF5"; statusIconBg.style.color = "#059669";
-        statusSub.textContent = "All good to go";
-    } else {
-        statusEl.textContent = "Processing";
-        statusDot.style.color = "#D97706"; statusIconBg.style.background = "#FFFBEB"; statusIconBg.style.color = "#D97706";
-        statusSub.textContent = "In progress";
-    }
-    
-    let renderList = monthSlips.filter(p => {
-        const matchesSearch = p.employeeName.toLowerCase().includes(search) || (p.employeeId && p.employeeId.toLowerCase().includes(search));
-        const matchesFilter = filter === 'all' || p.status === filter || (filter === 'published' && !p.status);
-        return matchesSearch && matchesFilter;
-    });
-    
-    renderList.sort((a, b) => {
-        if (window.payrollState.sortBy === 'name_asc') {
-            return (a.employeeName || '').localeCompare(b.employeeName || '');
-        } else if (window.payrollState.sortBy === 'net_desc') {
-            return (b._normalized.net || 0) - (a._normalized.net || 0);
-        } else if (window.payrollState.sortBy === 'net_asc') {
-            return (a._normalized.net || 0) - (b._normalized.net || 0);
-        }
-        return 0;
-    });
-    
-    document.getElementById('payroll-pagination-text').textContent = `Showing ${renderList.length > 0 ? 1 : 0} to ${renderList.length} of ${renderList.length} employees`;
-    
-    if (renderList.length === 0) {
-        listEl.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 64px;"><i class="fas fa-file-invoice-dollar fa-3x" style="color:#CBD5E1; margin-bottom:16px;"></i><h4 style="margin:0 0 8px 0; color:#0F172A;">No payslips found</h4></td></tr>';
-        return;
-    }
-    
-    listEl.innerHTML = renderList.map(p => {
-        const initial = (p.employeeName || 'U').substring(0,2).toUpperCase();
-        return `
-        <tr style="cursor: pointer;" onclick="window.openPayslipDrawer('${p.id}')">
-            <td>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing:0.5px;">
-                        ${initial}
-                    </div>
-                    <div style="font-weight: 600; color: #0F172A;">${p.employeeName}</div>
-                </div>
-            </td>
-            <td style="font-weight: 500; font-family: monospace;">${p.employeeId}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.basic)}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.allowances)}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.deductions)}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.lop)}</td>
-            <td style="text-align: right; font-weight: 700; color: #059669; font-variant-numeric: tabular-nums;">${window.formatINR(p._normalized.net)}</td>
-            <td><span class="pm-badge pm-badge-success">Published</span></td>
-            <td style="text-align: center;">
-                <div style="position: relative; display: inline-block;" onclick="event.stopPropagation()">
-                    <button onclick="window.togglePayslipMenu('${p.id}')" style="background:transparent; border:none; color:#94A3B8; cursor:pointer; padding:4px 8px; font-size: 18px; line-height: 1;">&vellip;</button>
-                    <div id="payslip-menu-${p.id}" style="display:none; position:absolute; right:100%; top:0; background:white; border:1px solid #E2E8F0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:10; width: 140px; text-align: left; overflow:hidden;">
-                        <div onclick="window.openPayslipDrawer('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">View Details</div>
-                        <div onclick="window.deletePayslip('${p.id}')" style="padding: 10px 16px; font-size: 13px; color: #DC2626; cursor: pointer; transition: background 0.1s; border-top: 1px solid #F1F5F9;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">Delete</div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        `;
-    }).join('');
-};
-
-window.togglePayslipMenu = function(id) {
-    const el = document.getElementById('payslip-menu-' + id);
-    const isVisible = el.style.display === 'block';
-    
-    document.querySelectorAll('[id^="payslip-menu-"]').forEach(menu => menu.style.display = 'none');
-    
-    if (!isVisible) {
-        if(el) el.style.display = 'block';
-    }
-    
-    setTimeout(() => {
-        const closeMenu = (e) => {
-            if (el) el.style.display = 'none';
-            document.removeEventListener('click', closeMenu);
-        };
-        document.addEventListener('click', closeMenu);
-    }, 0);
-};
-
-window.openPayslipDrawer = function(id) {
-    const payslip = window.payrollState.payslips.find(p => p.id === id);
-    if (!payslip) return;
-    
-    const initial = (payslip.employeeName || 'U').substring(0,2).toUpperCase();
-    const content = document.getElementById('payslip-drawer-content');
-    const footer = document.getElementById('payslip-drawer-footer');
-    
-    content.innerHTML = `
-        <!-- Header Profile -->
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; letter-spacing:0.5px;">
-                ${initial}
-            </div>
-            <div>
-                <div style="font-size: 18px; font-weight: 700; color: #0F172A;">${payslip.employeeName}</div>
-                <div style="font-size: 14px; color: #64748B;">${payslip.employeeId}</div>
-            </div>
-        </div>
-        
-        <!-- Period & Status -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #0F172A;">
-                <i class="far fa-calendar-alt" style="color: #64748B;"></i>
-                ${new Date(payslip.month+'-01').toLocaleDateString('en-US', {month:'long', year:'numeric'})}
-            </div>
-            <span class="pm-badge pm-badge-success">Published</span>
-        </div>
-        
-        <!-- Metadata -->
-        <div style="display: flex; background: #F8FAFC; border-radius: 8px; padding: 16px;">
-            <div style="flex: 1;">
-                <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">Published On</div>
-                <div style="font-size: 12px; font-weight: 600; color: #0F172A;">${new Date(payslip.publishedAt || payslip.createdAt || Date.now()).toLocaleString('en-US', {day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'})}</div>
-            </div>
-            <div style="flex: 1;">
-                <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">Published By</div>
-                <div style="font-size: 12px; font-weight: 600; color: #0F172A;">${payslip.publishedBy || 'Admin User'}</div>
-            </div>
-        </div>
-        
-        <!-- Earnings -->
-        <div>
-            <div style="font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.05em; margin-bottom: 16px;">EARNINGS</div>
-            <div class="pm-detail-row"><span class="pm-detail-label">Basic Pay</span><span class="pm-detail-value">${window.formatINR(payslip._normalized.basic)}</span></div>
-            <div class="pm-detail-row"><span class="pm-detail-label">HRA</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.hra || 0)}</span></div>
-            <div class="pm-detail-row"><span class="pm-detail-label">Overtime</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.overtime || 0)}</span></div>
-            <div class="pm-detail-row"><span class="pm-detail-label">Other Allowances</span><span class="pm-detail-value">${window.formatINR(payslip.earnings?.allowances?.other || (!payslip.earnings ? payslip._normalized.allowances : 0))}</span></div>
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-weight: 700;">
-                <span>Gross Pay</span>
-                <span>${window.formatINR(payslip._normalized.gross)}</span>
-            </div>
-        </div>
-        
-        <!-- Deductions -->
-        <div>
-            <div style="font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.05em; margin-bottom: 16px;">DEDUCTIONS</div>
-            <div class="pm-detail-row"><span class="pm-detail-label">LOP</span><span class="pm-detail-value">${window.formatINR(payslip._normalized.lop)}</span></div>
-            <div class="pm-detail-row"><span class="pm-detail-label">ESI</span><span class="pm-detail-value">${payslip._normalized.esi !== null ? window.formatINR(payslip._normalized.esi) : window.formatINR(0)}</span></div>
-            <div class="pm-detail-row"><span class="pm-detail-label">Other Deductions</span><span class="pm-detail-value">${window.formatINR(payslip.deductions?.other || 0)}</span></div>
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-weight: 700;">
-                <span>Total Deductions</span>
-                <span>${window.formatINR(payslip._normalized.deductions)}</span>
-            </div>
-        </div>
-        
-        <!-- Net Pay Big Box -->
-        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
-            <div style="font-size: 11px; font-weight: 700; color: #059669; letter-spacing: 0.05em;">NET PAY</div>
-            <div style="font-size: 24px; font-weight: 800; color: #059669;">${window.formatINR(payslip._normalized.net)}</div>
-        </div>
-    `;
-    
-    footer.innerHTML = `
-        <button class="pm-btn pm-btn-outline" style="flex:1; justify-content:center;" onclick="window.downloadPayslipPDF('${payslip.id}')"><i class="fas fa-download"></i> Download PDF</button>
-        <button class="pm-btn pm-btn-danger-outline" style="flex:1; justify-content:center;" onclick="window.deletePayslip('${payslip.id}')"><i class="fas fa-trash"></i> Delete Payslip</button>
-    `;
-    
-    document.getElementById('payslip-drawer-overlay').style.display = 'block';
-    setTimeout(() => { document.getElementById('payslip-detail-drawer').style.right = '0'; }, 10);
-};
-
-window.closePayslipDrawer = function() {
-    document.getElementById('payslip-detail-drawer').style.right = '-500px';
-    setTimeout(() => { document.getElementById('payslip-drawer-overlay').style.display = 'none'; }, 300);
-};
-
-
-window.wizardGoToStep = function(step) {
-    document.getElementById('payslip-step-1-ui').style.display = 'none';
-    document.getElementById('payslip-step-2-ui').style.display = 'none';
-    document.getElementById('payslip-step-3-ui').style.display = 'none';
-    document.getElementById('payslip-step-4-ui').style.display = 'none';
-    
-    document.getElementById('pw-step-1').style.color = '#64748B';
-    document.getElementById('pw-step-2').style.color = '#64748B';
-    document.getElementById('pw-step-3').style.color = '#64748B';
-    document.getElementById('pw-step-4').style.color = '#64748B';
-    
-    document.getElementById('payslip-step-' + step + '-ui').style.display = 'block';
-    document.getElementById('pw-step-' + step).style.color = '#2563EB';
-    
-    if (step === 4) {
-        window.wizardCalculateNet();
-    }
-};
-
-window.wizardAutofill = function() {
-    const empId = document.getElementById('payslip-employee-select').value;
-    const emp = window.payrollState.employees.find(e => e.id === empId);
-    if (emp) {
-        // Just fill basic if available
-        let basic = emp.basicSalary || emp['basic-salary'] || emp.basic || 0;
-        if (basic) {
-            document.getElementById('payslip-basic-input').value = basic;
-        }
-        document.getElementById('payslip-allowance-input').value = 0;
-        document.getElementById('payslip-ot-input').value = 0;
-        document.getElementById('payslip-other-earn-input').value = 0;
-        document.getElementById('payslip-lop-input').value = 0;
-        document.getElementById('payslip-esi-input').value = 0;
-        document.getElementById('payslip-other-deduct-input').value = 0;
-        
-        window.wizardCalculateNet();
-    }
-};
-
-window.wizardCalculateNet = function() {
-    const basic = Number(document.getElementById('payslip-basic-input').value) || 0;
-    const allow = Number(document.getElementById('payslip-allowance-input').value) || 0;
-    const ot = Number(document.getElementById('payslip-ot-input').value) || 0;
-    const otherEarn = Number(document.getElementById('payslip-other-earn-input').value) || 0;
-    
-    const lop = Number(document.getElementById('payslip-lop-input').value) || 0;
-    const esi = Number(document.getElementById('payslip-esi-input').value) || 0;
-    const otherDed = Number(document.getElementById('payslip-other-deduct-input').value) || 0;
-    
-    const gross = basic + allow + ot + otherEarn;
-    const deduct = lop + esi + otherDed;
-    const net = gross - deduct;
-    
-    const empId = document.getElementById('payslip-employee-select').value;
-    const emp = window.payrollState.employees.find(e => e.id === empId) || { name: 'Employee', employeeId: '' };
-    const month = document.getElementById('payslip-month-input').value;
-    
-    document.getElementById('payslip-review-content').innerHTML = `
-        <div style="font-weight: 700; margin-bottom: 4px;">${emp.name}</div>
-        <div style="margin-bottom: 16px; color: #64748B;">ID: ${emp.employeeId} | ${month}</div>
-        
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Basic</span><span>${window.formatINR(basic)}</span></div>
-        ${allow ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Allowances</span><span>${window.formatINR(allow)}</span></div>` : ''}
-        ${ot ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Overtime</span><span>${window.formatINR(ot)}</span></div>` : ''}
-        ${otherEarn ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Other Earnings</span><span>${window.formatINR(otherEarn)}</span></div>` : ''}
-        <div style="display: flex; justify-content: space-between; margin-top: 8px; border-top: 1px dashed #CBD5E1; padding-top: 8px; font-weight: 700;">
-            <span>Gross</span><span>${window.formatINR(gross)}</span>
-        </div>
-        
-        <div style="margin-top: 16px; margin-bottom: 4px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px; font-weight: 700;">Deductions</div>
-        ${lop ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>LOP / Shortage</span><span>${window.formatINR(lop)}</span></div>` : ''}
-        ${esi ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>ESI</span><span>${window.formatINR(esi)}</span></div>` : ''}
-        ${otherDed ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #DC2626;"><span>Other</span><span>${window.formatINR(otherDed)}</span></div>` : ''}
-        ${(!lop && !esi && !otherDed) ? `<div style="color: #64748B;">No deductions</div>` : ''}
-        
-        <div style="display: flex; justify-content: space-between; margin-top: 16px; border-top: 2px solid #0F172A; padding-top: 12px; font-weight: 800; font-size: 18px; color: #059669;">
-            <span>NET PAY</span><span>${window.formatINR(net)}</span>
-        </div>
-    `;
-    
-    // Store data for publish
-    window.payrollState.wizardData = {
-        basic, allow, ot, otherEarn, gross,
-        lop, esi, otherDed, deduct, net
-    };
-};
-
-window.publishPayslipToApp = async function() {
-    const btn = document.getElementById('publish-payslip-btn');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
-    btn.disabled = true;
-    
-    const employeeId = document.getElementById('payslip-employee-select').value;
-    const month = document.getElementById('payslip-month-input').value;
-    const emp = window.payrollState.employees.find(e => e.id === employeeId);
-    
-    if (!employeeId || !month) {
-        alert("Please select employee and month");
-        btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
-        btn.disabled = false;
-        return;
-    }
-    
-    // Warning for upsert
-    const existing = window.payrollState.payslips.find(p => p.employeeId === employeeId && p.month === month);
-    if (existing) {
-        if (!confirm(`A payslip already exists for ${emp.name} in ${month}. Do you want to replace it?`)) {
-            btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
-            btn.disabled = false;
-            return;
-        }
-    }
-
-    const wData = window.payrollState.wizardData;
-
-    try {
-        const payload = {
-            employeeId: employeeId,
-            employeeName: emp ? emp.name : 'Unknown Employee',
-            month: month,
-            basicSalary: wData.basic,
-            lopAmount: wData.lop,
-            netPay: wData.net,
-            earnings: {
-                basic: wData.basic,
-                allowances: {
-                    hra: wData.allow,
-                    overtime: wData.ot,
-                    other: wData.otherEarn
-                },
-                gross: wData.gross
-            },
-            deductions: {
-                lop: wData.lop,
-                esi: wData.esi,
-                other: wData.otherDed,
-                total: wData.deduct
-            }
-        };
-
-        const res = await fetch('/api/admin/payslips/publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        const data = await res.json();
-        if (data.success) {
-            window.closePayslipConfig();
-            // Refresh
-            await window.loadAdminPayroll();
-            setTimeout(() => alert('Payslip published successfully!'), 100);
-        } else {
-            alert('Error: ' + data.message);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Network error publishing payslip.');
-    } finally {
-        btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip';
-        btn.disabled = false;
-    }
-};
-
-window.deletePayslip = async function(id) {
-    if (!confirm('Delete Payslip?\n\nThis will permanently remove this published payslip. This action cannot be undone.\n\nAre you sure you want to delete it?')) return;
-    
-    try {
-        const res = await fetch(`/api/admin/payslips/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (res.ok) {
-            await window.loadAdminPayroll();
-        } else {
-            alert('Failed to delete: ' + (data.error || 'Unknown error'));
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Failed to delete payslip');
-    }
-};
-
-// Ensure modal reset
-window.openPayslipConfig = function() {
-    document.getElementById('payslip-config-form').reset();
-    document.getElementById('payslip-month-input').value = window.payrollState.currentMonth;
-    window.wizardGoToStep(1);
-    const modal = document.getElementById('payslip-config-modal');
-    modal.style.display = 'flex';
-    // Small delay to allow display:flex to apply before adding class for CSS transition
-    setTimeout(() => {
-        modal.classList.add('show');
-    }, 10);
-};
-
-window.closePayslipConfig = function() {
-    const modal = document.getElementById('payslip-config-modal');
-    modal.classList.remove('show');
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
-};
-
-// Key bindings
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        window.closePayslipDrawer();
-        window.closePayslipConfig();
-    }
-});
-
-
-
-window.payrollState.sortBy = 'name_asc';
-
-window.togglePayrollMoreFilters = function() {
-    const el = document.getElementById('payroll-more-filters-menu');
-    const isVisible = el.style.display === 'block';
-    
-    if (!isVisible) {
-        el.style.display = 'block';
-    }
-    
-    setTimeout(() => {
-        const closeMenu = (e) => {
-            if (el) el.style.display = 'none';
-            document.removeEventListener('click', closeMenu);
-        };
-        document.addEventListener('click', closeMenu);
-    }, 0);
-};
-
-window.setPayrollSort = function(sortType) {
-    window.payrollState.sortBy = sortType;
-    window.renderAdminPayroll();
-};

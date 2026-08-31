@@ -18,8 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260831_NAV_FIX">
-    <link rel="stylesheet" href="../css/admin-overrides.css?v=20260831">
+    <link rel="stylesheet" href="../css/admin.css?v=20260726_MODAL_UI">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -41,19 +40,11 @@
                 <!-- Group 1 -->
                 <div class="nav-group-title">Core Operations</div>
                 <div class="nav-item-wrapper">
-                    <button class="nav-item dashboard-btn" onclick="location.reload()" style="background: transparent; color: #9CA3AF;">
+                    <button class="nav-item dashboard-btn" onclick="location.reload()">
                         <i class="fas fa-th-large"></i><span>Dashboard</span>
                     </button>
-                </div>
-                <div class="nav-item-wrapper">
-                    <button class="nav-item payroll-btn" data-target="view-payroll" style="background: transparent; color: #9CA3AF;">
-                        <i class="fas fa-file-invoice-dollar"></i><span>Payroll</span>
-                    </button>
-                </div>
-                <div class="nav-item-wrapper">
-                    <button class="nav-item requests-btn" data-target="view-requests" style="background: transparent; color: #9CA3AF;">
-                        <i class="fas fa-inbox"></i><span>Requests</span>
-                    </button>
+                    <button class="nav-item" data-target="view-payroll"><i class="fas fa-file-invoice-dollar"></i><span>Payroll</span></button>
+                    <button class="nav-item" data-target="view-requests"><i class="fas fa-inbox"></i><span>Requests</span></button>
                 </div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item update-btn">
@@ -117,26 +108,16 @@
                     <button class="mobile-menu-btn" id="mobile-menu-toggle" style="display: none;">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <div>
-                        <h1 id="view-title">Dashboard</h1>
-                        <p id="view-subtitle"></p>
-                    </div>
+                    <h1 id="view-title">Dashboard</h1>
                 </div>
                 <div class="topbar-right">
-                    <button class="topbar-icon-btn">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button class="topbar-icon-btn" style="margin-right: 8px;">
-                        <i class="far fa-bell"></i>
-                        <span class="unread-indicator"></span>
-                    </button>
                     <div class="user-profile" id="user-profile-toggle">
                         <div
-                            style="width: 32px; height: 32px; border-radius: 50%; background: #4338ca; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; margin-left: 2px;">
+                            style="width: 36px; height: 36px; border-radius: 50%; background: #7C3AED; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
                             YO</div>
                         <div class="user-info"><span class="user-name">Yochan</span><span
                                 class="user-role">Developer</span></div>
-                        <i class="fas fa-chevron-down dropdown-icon" style="margin-right: 6px; font-size: 10px;"></i>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
 
                         <!-- Developer Profile Dropdown -->
                         <div class="profile-dropdown-menu" id="profile-dropdown">
@@ -163,7 +144,6 @@
             </header>
 
             <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
                 /* Studio Bento Grid Styles (Matched with Employee Portal) */
                 .studio-bento-grid {
                     display: grid;
@@ -251,22 +231,27 @@
                 <div class="content-area">
 
                     <!-- BETA WARNING BANNER -->
-                    <div class="beta-alert-compact" style="margin: 32px 0;">
-                        <div class="beta-alert-left">
-                            <div class="beta-icon-box">
-                                <i class="fas fa-flask"></i>
+                    <div class="beta-notice-banner"
+                        style="margin: 0 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
+                        <div style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="font-weight: 800; font-size: 15px; color: #1E293B; letter-spacing: -0.01em;">BETA Version - Testing &amp; Development</span>
+                                <span style="background: #3B82F6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase;">Active Review</span>
                             </div>
-                            <div>
-                                <h4 class="beta-title">
-                                    BETA VERSION
-                                    <span class="beta-badge">Active Review</span>
-                                </h4>
-                                <p class="beta-desc">You're viewing a version currently under testing.</p>
+                            <div style="font-size: 13.5px; color: #475569; line-height: 1.6; font-weight: 500;">
+                                This is a beta version under testing development. The application service may show errors or even serious mismatching bugs. Reporting lets the developer know the bug quicker for resolving.
+                            </div>
+                            <div style="margin-top: 15px; display: flex; gap: 12px;">
+                                <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]"
+                                    target="_blank"
+                                    style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
+                                    <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
+                                </a>
                             </div>
                         </div>
-                        <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]" target="_blank" class="beta-btn" style="text-decoration: none;">
-                            <i class="fab fa-whatsapp"></i> Report issue
-                        </a>
                     </div>
 
                     <!-- Studio Hub (Employee-Portal Style Bento) -->
@@ -652,7 +637,7 @@
 
                             <!-- Admin Summary Panel -->
                             <div class="summary-grid"
-                                style="margin-bottom: 32px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                                style="margin-bottom: 32px; grid-template-columns: repeat(6, 1fr);">
                                 <div class="summary-card">
                                     <div class="stat-info">
                                         <span class="stat-label">Total Emps</span>
@@ -787,378 +772,37 @@
                     </div>
 
         <!-- ========================================== -->
-        <!-- VIEW: PAYROLL (Dashboard & History) -->
-        <!-- ========================================== -->
-        
-        
-        <section id="view-payroll" class="admin-view rq-view" style="background-color: #F8FAFC; padding: 24px; min-height: 100vh;">
-            <style>
-                /* Typography & Reset */
-                #view-payroll { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0F172A; }
-                #view-payroll h2, #view-payroll h3, #view-payroll p { margin: 0; }
-                
-                /* Buttons */
-                .pm-btn { cursor: pointer; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; padding: 10px 16px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-                .pm-btn-primary { background: #F95A2C; color: white; box-shadow: 0 4px 6px -1px rgba(249, 90, 44, 0.2); }
-                .pm-btn-primary:hover { background: #E0481D; box-shadow: 0 4px 12px rgba(249, 90, 44, 0.3); transform: translateY(-1px); }
-                .pm-btn-outline { background: white; border: 1px solid #E2E8F0; color: #475569; }
-                .pm-btn-outline:hover { background: #F8FAFC; color: #0F172A; border-color: #CBD5E1; }
-                .pm-btn-danger-outline { background: white; border: 1px solid #FECACA; color: #DC2626; }
-                .pm-btn-danger-outline:hover { background: #FEF2F2; }
-                
-                /* Month Selector */
-                .pm-month-selector { display: flex; align-items: center; background: white; border: 1px solid #E2E8F0; border-radius: 8px; padding: 4px; }
-                .pm-month-btn { background: transparent; border: none; padding: 8px 12px; cursor: pointer; color: #64748B; border-radius: 6px; }
-                .pm-month-btn:hover { background: #F1F5F9; color: #0F172A; }
-                .pm-month-text { font-weight: 600; font-size: 14px; padding: 0 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-                
-                /* Stats Cards */
-                .pm-stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-                .pm-stat-header { display: flex; align-items: center; gap: 12px; }
-                .pm-stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-                .pm-stat-title { font-size: 11px; white-space: nowrap; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; }
-                .pm-stat-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: #0F172A; }
-                .pm-stat-sub { font-size: 12px; color: #94A3B8; font-weight: 500; }
-                
-                /* Toolbar */
-                .pm-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #E2E8F0; background: white; }
-                .pm-input { border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none; transition: border 0.2s; }
-                .pm-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-                
-                /* Table */
-                .pm-table-container { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-                .pm-table { width: 100%; border-collapse: collapse; text-align: left; }
-                .pm-table th { padding: 12px 24px; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #E2E8F0; background: #F8FAFC; }
-                .pm-table td { padding: 16px 24px; font-size: 14px; border-bottom: 1px solid #F1F5F9; color: #475569; }
-                .pm-table tr:hover td { background: #F8FAFC; }
-                
-                /* Badges */
-                .pm-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-                .pm-badge-success { background: #ECFDF5; color: #059669; }
-                .pm-badge-warning { background: #FFFBEB; color: #D97706; }
-                
-                /* Drawer */
-                .pm-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); z-index:9998; backdrop-filter:blur(2px); }
-                .pm-drawer { position:fixed; top:0; right:-500px; width:480px; max-width:100vw; height:100vh; background:white; z-index:9999; box-shadow:-10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-direction:column; }
-                .pm-drawer-header { padding: 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; }
-                .pm-drawer-content { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px; }
-                .pm-drawer-footer { padding: 24px; border-top: 1px solid #E2E8F0; display: flex; gap: 12px; background: #F8FAFC; }
-                
-                .pm-detail-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; }
-                .pm-detail-label { color: #475569; }
-                .pm-detail-value { font-weight: 600; color: #0F172A; }
-            </style>
-
-            
-
-            <!-- Controls Row -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <div class="pm-month-selector">
-                    <button class="pm-month-btn" onclick="window.changePayrollMonth(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <div class="pm-month-text" onclick="document.getElementById('payroll-month-selector').showPicker()">
-                        <span id="payroll-current-month-display">August 2026</span>
-                        <i class="fas fa-chevron-down" style="font-size: 10px; color: #94A3B8;"></i>
-                    </div>
-                    <input type="month" id="payroll-month-selector" style="display:none;" onchange="window.setPayrollMonth(this.value)">
-                    <button class="pm-month-btn" onclick="window.changePayrollMonth(1)"><i class="fas fa-chevron-right"></i></button>
-                </div>
-                
-                <div style="display: flex; gap: 12px;">
-                    <button class="pm-btn pm-btn-outline" onclick="window.loadAdminPayroll()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                    <button class="pm-btn pm-btn-primary" onclick="window.openPayslipConfig()">
-                        <i class="fas fa-plus"></i> Generate Payslip
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 32px;">
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" style="background: #FFF1F2; color: #E11D48;"><i class="fas fa-wallet"></i></div>
-                        <div class="pm-stat-title">Total Payroll</div>
-                    </div>
-                    <div>
-                        <div class="pm-stat-value" id="payroll-stat-total">₹0</div>
-                        <div class="pm-stat-sub" id="payroll-stat-total-label">For selected month</div>
-                    </div>
-                </div>
-                
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" style="background: #ECFDF5; color: #059669;"><i class="fas fa-users"></i></div>
-                        <div class="pm-stat-title">Employees Paid</div>
-                    </div>
-                    <div>
-                        <div class="pm-stat-value" id="payroll-stat-paid">0 / 0</div>
-                        <div class="pm-stat-sub" id="payroll-stat-paid-sub">Processed</div>
-                    </div>
-                </div>
-
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" style="background: #EEF2FF; color: #4F46E5;"><i class="fas fa-file-invoice"></i></div>
-                        <div class="pm-stat-title">Payslips Generated</div>
-                    </div>
-                    <div>
-                        <div class="pm-stat-value" id="payroll-stat-slips">0</div>
-                        <div class="pm-stat-sub">This month</div>
-                    </div>
-                </div>
-                
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" style="background: #EFF6FF; color: #2563EB;"><i class="fas fa-chart-line"></i></div>
-                        <div class="pm-stat-title">Average Net Pay</div>
-                    </div>
-                    <div>
-                        <div class="pm-stat-value" id="payroll-stat-avg">₹0</div>
-                        <div class="pm-stat-sub">Across paid employees</div>
-                    </div>
-                </div>
-                
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" style="background: #FFFBEB; color: #D97706;"><i class="fas fa-clock"></i></div>
-                        <div class="pm-stat-title">Pending</div>
-                    </div>
-                    <div>
-                        <div class="pm-stat-value" id="payroll-stat-pending">0</div>
-                        <div class="pm-stat-sub">Awaiting payslips</div>
-                    </div>
-                </div>
-                
-                <div class="pm-stat-card" style="grid-column: span 1;">
-                    <div class="pm-stat-header">
-                        <div class="pm-stat-icon" id="payroll-status-icon-bg" style="background: #ECFDF5; color: #059669;"><i class="fas fa-check-circle" id="payroll-status-icon"></i></div>
-                        <div class="pm-stat-title">Payroll Status</div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                        <i class="fas fa-circle" id="payroll-status-dot" style="font-size: 8px; color: #059669;"></i>
-                        <span class="pm-stat-value" id="payroll-stat-status" style="font-size: 24px;">Ready</span>
-                    </div>
-                    <div class="pm-stat-sub" id="payroll-status-sub">All good to go</div>
-                </div>
-            </div>
-
-            <!-- Ledger Container -->
-            <div class="pm-table-container">
-                <div class="pm-toolbar">
-                    <h3 style="font-size: 16px; font-weight: 700;">Payroll Ledger</h3>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <div style="position: relative;">
-                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
-                            <input type="text" class="pm-input" id="payroll-search-input" oninput="window.filterAdminPayroll()" placeholder="Search employee or ID..." style="padding-left: 36px; width: 220px;">
-                        </div>
-                        <select class="pm-input" id="payroll-status-filter" onchange="window.filterAdminPayroll()" style="width: 140px; background: white; cursor: pointer;">
-                            <option value="all">All Status</option>
-                            <option value="published">Published</option>
-                            <option value="draft">Draft</option>
-                        </select>
-                        <select class="pm-input" style="width: 150px; background: white; cursor: pointer;">
-                            <option>All Departments</option>
-                        </select>
-                        <div style="position: relative;">
-                            <button class="pm-btn pm-btn-outline" onclick="window.togglePayrollMoreFilters()">
-                                <i class="fas fa-filter"></i> More filters
-                            </button>
-                            <div id="payroll-more-filters-menu" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:white; border:1px solid #E2E8F0; border-radius:12px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1); z-index:20; width: 220px; text-align: left; overflow:hidden;">
-                                <div style="padding: 12px 16px; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #F1F5F9; background: #F8FAFC;">Sort By</div>
-                                <div onclick="window.setPayrollSort('name_asc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Employee Name (A-Z)</div>
-                                <div onclick="window.setPayrollSort('net_desc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Net Pay (High to Low)</div>
-                                <div onclick="window.setPayrollSort('net_asc')" style="padding: 10px 16px; font-size: 13px; color: #0F172A; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">Net Pay (Low to High)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="overflow-x: auto;">
-                    <table class="pm-table">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Employee ID</th>
-                                <th style="text-align: right;">Basic</th>
-                                <th style="text-align: right;">Allowances</th>
-                                <th style="text-align: right;">Deductions</th>
-                                <th style="text-align: right;">LOP</th>
-                                <th style="text-align: right;">Net Pay</th>
-                                <th>Status</th>
-                                <th style="text-align: center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-payslip-history-list">
-                            <!-- JS Injected -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Pagination Footer -->
-                <div style="padding: 16px 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; color: #64748B; font-size: 13px;">
-                    <div id="payroll-pagination-text">Showing 0 employees</div>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="pm-btn pm-btn-outline" style="padding: 6px 12px; opacity: 0.5; cursor: not-allowed;">Previous</button>
-                        <button class="pm-btn pm-btn-primary" style="padding: 6px 12px; border-radius: 6px;">1</button>
-                        <button class="pm-btn pm-btn-outline" style="padding: 6px 12px;">Next</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drawer -->
-            <div class="pm-drawer-overlay" id="payslip-drawer-overlay" onclick="window.closePayslipDrawer()"></div>
-            <div class="pm-drawer" id="payslip-detail-drawer">
-                <div class="pm-drawer-header">
-                    <h3 style="font-size: 18px; font-weight: 700;">Payslip Details</h3>
-                    <button onclick="window.closePayslipDrawer()" style="background:transparent; border:none; font-size: 20px; color: #64748B; cursor: pointer; padding: 4px;"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="pm-drawer-content" id="payslip-drawer-content">
-                    <!-- JS Injected -->
-                </div>
-                <div class="pm-drawer-footer" id="payslip-drawer-footer">
-                    <!-- JS Injected -->
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================== -->
         <!-- VIEW: REQUESTS (Leaves & Swaps) -->
         <!-- ========================================== -->
-        <section id="view-requests" class="admin-view rq-view">
-
-            <!-- Page Header -->
-            <div class="rq-page-header">
-                <div class="rq-page-title-area">
-                    <h1 class="rq-page-title"><i class="fas fa-inbox"></i> Requests</h1>
-                    <p class="rq-page-subtitle">Manage employee leave and shift swap requests</p>
+        <section id="view-requests" class="admin-view" style="display: none;">
+            <header class="section-header">
+                <div class="header-content">
+                    <h2><i class="fas fa-inbox"></i> Employee Requests</h2>
+                    <p>Manage leave requests and shift swaps</p>
                 </div>
-                <button class="rq-refresh-btn" onclick="loadAdminRequests()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
-
-            <!-- Stats Row -->
-            <div class="rq-stats-row">
-                <div class="rq-stat-card">
-                    <div class="rq-stat-icon-wrap rq-orange">
-                        <i class="fas fa-clock"></i>
+            </header>
+            
+            <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card">
+                    <div class="card-header">
+                        <h3>Pending Leave Requests</h3>
+                        <button class="icon-btn" onclick="loadAdminRequests()"><i class="fas fa-sync"></i></button>
                     </div>
-                    <div class="rq-stat-body">
-                        <span class="rq-stat-num" id="stat-pending-leaves">0</span>
-                        <span class="rq-stat-lbl">Pending Leaves</span>
-                    </div>
-                    <div class="rq-stat-trend rq-trend-warn">Needs Review</div>
-                </div>
-                <div class="rq-stat-card">
-                    <div class="rq-stat-icon-wrap rq-blue">
-                        <i class="fas fa-exchange-alt"></i>
-                    </div>
-                    <div class="rq-stat-body">
-                        <span class="rq-stat-num" id="stat-pending-swaps">0</span>
-                        <span class="rq-stat-lbl">Pending Swaps</span>
-                    </div>
-                    <div class="rq-stat-trend rq-trend-warn">Needs Review</div>
-                </div>
-                <div class="rq-stat-card">
-                    <div class="rq-stat-icon-wrap rq-green">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="rq-stat-body">
-                        <span class="rq-stat-num" id="stat-approved">0</span>
-                        <span class="rq-stat-lbl">Approved</span>
-                    </div>
-                    <div class="rq-stat-trend rq-trend-good">This Month</div>
-                </div>
-                <div class="rq-stat-card">
-                    <div class="rq-stat-icon-wrap rq-purple">
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                    <div class="rq-stat-body">
-                        <span class="rq-stat-num" id="stat-total-reqs">0</span>
-                        <span class="rq-stat-lbl">Total Requests</span>
-                    </div>
-                    <div class="rq-stat-trend rq-trend-neutral">All Time</div>
-                </div>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="rq-toolbar">
-                <div class="rq-filter-pills">
-                    <button class="req-filter-btn active" data-filter="all">All</button>
-                    <button class="req-filter-btn" data-filter="pending">
-                        <span class="rq-dot rq-dot-pending"></span> Pending
-                    </button>
-                    <button class="req-filter-btn" data-filter="approved">
-                        <span class="rq-dot rq-dot-approved"></span> Approved
-                    </button>
-                    <button class="req-filter-btn" data-filter="rejected">
-                        <span class="rq-dot rq-dot-rejected"></span> Rejected
-                    </button>
-                </div>
-                <div class="rq-toolbar-right">
-                    <div class="rq-search-wrap">
-                        <i class="fas fa-search rq-search-icon"></i>
-                        <input type="text" id="req-search" class="rq-search-input" placeholder="Search by name, ID, reason…">
-                    </div>
-                    <select id="req-sort" class="rq-sort-select">
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Main Two-Column Grid -->
-            <div class="rq-columns-grid">
-                <!-- LEAVES COLUMN -->
-                <div class="rq-column">
-                    <div class="rq-col-header">
-                        <div class="rq-col-label">
-                            <div class="rq-col-icon rq-col-icon-leave">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div>
-                                <h3 class="rq-col-title">Leave Requests</h3>
-                                <p class="rq-col-sub">Employee time-off requests</p>
-                            </div>
-                        </div>
-                        <span class="rq-badge-count" id="badge-pending-leaves">0</span>
-                    </div>
-                    <div id="admin-leave-requests-list" class="rq-list">
-                        <div class="rq-empty-state">
-                            <div class="rq-empty-icon"><i class="fas fa-calendar-check"></i></div>
-                            <h4>All clear!</h4>
-                            <p>Leave requests will appear here when employees submit them.</p>
-                        </div>
+                    <div class="reports-list" id="admin-leave-requests-list" style="margin-top: 15px;">
+                        <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
 
-                <!-- SWAPS COLUMN -->
-                <div class="rq-column">
-                    <div class="rq-col-header">
-                        <div class="rq-col-label">
-                            <div class="rq-col-icon rq-col-icon-swap">
-                                <i class="fas fa-exchange-alt"></i>
-                            </div>
-                            <div>
-                                <h3 class="rq-col-title">Shift Swaps</h3>
-                                <p class="rq-col-sub">Employee shift exchange requests</p>
-                            </div>
-                        </div>
-                        <span class="rq-badge-count" id="badge-pending-swaps">0</span>
+                <div class="stat-card">
+                    <div class="card-header">
+                        <h3>Pending Shift Swaps</h3>
                     </div>
-                    <div id="admin-swap-requests-list" class="rq-list">
-                        <div class="rq-empty-state">
-                            <div class="rq-empty-icon"><i class="fas fa-people-arrows"></i></div>
-                            <h4>All clear!</h4>
-                            <p>Shift swap requests will appear here when employees submit them.</p>
-                        </div>
+                    <div class="reports-list" id="admin-swap-requests-list" style="margin-top: 15px;">
+                        <div class="empty-state">Loading requests...</div>
                     </div>
                 </div>
             </div>
-
         </section>
-
 
         </main>
     </div>
@@ -2059,102 +1703,87 @@
     </div>
 
     <!-- PAYSLIP SELECTION MODAL -->
-    
-    <div class="modal-overlay" id="payslip-config-modal" style="display: none; background: rgba(15, 23, 42, 0.7);  z-index:99999; justify-content:center; align-items:center;">
-        <div class="modern-modal" style="width: 500px; max-width: 95%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div class="modern-modal-header" style="background: #F8FAFC; padding: 20px 24px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #0F172A;"><i class="fas fa-magic" style="color: #F95A2C; margin-right: 8px;"></i> Payslip Wizard</h2>
-                <button onclick="window.closePayslipConfig()" style="background: transparent; border: none; font-size: 24px; color: #64748B; cursor: pointer; line-height:1; padding:0;">&times;</button>
+    <div class="modal-overlay" id="payslip-config-modal">
+        <div class="modern-modal" style="max-width: 600px; width: 95vw;">
+            <div class="modern-modal-header">
+                <div class="modal-title-area">
+                    <h2>Configure Payslip</h2>
+                    <p>Enter employee and payroll details for this month</p>
+                </div>
+                <button class="close-modal-btn" onclick="window.closePayslipConfig()">&times;</button>
             </div>
-            
-            <div style="display: flex; background: #F1F5F9; padding: 12px 24px; font-size: 12px; font-weight: 600; color: #64748B; gap: 8px; justify-content: space-between; border-bottom: 1px solid #E2E8F0;">
-                <span id="pw-step-1" style="color: #2563EB;">1. Setup</span> <i class="fas fa-chevron-right" style="font-size:10px; margin-top:2px;"></i>
-                <span id="pw-step-2">2. Earnings</span> <i class="fas fa-chevron-right" style="font-size:10px; margin-top:2px;"></i>
-                <span id="pw-step-3">3. Deductions</span> <i class="fas fa-chevron-right" style="font-size:10px; margin-top:2px;"></i>
-                <span id="pw-step-4">4. Review</span>
-            </div>
-
-            <div class="modern-modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+            <div class="modern-modal-body">
                 <form id="payslip-config-form">
-                    
-                    <!-- STEP 1: Employee & Period -->
-                    <div id="payslip-step-1-ui">
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Select Employee</label>
-                            <select id="payslip-employee-select" class="modern-input" style="height: 50px; font-size: 15px; width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; outline:none; padding: 0 12px;" required onchange="window.wizardAutofill()">
-                                <option value="">Loading employees...</option>
+                    <!-- Step 1: Employee & Period -->
+                    <div id="payslip-step-1">
+                        <div class="modern-form-group">
+                            <label style="font-weight: 700; color: #1E293B;">Select Employee</label>
+                            <select id="payslip-employee-select" class="modern-input" style="height: 56px; font-size: 16px;" required>
+                                <option value="">Choose Employee...</option>
                             </select>
                         </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Payroll Period</label>
-                            <input type="month" id="payslip-month-input" class="modern-input" style="height: 50px; font-size: 15px; width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; outline:none; padding: 0 12px; box-sizing: border-box;" required>
+                        <div class="modern-form-group" style="margin-top: 20px;">
+                            <label style="font-weight: 700; color: #1E293B;">Select Month</label>
+                            <input type="month" id="payslip-month-input" class="modern-input" style="height: 56px; font-size: 16px;" required>
                         </div>
-                        <button type="button" class="modern-btn accent" onclick="window.wizardGoToStep(2)" style="width: 100%; height: 50px; font-size: 16px; font-weight: 700; background: #0F172A; color: white; border: none; border-radius: 8px; cursor: pointer;">Next: Earnings <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+                        <button type="button" class="modern-btn accent" onclick="window.toPayslipStep2()" style="width: 100%; margin-top: 24px; height: 56px; font-size: 16px; font-weight: 700;">
+                            <i class="fas fa-file-invoice-dollar"></i> Generate Payslip Now
+                        </button>
                     </div>
 
-                    <!-- STEP 2: Earnings -->
-                    <div id="payslip-step-2-ui" style="display: none;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Basic Pay (₹)</label>
-                                <input type="number" id="payslip-basic-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" required oninput="window.wizardCalculateNet()">
+                    <!-- Step 2: Financial Grid (Hidden by default) -->
+                    <div id="payslip-step-2" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0;">
+                            <div class="modern-form-group" style="margin-bottom: 0;">
+                                <label>Basic Salary</label>
+                                <input type="number" id="payslip-basic-input" class="modern-input" placeholder="9350">
                             </div>
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Allowances (₹)</label>
-                                <input type="number" id="payslip-allowance-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
+                            <div class="modern-form-group" style="margin-bottom: 0;">
+                                <label>Holiday Pay/OT</label>
+                                <input type="number" id="payslip-ot-input" class="modern-input" value="0">
                             </div>
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Overtime (₹)</label>
-                                <input type="number" id="payslip-ot-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>ESI</label>
+                                <input type="text" id="payslip-esi-input" class="modern-input" value="N/A">
                             </div>
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Other Earnings (₹)</label>
-                                <input type="number" id="payslip-other-earn-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Billing Diff</label>
+                                <input type="number" id="payslip-billing-diff-input" class="modern-input" value="0">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>LOP Deduction (₹)</label>
+                                <input type="number" id="payslip-lop-input" class="modern-input" value="0">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>LOP Days</label>
+                                <input type="number" id="payslip-lop-days-input" class="modern-input" value="0" step="0.5">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Worked Days</label>
+                                <input type="number" id="payslip-worked-days-input" class="modern-input" value="1" step="0.5">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Leave Balance</label>
+                                <input type="number" id="payslip-leave-balance" class="modern-input" value="2">
+                            </div>
+                            <div class="modern-form-group" style="margin-top: 10px;">
+                                <label>Location</label>
+                                <input type="text" id="payslip-location-input" class="modern-input" value="Sullia, Karnataka">
                             </div>
                         </div>
-                        <div style="display: flex; gap: 12px;">
-                            <button type="button" class="modern-btn" onclick="window.wizardGoToStep(1)" style="flex: 1; height: 50px; background: white; border: 1px solid #CBD5E1; border-radius: 8px; color: #475569; font-weight: 600; cursor: pointer;">Back</button>
-                            <button type="button" class="modern-btn accent" onclick="window.wizardGoToStep(3)" style="flex: 2; height: 50px; background: #0F172A; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Next: Deductions <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
-                        </div>
-                    </div>
 
-                    <!-- STEP 3: Deductions -->
-                    <div id="payslip-step-3-ui" style="display: none;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">LOP / Shortage (₹)</label>
-                                <input type="number" id="payslip-lop-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">ESI (₹)</label>
-                                <input type="number" id="payslip-esi-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
-                            </div>
-                            <div style="grid-column: span 2;">
-                                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Other Deductions (₹)</label>
-                                <input type="number" id="payslip-other-deduct-input" class="modern-input" style="height: 50px; width:100%; border: 1px solid #CBD5E1; border-radius:8px; outline:none; padding: 0 12px; box-sizing: border-box;" value="0" oninput="window.wizardCalculateNet()">
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 12px;">
-                            <button type="button" class="modern-btn" onclick="window.wizardGoToStep(2)" style="flex: 1; height: 50px; background: white; border: 1px solid #CBD5E1; border-radius: 8px; color: #475569; font-weight: 600; cursor: pointer;">Back</button>
-                            <button type="button" class="modern-btn accent" onclick="window.wizardGoToStep(4)" style="flex: 2; height: 50px; background: #0F172A; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Review <i class="fas fa-eye" style="margin-left: 8px;"></i></button>
+                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                            <button type="button" class="modern-btn secondary" onclick="window.backToPayslipStep1()" style="flex: 1;">Back</button>
+                            <button type="submit" class="modern-btn accent" style="flex: 2; font-weight: 700;">
+                                <i class="fas fa-file-invoice-dollar"></i> Generate Payslip
+                            </button>
                         </div>
                     </div>
-
-                    <!-- STEP 4: Review -->
-                    <div id="payslip-step-4-ui" style="display: none;">
-                        <div id="payslip-review-content" style="background: #FAFAFA; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 20px; font-size: 14px; color: #0F172A; font-family: 'Courier New', monospace;">
-                            <!-- Injected by JS -->
-                        </div>
-                        <div style="display: flex; gap: 12px;">
-                            <button type="button" class="modern-btn" onclick="window.wizardGoToStep(3)" style="flex: 1; height: 50px; background: white; border: 1px solid #CBD5E1; border-radius: 8px; color: #475569; font-weight: 600; cursor: pointer;">Back</button>
-                            <button type="button" id="publish-payslip-btn" class="modern-btn accent" onclick="window.publishPayslipToApp()" style="flex: 2; height: 50px; background: linear-gradient(135deg, #F95A2C 0%, #D9381E 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s;"><i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Publish Payslip</button>
-                        </div>
-                    </div>
+                </form>
                 </form>
             </div>
         </div>
     </div>
-    <!-- PAYSLIP PREVIEW MODAL -->
 
     <!-- PAYSLIP PREVIEW MODAL -->
     <div class="modal-overlay" id="payslip-preview-modal" style="background: rgba(0,0,0,0.85);">
@@ -2292,87 +1921,8 @@
     </div>
 
 
-    <!-- Request Detail Drawer -->
-    <div id="request-detail-drawer" class="req-drawer-overlay">
-        <div class="req-drawer">
-            <div class="drawer-header">
-                <div>
-                    <h3 style="margin:0; font-size:18px; font-weight:700; color:var(--text-primary);">Request Details</h3>
-                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">ID: <span id="drawer-req-id"></span></div>
-                </div>
-                <button class="drawer-close" onclick="window.closeRequestDrawer()"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div class="drawer-content">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-                    <div class="drawer-avatar" id="drawer-emp-avatar"></div>
-                    <div>
-                        <div style="font-weight:600; color:var(--text-primary); font-size:15px;" id="drawer-emp-name"></div>
-                        <span id="drawer-req-status" class="drawer-badge"></span>
-                    </div>
-                </div>
-                
-                <div class="drawer-details-grid" id="drawer-details-grid">
-                    <!-- Dynamic Details -->
-                </div>
-                
-                <div style="margin-top:24px;">
-                    <div class="drawer-detail-label" style="margin-bottom:8px;">Reason / Notes</div>
-                    <div class="drawer-reason-box" id="drawer-req-reason"></div>
-                </div>
-            </div>
-            
-            <div class="drawer-footer" id="drawer-action-area">
-                <!-- Action Buttons -->
-            </div>
-        </div>
-    </div>
-    
-    <style>
-        .req-drawer-overlay {
-            display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; 
-            background: rgba(0,0,0,0.4); z-index: 9999; backdrop-filter: blur(2px);
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        .req-drawer-overlay.active {
-            display: block; opacity: 1;
-        }
-        .req-drawer {
-            position: absolute; right: 0; top: 0; bottom: 0; width: 400px; max-width: 100%;
-            background: #fff; box-shadow: -5px 0 25px rgba(0,0,0,0.1); display: flex; 
-            flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .req-drawer-overlay.active .req-drawer {
-            transform: translateX(0);
-        }
-        .drawer-header { padding: 20px 24px; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: flex-start; }
-        .drawer-close { background: none; border: none; font-size: 20px; color: #9CA3AF; cursor: pointer; padding: 4px; border-radius: 6px; }
-        .drawer-close:hover { background: #F1F5F9; color: #1F2937; }
-        .drawer-content { padding: 24px; flex: 1; overflow-y: auto; }
-        .drawer-avatar { width: 48px; height: 48px; border-radius: 12px; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #3B82F6; }
-        .drawer-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 6px; }
-        .drawer-badge-pending { background: #FEF3C7; color: #D97706; }
-        .drawer-badge-approved { background: #D1FAE5; color: #059669; }
-        .drawer-badge-rejected { background: #FEE2E2; color: #DC2626; }
-        .drawer-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #F8FAFC; padding: 16px; border-radius: 12px; border: 1px solid #F1F5F9; }
-        .drawer-detail-label { font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
-        .drawer-detail-value { font-size: 14px; color: #0F172A; font-weight: 500; margin-top: 4px; }
-        .drawer-reason-box { background: #F8FAFC; padding: 16px; border-radius: 12px; font-size: 13px; color: #334155; line-height: 1.6; border: 1px solid #F1F5F9; }
-        .drawer-footer { padding: 20px 24px; border-top: 1px solid #F1F5F9; background: #F8FAFC; display: flex; gap: 12px; }
-        .drawer-btn { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-reject { background: #fff; border: 1px solid #E2E8F0; color: #DC2626; }
-        .btn-reject:hover { background: #FEF2F2; border-color: #FECACA; }
-        .btn-approve { background: #111827; color: #fff; }
-        .btn-approve:hover { background: #374151; }
-        .btn-delete { background: transparent; border: 1px solid #FEE2E2; color: #DC2626; font-size: 13px; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 500; font-family: inherit; }
-        .btn-delete:hover { background: #FEF2F2; border-color: #FECACA; }
-        .drawer-badge-pending  { background: #FEF3C7; color: #D97706; }
-        .drawer-badge-approved { background: #D1FAE5; color: #059669; }
-        .drawer-badge-rejected { background: #FEE2E2; color: #DC2626; }
-    </style>
-
     <script src="../js/script.js"></script>
-    <script src="../js/admin.js?v=20260831_EMP_DROPDOWN"></script>
+    <script src="../js/admin.js?v=20260726_LABEL_FIX"></script>
     <script src="../js/admin_reports.js"></script>
 </body>
 
