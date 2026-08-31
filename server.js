@@ -97,6 +97,21 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Safe debug status for deployment troubleshooting (no secrets returned)
+app.get('/api/debug/status', (req, res) => {
+    try {
+        const envStatus = {
+            JWT_SECRET: !!JWT_SECRET,
+            FIREBASE_SERVICE_ACCOUNT_ENV: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+            FIREBASE_KEY_FILE_EXISTS: fs.existsSync(FIREBASE_KEY_PATH),
+            VERCEL: process.env.VERCEL === '1'
+        };
+        res.json({ success: true, firestoreAvailable: !!firestore, env: envStatus });
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Debug status failed', error: e.message });
+    }
+});
+
 // Heavy dependencies (Deferred for serverless compatibility)
 let puppeteer;
 
