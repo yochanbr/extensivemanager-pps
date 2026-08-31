@@ -113,12 +113,21 @@ async function bootstrapApp() {
         const res = await fetch(API_BASE + '/api/employee/bootstrap', {
             headers: { 'Authorization': 'Bearer ' + localStorage.getItem('emp_auth_token') }
         });
-        if (res.status === 401) return logout();
+        console.log('[bootstrap] response status', res.status);
+        if (res.status === 401) {
+            showToast('Session expired. Please log in again.', 'error');
+            return logout();
+        }
         const json = await res.json();
-        if (json.success) {
+        console.log('[bootstrap] payload', json);
+        if (json && json.success) {
             appState = json.data;
             try { sessionStorage.setItem(cacheKey, JSON.stringify(appState)); } catch (e) {}
             renderAllViews();
+        } else {
+            const msg = (json && json.message) ? json.message : 'Failed to load app data';
+            showToast(msg, 'error');
+            console.warn('[bootstrap] non-success payload', json);
         }
     } catch (e) {
         showToast('Failed to sync app data', 'error');
