@@ -3609,37 +3609,39 @@ document.addEventListener('DOMContentLoaded', () => {
         swapsList.innerHTML = '';
 
         const generateCard = (r, isSwap) => {
-            const dateStr = isSwap ? r.date : (r.startDate && r.endDate ? `${r.startDate} to ${r.endDate} (${r.days} days)` : (r.date || 'N/A'));
+            const dateStr = isSwap ? r.date : (r.startDate && r.endDate ? `${r.startDate} → ${r.endDate} (${r.days} day${r.days !== 1 ? 's' : ''})` : (r.date || 'N/A'));
             const idStr = r.requestId || 'Legacy';
+            const typeLabel = isSwap ? 'Shift Swap' : `${r.type ? r.type.charAt(0).toUpperCase() + r.type.slice(1) : ''} Leave`;
+            const avatarLetter = r.employeeName ? r.employeeName.charAt(0).toUpperCase() : '?';
             return `
-                <div class="req-card" onclick='window.openRequestDrawer(${JSON.stringify(r).replace(/'/g, "&#39;")}, ${isSwap})'>
-                    <div class="req-card-header">
-                        <div class="req-user-info">
-                            <div class="req-avatar">${r.employeeName ? r.employeeName.charAt(0).toUpperCase() : '?'}</div>
+                <div class="rq-card" onclick='window.openRequestDrawer(${JSON.stringify(r).replace(/'/g, "&#39;")}, ${isSwap})'>
+                    <div class="rq-card-top">
+                        <div class="rq-card-user">
+                            <div class="rq-card-avatar">${avatarLetter}</div>
                             <div>
-                                <h4 style="margin:0; font-size:14px; font-weight:600; color:var(--text-primary);">${escapeHtml(r.employeeName)}</h4>
-                                <span style="font-size:12px; color:var(--text-secondary);">ID: ${idStr}</span>
+                                <p class="rq-card-name">${escapeHtml(r.employeeName)}</p>
+                                <p class="rq-card-id">${idStr}</p>
                             </div>
                         </div>
-                        <span class="req-badge req-badge-${r.status}">${r.status.toUpperCase()}</span>
+                        <span class="rq-status-pill rq-status-${r.status}">${r.status}</span>
                     </div>
-                    <div class="req-card-body">
-                        <div class="req-detail"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
-                        ${isSwap ? `<div class="req-detail"><i class="fas fa-exchange-alt"></i> Swap with ${escapeHtml(r.coworkerName)}</div>` : 
-                                    `<div class="req-detail"><i class="fas fa-briefcase"></i> ${r.type} Leave</div>`}
+                    <div class="rq-card-meta">
+                        <div class="rq-card-meta-row"><i class="fas fa-calendar-alt"></i> ${dateStr}</div>
+                        <div class="rq-card-meta-row"><i class="fas ${isSwap ? 'fa-exchange-alt' : 'fa-briefcase'}"></i> ${typeLabel}${isSwap ? ` · with ${escapeHtml(r.coworkerName || 'Unknown')}` : ''}</div>
+                        ${r.reason ? `<div class="rq-card-meta-row" style="color:#94A3B8; font-style:italic;"><i class="fas fa-comment-alt"></i> ${escapeHtml(r.reason).substring(0, 50)}${r.reason.length > 50 ? '…' : ''}</div>` : ''}
                     </div>
                 </div>
             `;
         };
 
         if (leaves.length === 0) {
-            leavesList.innerHTML = `<div class="req-empty"><div class="req-empty-icon"><i class="fas fa-check-circle"></i></div><h4 class="req-empty-title">All caught up</h4><p class="req-empty-desc">No leave requests match your criteria.</p></div>`;
+            leavesList.innerHTML = `<div class="rq-empty-state"><div class="rq-empty-icon"><i class="fas fa-calendar-check"></i></div><h4>All caught up!</h4><p>No leave requests match your current filter.</p></div>`;
         } else {
             leavesList.innerHTML = leaves.map(r => generateCard(r, false)).join('');
         }
 
         if (swaps.length === 0) {
-            swapsList.innerHTML = `<div class="req-empty"><div class="req-empty-icon"><i class="fas fa-check-circle"></i></div><h4 class="req-empty-title">All caught up</h4><p class="req-empty-desc">No shift swaps match your criteria.</p></div>`;
+            swapsList.innerHTML = `<div class="rq-empty-state"><div class="rq-empty-icon"><i class="fas fa-people-arrows"></i></div><h4>All caught up!</h4><p>No shift swaps match your current filter.</p></div>`;
         } else {
             swapsList.innerHTML = swaps.map(r => generateCard(r, true)).join('');
         }
@@ -3704,9 +3706,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach Filter Event Listeners
     document.querySelectorAll('.req-filter-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            const target = e.target.closest('.req-filter-btn');
             document.querySelectorAll('.req-filter-btn').forEach(p => p.classList.remove('active'));
-            e.target.classList.add('active');
-            window.adminRequestsCache.filter = e.target.textContent.toLowerCase().trim();
+            target.classList.add('active');
+            window.adminRequestsCache.filter = target.dataset.filter || target.textContent.trim().toLowerCase();
             window.renderAdminRequests();
         });
     });

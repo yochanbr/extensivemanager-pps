@@ -780,101 +780,140 @@
         <!-- ========================================== -->
         <!-- VIEW: REQUESTS (Leaves & Swaps) -->
         <!-- ========================================== -->
-        <section id="view-requests" class="admin-view" style="display: none; padding: 32px; max-width: 1400px; margin: 0 auto;">
-            
-            <!-- Stats Row -->
-            <div class="req-stats-row">
-                <div class="req-stat-card">
-                    <div class="req-stat-icon orange">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="req-stat-content">
-                        <span class="req-stat-value" id="stat-pending-leaves">0</span>
-                        <span class="req-stat-label">Pending Leave</span>
-                    </div>
+        <section id="view-requests" class="admin-view rq-view">
+
+            <!-- Page Header -->
+            <div class="rq-page-header">
+                <div class="rq-page-title-area">
+                    <h1 class="rq-page-title"><i class="fas fa-inbox"></i> Requests</h1>
+                    <p class="rq-page-subtitle">Manage employee leave and shift swap requests</p>
                 </div>
-                <div class="req-stat-card">
-                    <div class="req-stat-icon blue">
+                <button class="rq-refresh-btn" onclick="loadAdminRequests()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="rq-stats-row">
+                <div class="rq-stat-card">
+                    <div class="rq-stat-icon-wrap rq-orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="rq-stat-body">
+                        <span class="rq-stat-num" id="stat-pending-leaves">0</span>
+                        <span class="rq-stat-lbl">Pending Leaves</span>
+                    </div>
+                    <div class="rq-stat-trend rq-trend-warn">Needs Review</div>
+                </div>
+                <div class="rq-stat-card">
+                    <div class="rq-stat-icon-wrap rq-blue">
                         <i class="fas fa-exchange-alt"></i>
                     </div>
-                    <div class="req-stat-content">
-                        <span class="req-stat-value" id="stat-pending-swaps">0</span>
-                        <span class="req-stat-label">Pending Swaps</span>
+                    <div class="rq-stat-body">
+                        <span class="rq-stat-num" id="stat-pending-swaps">0</span>
+                        <span class="rq-stat-lbl">Pending Swaps</span>
                     </div>
+                    <div class="rq-stat-trend rq-trend-warn">Needs Review</div>
                 </div>
-                <div class="req-stat-card">
-                    <div class="req-stat-icon green">
+                <div class="rq-stat-card">
+                    <div class="rq-stat-icon-wrap rq-green">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="req-stat-content">
-                        <span class="req-stat-value" id="stat-approved">0</span>
-                        <span class="req-stat-label">Approved This Month</span>
+                    <div class="rq-stat-body">
+                        <span class="rq-stat-num" id="stat-approved">0</span>
+                        <span class="rq-stat-lbl">Approved</span>
                     </div>
+                    <div class="rq-stat-trend rq-trend-good">This Month</div>
                 </div>
-                <div class="req-stat-card">
-                    <div class="req-stat-icon purple">
-                        <i class="fas fa-inbox"></i>
+                <div class="rq-stat-card">
+                    <div class="rq-stat-icon-wrap rq-purple">
+                        <i class="fas fa-layer-group"></i>
                     </div>
-                    <div class="req-stat-content">
-                        <span class="req-stat-value" id="stat-total-reqs">0</span>
-                        <span class="req-stat-label">Total Requests</span>
+                    <div class="rq-stat-body">
+                        <span class="rq-stat-num" id="stat-total-reqs">0</span>
+                        <span class="rq-stat-lbl">Total Requests</span>
                     </div>
+                    <div class="rq-stat-trend rq-trend-neutral">All Time</div>
                 </div>
             </div>
 
             <!-- Toolbar -->
-            <div class="req-toolbar">
-                <div class="req-filters">
-                    <button class="req-filter-btn active">All</button>
-                    <button class="req-filter-btn">Pending</button>
-                    <button class="req-filter-btn">Approved</button>
-                    <button class="req-filter-btn">Rejected</button>
+            <div class="rq-toolbar">
+                <div class="rq-filter-pills">
+                    <button class="req-filter-btn active" data-filter="all">All</button>
+                    <button class="req-filter-btn" data-filter="pending">
+                        <span class="rq-dot rq-dot-pending"></span> Pending
+                    </button>
+                    <button class="req-filter-btn" data-filter="approved">
+                        <span class="rq-dot rq-dot-approved"></span> Approved
+                    </button>
+                    <button class="req-filter-btn" data-filter="rejected">
+                        <span class="rq-dot rq-dot-rejected"></span> Rejected
+                    </button>
                 </div>
-                <div class="req-actions-right" style="display:flex; gap:10px; align-items:center;">
-                    <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9CA3AF;"></i>
-                        <input type="text" id="req-search" placeholder="Search requests..." style="padding: 8px 12px 8px 30px; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px; outline:none; min-width: 200px;">
+                <div class="rq-toolbar-right">
+                    <div class="rq-search-wrap">
+                        <i class="fas fa-search rq-search-icon"></i>
+                        <input type="text" id="req-search" class="rq-search-input" placeholder="Search by name, ID, reason…">
                     </div>
-                    <select id="req-sort" style="padding: 8px 12px; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px; outline:none; background:white;">
+                    <select id="req-sort" class="rq-sort-select">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
                     </select>
-                    <button class="req-action-btn" onclick="loadAdminRequests()" style="background: #111827; color: #FFF; border-color: #111827;"><i class="fas fa-sync"></i> Refresh</button>
                 </div>
             </div>
-            
-            <div class="req-main-grid">
+
+            <!-- Main Two-Column Grid -->
+            <div class="rq-columns-grid">
                 <!-- LEAVES COLUMN -->
-                <div>
-                    <h3 class="req-col-header">
-                        Leave Requests
-                        <span class="req-badge" id="badge-pending-leaves">0 pending</span>
-                    </h3>
-                    <div id="admin-leave-requests-list" style="display: flex; flex-direction: column; gap: 16px;">
-                        <div class="req-empty">
-                            <div class="req-empty-icon"><i class="fas fa-calendar-times"></i></div>
-                            <h4 class="req-empty-title">No pending leave requests</h4>
-                            <p class="req-empty-desc">Leave requests will appear here when employees submit them.</p>
+                <div class="rq-column">
+                    <div class="rq-col-header">
+                        <div class="rq-col-label">
+                            <div class="rq-col-icon rq-col-icon-leave">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="rq-col-title">Leave Requests</h3>
+                                <p class="rq-col-sub">Employee time-off requests</p>
+                            </div>
+                        </div>
+                        <span class="rq-badge-count" id="badge-pending-leaves">0</span>
+                    </div>
+                    <div id="admin-leave-requests-list" class="rq-list">
+                        <div class="rq-empty-state">
+                            <div class="rq-empty-icon"><i class="fas fa-calendar-check"></i></div>
+                            <h4>All clear!</h4>
+                            <p>Leave requests will appear here when employees submit them.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- SWAPS COLUMN -->
-                <div>
-                    <h3 class="req-col-header">
-                        Shift Swaps
-                        <span class="req-badge" id="badge-pending-swaps">0 pending</span>
-                    </h3>
-                    <div id="admin-swap-requests-list" style="display: flex; flex-direction: column; gap: 16px;">
-                        <div class="req-empty">
-                            <div class="req-empty-icon"><i class="fas fa-exchange-alt"></i></div>
-                            <h4 class="req-empty-title">No pending shift swaps</h4>
-                            <p class="req-empty-desc">Shift swap requests will appear here when employees submit them.</p>
+                <div class="rq-column">
+                    <div class="rq-col-header">
+                        <div class="rq-col-label">
+                            <div class="rq-col-icon rq-col-icon-swap">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="rq-col-title">Shift Swaps</h3>
+                                <p class="rq-col-sub">Employee shift exchange requests</p>
+                            </div>
+                        </div>
+                        <span class="rq-badge-count" id="badge-pending-swaps">0</span>
+                    </div>
+                    <div id="admin-swap-requests-list" class="rq-list">
+                        <div class="rq-empty-state">
+                            <div class="rq-empty-icon"><i class="fas fa-people-arrows"></i></div>
+                            <h4>All clear!</h4>
+                            <p>Shift swap requests will appear here when employees submit them.</p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </section>
+
 
         </main>
     </div>
