@@ -3719,8 +3719,14 @@ const verifyEmployeeApp = (req, res, next) => {
     if (!token) return res.status(401).json({ success: false, message: 'No token' });
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(401).json({ success: false, message: 'Invalid token' });
-        if (decoded.role !== 'employee') return res.status(403).json({ success: false, message: 'Forbidden' });
+        if (err) {
+            try { console.warn('[verifyEmployeeApp] token verification failed:', err.message, 'token=', token && token.substr ? token.substr(0, 20) + '...' : token); } catch(e) {}
+            return res.status(401).json({ success: false, message: 'Invalid token' });
+        }
+        if (decoded.role !== 'employee') {
+            console.warn('[verifyEmployeeApp] token role mismatch:', decoded.role);
+            return res.status(403).json({ success: false, message: 'Forbidden' });
+        }
         req.employeeId = decoded.id;
         next();
     });
@@ -3797,7 +3803,7 @@ app.get('/api/employee/bootstrap', verifyEmployeeApp, async (req, res) => {
             requests = leavesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
         
-        const swapsSnapshot = await db.swap_requests()
+        const swapsSnapshot = await db.shift_swaps()
             .where('employeeId', '==', req.employeeId)
             .get();
             
@@ -3875,8 +3881,8 @@ app.get('/api/employee/dashboard', verifyEmployeeApp, async (req, res) => {
 
         res.json({
             success: true,
-            leaveBalance: 2, 
-            workedDays: reportsSnapshot.size, 
+            leaveBalance: 2,
+            workedDays: reports.length,
             todayShift,
             reports
         });
