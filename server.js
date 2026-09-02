@@ -290,6 +290,7 @@ app.use('/api', (req, res, next) => {
     if (req.path === '/attendance/scan' && req.method === 'POST') return next();
     // Scanner heartbeat is public (kiosk has no auth token)
     if (req.path === '/scanner/heartbeat') return next();
+    if (req.path === '/scanner/descriptors' && req.method === 'GET') return next();
     // Face requests GET is public (scanner needs to poll without auth)
     if (req.path === '/admin/face-requests' && req.method === 'GET') return next();
     // Face requests DELETE is public (scanner clears after registration)
@@ -675,9 +676,10 @@ app.get('/api/employees', async (req, res) => {
             const data = doc.data();
             data.id = doc.id;
             
-            // If not admin (e.g. scanner kiosk), omit sensitive PII
+            // If not admin, omit sensitive PII AND raw biometric templates
             if (!isAdmin) {
                 delete data.password;
+                delete data.faceDescriptor;
                 delete data['aadhar-number'];
                 delete data['pan-number'];
                 delete data['account-number'];
@@ -752,6 +754,7 @@ app.get('/api/employees/:id', async (req, res) => {
             const isAdmin = isAdminRequest(req);
             if (!isAdmin) {
                 delete emp.password;
+                delete emp.faceDescriptor;
                 delete emp['aadhar-number'];
                 delete emp['pan-number'];
                 delete emp['account-number'];
@@ -810,6 +813,32 @@ app.put('/api/employees/:id', verifyAdmin, async (req, res) => {
 
     await db.employees().doc(employeeId).update(employeeData);
     res.json({ success: true, message: 'Employee updated successfully.' });
+});
+
+
+/**
+ * Dedicated Biometric Template Endpoint for Scanner Kiosk
+ * Only returns active employee IDs and mathematical face embeddings needed for on-device matching.
+ */
+app.get('/api/scanner/descriptors', async (req, res) => {
+    try {
+        const snapshot = await db.employees().where('isActive', '!=', false).get();
+        const descriptors = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.faceDescriptor && Array.isArray(data.faceDescriptor) && data.faceDescriptor.length > 0) {
+                descriptors.push({
+                    id: doc.id,
+                    name: data.name,
+                    faceDescriptor: data.faceDescriptor
+                });
+            }
+        });
+        res.json({ success: true, descriptors });
+    } catch (e) {
+        console.error('Error in /api/scanner/descriptors:', e);
+        res.status(500).json({ success: false, message: 'Server error loading biometric templates.' });
+    }
 });
 
 // Register or update an employee's face descriptor

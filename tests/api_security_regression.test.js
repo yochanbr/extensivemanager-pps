@@ -80,7 +80,7 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
     });
 
     // 3. Data Isolation / PII Protection
-    it('should strip sensitive PII (Aadhaar, PAN, Bank, Phone) when unauthenticated caller fetches /api/employees', async () => {
+    it('should strip sensitive PII when unauthenticated caller fetches /api/employees', async () => {
         const res = await request(app).get('/api/employees');
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
@@ -106,7 +106,7 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
         expect(Array.isArray(res.body)).toBe(true);
         if (res.body.length > 0) {
             const sample = res.body[0];
-            expect(sample.password).toBeUndefined(); // Passwords must never be exposed
+            expect(sample.password).toBeUndefined();
             expect(sample).toHaveProperty('name');
             testEmpId = sample.id;
         }
@@ -158,5 +158,35 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
         const res = await request(app).get('/api/health');
         expect(res.status).toBe(200);
         expect(res.body.status).toBe('online');
+    });
+
+    // 7. Biometric Template Data Isolation & Dedicated Kiosk Route
+    it('should NOT expose raw biometric faceDescriptors on general unauthenticated /api/employees', async () => {
+        const res = await request(app).get('/api/employees');
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        if (res.body.length > 0) {
+            res.body.forEach(emp => {
+                expect(emp.faceDescriptor).toBeUndefined();
+            });
+        }
+    });
+
+    it('should only serve active descriptors via the special-purpose /api/scanner/descriptors endpoint', async () => {
+        const res = await request(app).get('/api/scanner/descriptors');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.descriptors)).toBe(true);
+        if (res.body.descriptors.length > 0) {
+            const first = res.body.descriptors[0];
+            expect(first).toHaveProperty('id');
+            expect(first).toHaveProperty('faceDescriptor');
+            expect(first['aadhar-number']).toBeUndefined();
+            expect(first['pan-number']).toBeUndefined();
+            expect(first['account-number']).toBeUndefined();
+            expect(first.phone).toBeUndefined();
+            expect(first.email).toBeUndefined();
+            expect(first.address).toBeUndefined();
+        }
     });
 });

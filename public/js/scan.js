@@ -119,11 +119,12 @@ async function initScanner() {
 
         statusText.textContent = 'Syncing biometric data...';
         progress.style.width = '60%';
-        const res = await fetch('/api/employees');
-        const employees = await res.json();
+        const res = await fetch('/api/scanner/descriptors');
+        const data = await res.json();
+        const descriptors = data.descriptors || (Array.isArray(data) ? data : []);
 
         labeledDescriptors = [];
-        employees.forEach(emp => {
+        descriptors.forEach(emp => {
             if (emp.faceDescriptor && emp.faceDescriptor.length > 0) {
                 const desc = new Float32Array(emp.faceDescriptor);
                 labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
