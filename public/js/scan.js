@@ -2,7 +2,7 @@
 // Kiosk Device Authentication Handshake
 async function ensureKioskAuthenticated() {
     try {
-        const storedSecret = localStorage.getItem('kiosk_secret') || 'kiosk_pps_nammamart_sec_2026';
+        const storedSecret = localStorage.getItem('kiosk_secret') || '';
         const res = await fetch('/api/scanner/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

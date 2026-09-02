@@ -5,6 +5,14 @@
 
 (function() {
     'use strict';
+    // Production Console Scrubbing (Suppresses verbose debug logs in production)
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        const noop = function() {};
+        console.log = noop;
+        console.debug = noop;
+        console.info = noop;
+    }
+
     // Production XSS Sanitizer
     window.escapeHtml = function(str) {
         if (str === null || str === undefined) return '';
