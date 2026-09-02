@@ -4449,3 +4449,328 @@ document.addEventListener('keydown', (e) => {
         if (typeof window.closeEsrDetailModal === 'function') window.closeEsrDetailModal();
     }
 });
+
+
+// ==========================================
+// QUICK PAYSLIP GENERATION SYSTEM
+// ==========================================
+
+window.openPayslipConfig = async function() {
+    const modal = document.getElementById('payslip-config-modal');
+    const select = document.getElementById('payslip-employee-select');
+    
+    if (!modal || !select) return;
+
+    // Reset step
+    window.backToPayslipStep1();
+
+    // Reset and Load Employees
+    select.innerHTML = '<option value="">Loading employees...</option>';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+
+    try {
+        const res = await fetch('/api/employees');
+        const data = await res.json();
+        if (data.success && data.employees) {
+            select.innerHTML = '<option value="">Choose Employee...</option>';
+            data.employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
+                select.appendChild(opt);
+            });
+        } else {
+            select.innerHTML = '<option value="">Failed to load employees</option>';
+        }
+    } catch (err) {
+        console.error('Error loading employees for payslip:', err);
+        select.innerHTML = '<option value="">Error loading staff</option>';
+    }
+
+    // Set default month to current
+    const now = new Date();
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthInput = document.getElementById('payslip-month-input');
+    if (monthInput) monthInput.value = monthStr;
+};
+
+window.closePayslipConfig = function() {
+    const modal = document.getElementById('payslip-config-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+window.toPayslipStep2 = async function() {
+    const employeeId = document.getElementById('payslip-employee-select').value;
+    const month = document.getElementById('payslip-month-input').value;
+
+    if (!employeeId || !month) {
+        if (typeof nammaModalSystem !== 'undefined') {
+            await nammaModalSystem.alert('Please select both an employee and a month.');
+        } else {
+            alert('Please select both an employee and a month.');
+        }
+        return;
+    }
+
+    // Auto-calculate worked days & LOP from attendance grid
+    try {
+        const attnRes = await fetch(`/api/reports/attendance-grid?month=${month}`);
+        const attnData = await attnRes.json();
+        
+        let workedDays = 0;
+        let lopDays = 0;
+
+        if (attnData.success && attnData.grid) {
+            const empRow = attnData.grid.find(r => r.id === employeeId);
+            if (empRow && empRow.daily) {
+                const dailyValues = Object.values(empRow.daily);
+                workedDays = dailyValues.filter(v => v.status === 'P').length;
+                lopDays = dailyValues.filter(v => v.status === 'A').length;
+            }
+        }
+
+        const workedInput = document.getElementById('payslip-worked-days-input');
+        const lopInput = document.getElementById('payslip-lop-days-input');
+        if (workedInput) workedInput.value = workedDays;
+        if (lopInput) lopInput.value = lopDays;
+    } catch (e) {
+        console.warn('Could not auto-fetch attendance grid for payslip:', e);
+    }
+
+    document.getElementById('payslip-step-1').style.display = 'none';
+    document.getElementById('payslip-step-2').style.display = 'block';
+};
+
+window.backToPayslipStep1 = function() {
+    const step1 = document.getElementById('payslip-step-1');
+    const step2 = document.getElementById('payslip-step-2');
+    if (step1) step1.style.display = 'block';
+    if (step2) step2.style.display = 'none';
+};
+
+window.closePayslipPreview = function() {
+    const modal = document.getElementById('payslip-preview-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+window.printPayslip = function() {
+    window.print();
+};
+
+function numberToWords(num) {
+    const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    if ((num = num.toString()).length > 9) return 'overflow';
+    let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return ''; 
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Hundred ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + ' ' : '';
+    return str.trim();
+}
+
+// Bind Payslip Configuration Form Submission
+document.addEventListener('DOMContentLoaded', () => {
+    const payslipConfigForm = document.getElementById('payslip-config-form');
+    if (payslipConfigForm) {
+        payslipConfigForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const employeeId = document.getElementById('payslip-employee-select').value;
+            const month = document.getElementById('payslip-month-input').value; // YYYY-MM
+            
+            if (!employeeId || !month) return;
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Payslip...';
+                btn.disabled = true;
+            }
+
+            try {
+                // 1. Fetch Employee Details
+                const empRes = await fetch(`/api/employees/${employeeId}`);
+                const empData = await empRes.json();
+                const employee = empData.employee || empData;
+
+                // 2. Fetch Attendance for calculation
+                const attnRes = await fetch(`/api/reports/attendance-grid?month=${month}`);
+                const attnData = await attnRes.json();
+                
+                let workedDays = parseFloat(document.getElementById('payslip-worked-days-input').value) || 0;
+                let lopDays = parseFloat(document.getElementById('payslip-lop-days-input').value) || 0;
+                let stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
+
+                if (attnData.success && attnData.grid && workedDays === 0) {
+                    const empRow = attnData.grid.find(r => r.id === employeeId);
+                    if (empRow && empRow.daily) {
+                        const dailyValues = Object.values(empRow.daily);
+                        workedDays = dailyValues.filter(v => v.status === 'P').length;
+                        lopDays = dailyValues.filter(v => v.status === 'A').length;
+                    }
+                }
+
+                // 3. Gather Inputs
+                const basic = parseFloat(document.getElementById('payslip-basic-input').value) || 9350;
+                const ot = parseFloat(document.getElementById('payslip-ot-input').value) || 0;
+                const esi = document.getElementById('payslip-esi-input').value || 'N/A';
+                const billingDiff = parseFloat(document.getElementById('payslip-billing-diff-input').value) || 0;
+                const leaveBalance = document.getElementById('payslip-leave-balance').value || 2;
+                const location = document.getElementById('payslip-location-input').value || 'SULLIA, KARNATAKA';
+
+                // Calculations
+                const grossEarnings = basic + ot;
+                const esiValue = isNaN(parseFloat(esi)) ? 0 : parseFloat(esi);
+                const grossDeductions = esiValue + billingDiff + (lopDays * (basic / stdDays));
+                const netSalary = Math.round(grossEarnings - grossDeductions);
+
+                // 4. Render Payslip
+                const monthName = new Date(month + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
+                
+                const renderingArea = document.getElementById('payslip-rendering-area');
+                renderingArea.innerHTML = `
+                    <div class="payslip-container">
+                        <div class="payslip-header">Pay Slip for the month of ${monthName}</div>
+                        <div class="payslip-main-box">
+                            <div class="payslip-logo-section">
+                                <h1 style="margin:0; font-size: 24px; color: #5B21B6; letter-spacing: 2px;">NAMMA MART</h1>
+                                <p style="margin:0; font-size: 10px; font-weight: bold; color: #5B21B6;">SIGNATURE OF QUALITY -</p>
+                            </div>
+                            <div class="payslip-address-section">
+                                SULLIA, KARNATAKA - 574239<br>
+                                Ph: 08257-230230, 230231
+                            </div>
+
+                            <table class="payslip-table">
+                                <tr>
+                                    <td class="payslip-label">Employee ID</td>
+                                    <td class="payslip-value">${employee.username || employee['employee-id'] || 'N/A'}</td>
+                                    <td class="payslip-label">Location</td>
+                                    <td class="payslip-value">${location}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Employee Name</td>
+                                    <td class="payslip-value" style="font-weight: bold; text-transform: uppercase;">${employee.name}</td>
+                                    <td class="payslip-label">STD Days</td>
+                                    <td class="payslip-value">${stdDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Designation</td>
+                                    <td class="payslip-value">Customer Representative</td>
+                                    <td class="payslip-label">Worked Days</td>
+                                    <td class="payslip-value">${workedDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Department</td>
+                                    <td class="payslip-value">Operations</td>
+                                    <td class="payslip-label">LOP Days</td>
+                                    <td class="payslip-value">${lopDays}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Joining Date</td>
+                                    <td class="payslip-value">NOT SPECIFIED</td>
+                                    <td class="payslip-label">Leave Balance</td>
+                                    <td class="payslip-value">${leaveBalance}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">ESI Number</td>
+                                    <td class="payslip-value">NOT SPECIFIED</td>
+                                    <td class="payslip-label">PF Number</td>
+                                    <td class="payslip-value">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">Bank Name</td>
+                                    <td class="payslip-value">${employee['bank-name'] || 'N/A'}</td>
+                                    <td class="payslip-label">A/C Number</td>
+                                    <td class="payslip-value">${employee['account-number'] || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td class="payslip-label">PAN Number</td>
+                                    <td class="payslip-value">${employee['pan-number'] || 'N/A'}</td>
+                                    <td class="payslip-label">PF UAN Number</td>
+                                    <td class="payslip-value">N/A</td>
+                                </tr>
+                            </table>
+
+                            <table class="payslip-table" style="margin-top: 20px;">
+                                <tr class="payslip-section-title">
+                                    <td style="width: 25%;">EARNINGS</td>
+                                    <td style="width: 25%;">AMOUNT</td>
+                                    <td style="width: 25%;">DEDUCTIONS</td>
+                                    <td style="width: 25%;">AMOUNT</td>
+                                </tr>
+                                <tr>
+                                    <td>Basic</td>
+                                    <td style="text-align: right;">${basic.toFixed(2)}</td>
+                                    <td>ESI</td>
+                                    <td style="text-align: right;">${esi}</td>
+                                </tr>
+                                <tr>
+                                    <td>Holiday Pay / OT</td>
+                                    <td style="text-align: right;">${ot.toFixed(2)}</td>
+                                    <td>Billing Difference</td>
+                                    <td style="text-align: right;">${billingDiff.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td>LOP</td>
+                                    <td style="text-align: right;">${(lopDays * (basic / stdDays)).toFixed(2)}</td>
+                                </tr>
+                                <tr class="payslip-total-row">
+                                    <td>Gross Earnings</td>
+                                    <td style="text-align: right;">${grossEarnings.toFixed(2)}</td>
+                                    <td>Gross Deductions</td>
+                                    <td style="text-align: right;">${grossDeductions.toFixed(2)}</td>
+                                </tr>
+                            </table>
+
+                            <div class="payslip-net-salary">
+                                NET SALARY: Rs. ${netSalary} /-<br>
+                                <span style="font-size: 10px; font-weight: normal;">(Rupees ${numberToWords(netSalary)} Only)</span>
+                            </div>
+
+                            <div class="payslip-signature-area">
+                                <div class="payslip-signature-line">Employer Signature</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; font-size: 9px; color: #666; margin-top: 10px;">
+                            This is a computer generated payslip and does not require a physical signature.
+                        </div>
+                    </div>
+                `;
+
+                // 5. Open Preview
+                window.closePayslipConfig();
+                const previewModal = document.getElementById('payslip-preview-modal');
+                if (previewModal) {
+                    previewModal.style.display = 'flex';
+                    setTimeout(() => previewModal.classList.add('show'), 10);
+                }
+
+            } catch (err) {
+                console.error('Error generating payslip:', err);
+                if (typeof nammaModalSystem !== 'undefined') {
+                    await nammaModalSystem.alert('Failed to generate payslip. Please check console for details.');
+                } else {
+                    alert('Failed to generate payslip. Please check console for details.');
+                }
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            }
+        });
+    }
+});

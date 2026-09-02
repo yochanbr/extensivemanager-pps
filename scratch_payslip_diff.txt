@@ -1,0 +1,3112 @@
+diff --git a/public/js/admin.js b/public/js/admin.js
+index 2a12d1f..94f3427 100644
+--- a/public/js/admin.js
++++ b/public/js/admin.js
+@@ -1,16 +1,23 @@
+ // --- SECURITY GUARD --- //
+-if (localStorage.getItem('adminLoggedIn') !== 'true') {
+-    window.location.href = '/';
+-}
++// Admin is securely protected by Server-Side JWT Middlewares. 
++// No client-side checks needed.
++
++// --- GLOBAL IST CONFIGURATION --- //
++const formatIST = (date) => {
++    return new Date(date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
++};
+ 
+ document.addEventListener('DOMContentLoaded', () => {
+     // --- INACTIVITY MONITOR (1 MINUTE) --- //
+     let inactivityTimer;
+     const INACTIVITY_LIMIT = 60 * 1000; // 1 minute
+ 
+-    const logoutSession = () => {
++    const logoutSession = async () => {
+         console.log("🔐 Inactivity timeout triggered. Logging out...");
+         localStorage.removeItem('adminLoggedIn');
++        try {
++            await fetch('/logout', { method: 'POST' });
++        } catch (e) {}
+         window.location.href = '/';
+     };
+ 
+@@ -20,12 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
+     };
+ 
+     // Initialize the timer
+-    resetTimer();
++    // resetTimer();
+ 
+     // Reset timer on any significant user activity
+-    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+-        window.addEventListener(event, resetTimer, { passive: true });
+-    });
++    // ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(event => {
++    //     window.addEventListener(event, resetTimer, { passive: true });
++    // });
+ 
+     const viewReportBtn = document.querySelector('.view-report-btn');
+     const viewEsrJpgsBtn = document.querySelector('.view-esr-jpgs-btn');
+@@ -171,8 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+     /* manageEmployeesBtn is now SPA routed */
+ 
+-    logoutBtn.addEventListener('click', () => {
++    logoutBtn.addEventListener('click', async () => {
+         localStorage.removeItem('adminLoggedIn');
++        try {
++            await fetch('/logout', { method: 'POST' });
++        } catch (e) {}
+         window.location.href = '/';
+     });
+ 
+@@ -611,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
+     const settingsView = document.getElementById('settings-view');
+     const masterReportsView = document.getElementById('master-reports-hub-v2');
+ 
+-    function switchSpaView(targetView, activeBtn) {
++    window.switchSpaView = function (targetView, activeBtn) {
+         // Fallback for Hub v2 if targetView is missing (Resiliency for Cache)
+         if (!targetView && activeBtn && activeBtn.classList.contains('master-report-btn')) {
+             targetView = document.getElementById('master-reports-hub-v2');
+@@ -624,7 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
+             document.getElementById('shift-summary-view'),
+             document.getElementById('attendance-view'),
+             document.getElementById('settings-view'),
+-            document.getElementById('master-reports-hub-v2')
++            document.getElementById('master-reports-hub-v2'),
++            document.getElementById('bill-report-view')
+         ];
+ 
+         const masterBtn = document.querySelector('.master-report-btn');
+@@ -650,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
+         // Refresh data based on view
+         if (targetView && targetView.id === 'dashboard-view') loadDashboardData();
+         if (targetView && targetView.id === 'employees-view') fetchEmployeesForSPA();
+-        if (targetView && targetView.id === 'shift-summary-view') fetchEmployeesForShiftSummary();
++        if (targetView && targetView.id === 'shift-summary-view') window.loadShiftSummaries();
+         if (targetView && targetView.id === 'reports-view') fetchEmployeesForReports();
+ 
+         if (targetView && targetView.id === 'attendance-view') {
+@@ -662,10 +673,12 @@ document.addEventListener('DOMContentLoaded', () => {
+         }
+     }
+ 
++    const viewReportsBtnEl = document.querySelector('.view-reports-btn');
++    const viewEsrJpgsBtnEl = document.querySelector('.view-esr-jpgs-btn');
+     if (dashboardBtn) dashboardBtn.addEventListener('click', () => switchSpaView(dashboardView, dashboardBtn));
+     if (manageEmployeesBtn) manageEmployeesBtn.addEventListener('click', () => switchSpaView(employeesView, manageEmployeesBtn));
+-    if (viewReportBtn) viewReportBtn.addEventListener('click', () => switchSpaView(reportsView, viewReportBtn));
+-    if (viewEsrJpgsBtn) viewEsrJpgsBtn.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtn));
++    if (viewReportsBtnEl) viewReportsBtnEl.addEventListener('click', () => switchSpaView(reportsView, viewReportsBtnEl));
++    if (viewEsrJpgsBtnEl) viewEsrJpgsBtnEl.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtnEl));
+     if (attendanceBtn) attendanceBtn.addEventListener('click', () => {
+         switchSpaView(attendanceView, attendanceBtn);
+         // Default to Sessions view (not Raw Logs) on every navigation
+@@ -685,8 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
+     // Master Report Module Handlers
+     const attendanceCard = document.querySelector('.attendance-report-card');
+     const billingCard = document.querySelector('.billing-report-card');
+-    const payslipCard = document.querySelector('.payslip-report-card');
+-
+     if (attendanceCard) {
+         attendanceCard.addEventListener('click', () => {
+             window.openReportSelection();
+@@ -695,16 +706,9 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+     if (billingCard) {
+         billingCard.addEventListener('click', () => {
+-            nammaModalSystem.alert("Billing Analytics is a premium module and is currently being configured for your store.", {
+-                title: "Coming Soon",
+-                theme: "default"
+-            });
+-        });
+-    }
+-
+-    if (payslipCard) {
+-        payslipCard.addEventListener('click', () => {
+-            window.openPayslipConfig();
++            if (typeof window.showBillReportingView === 'function') {
++                window.showBillReportingView();
++            }
+         });
+     }
+ 
+@@ -895,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
+             thead.innerHTML = headerHtml + dayHtml;
+ 
+             // 2. Render Rows
+-            tbody.innerHTML = ''; 
++            tbody.innerHTML = '';
+             if (data.grid.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="100" style="padding: 40px; text-align: center; color: #64748B;">No employee data available for this month.</td></tr>';
+                 return;
+@@ -908,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
+                 data.headers.forEach(h => {
+                     const dayData = emp.daily[h.iso] || { status: '-', variance: 0 };
+                     const numVar = parseFloat(dayData.variance);
+-                    
++
+                     // Status Class Mapping
+                     const statusClassMap = {
+                         'P': 'excel-status-p',
+@@ -917,12 +921,12 @@ document.addEventListener('DOMContentLoaded', () => {
+                         'WO': 'excel-status-wo'
+                     };
+                     const sc = statusClassMap[dayData.status] || '';
+-                    
++
+                     // Variance Display
+                     let varDisplay = (numVar === 0) ? '0' : (numVar > 0 ? `+${numVar}` : `${numVar}`);
+                     // If no data, keep it clean
+                     if (dayData.status === '-') varDisplay = '';
+-                    
++
+                     let varColorClass = 'grid-variance-neutral';
+                     if (numVar > 0) varColorClass = 'grid-variance-pos';
+                     else if (numVar < 0) varColorClass = 'grid-variance-neg';
+@@ -933,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+                 trStatusHtml += `</tr>`;
+                 trVarHtml += `</tr>`;
+-                
++
+                 tbody.innerHTML += (trStatusHtml + trVarHtml);
+             });
+ 
+@@ -946,13 +950,16 @@ document.addEventListener('DOMContentLoaded', () => {
+         try {
+             const dateInput = document.getElementById('mainDateFilter');
+             const dateStr = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+-            const [empRes, logsRes] = await Promise.all([
++            const [empRes, logsRes, unverifiedRes] = await Promise.all([
+                 fetch('/api/employees'),
+-                fetch(`/api/daily-sessions?date=${dateStr}`)
++                fetch(`/api/daily-sessions?date=${dateStr}`),
++                fetch('/api/admin/unverified-shifts')
+             ]);
+             const employees = await empRes.json();
+             const logsData = await logsRes.json();
++            const unverifiedData = await unverifiedRes.json();
+             const sessions = logsData.success ? logsData.sessions : [];
++            const unverifiedReports = unverifiedData.success ? unverifiedData.reports : [];
+ 
+             let active = 0, checkins = 0, breakCount = 0, checkouts = 0, leaveWorked = 0;
+             let totalWorkMs = 0, totalBreakMs = 0;
+@@ -1026,40 +1033,83 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+             // --- ALERT HUB ENGINE (REFINED FOR APPROVALS) ---
+             const alerts = [];
++
++            // 1. Scan for employees with missing shift configurations
++            // 2. Scan for unverified shift bills
++            unverifiedReports.forEach(rep => {
++                alerts.push({
++                    id: `verify-bill-${rep.id}`,
++                    type: 'bill_verification',
++                    icon: 'file-invoice-dollar',
++                    title: 'Bill Verification',
++                    user: rep.employeeName || 'Staff',
++                    desc: `Shift Ended (${rep.date}). Verify collections.`,
++                    color: '#3B82F6',
++                    isActionable: true,
++                    action: `window.openBillVerification('${rep.id}')`,
++                    actionLabel: 'Verify Bill'
++                });
++            });
++
++            employees.forEach(emp => {
++                if (emp.isActive !== false && (!emp['start-time'] || !emp['end-time'])) {
++                    alerts.push({
++                        id: `missing-shift-${emp.id}`,
++                        type: 'config_error',
++                        icon: 'tools',
++                        title: 'Setup Required',
++                        user: emp.name,
++                        desc: 'Shift times not set (Prevents check-in)',
++                        color: '#f43f5e',
++                        isActionable: false
++                    });
++                }
++            });
+             sessions.forEach(session => {
+                 if (session.approvalStatus === 'pending_approval') {
+                     const type = session.requiresApproval || 'DISCREPANCY';
+                     let title = 'Attention Required';
+                     let color = '#F59E0B'; // Amber for pending
+                     let icon = 'exclamation-triangle';
++                    let desc = 'Requires your review.';
+ 
+                     if (type === 'LATE_ARRIVAL') {
+                         title = 'Late Arrival';
+                         color = '#EF4444';
+                         icon = 'clock';
+-                    } else if (type === 'EARLY_EXIT') {
+-                        title = 'Early Departure';
+-                        color = '#F97316';
+-                        icon = 'running';
++                        desc = `${session.lateMinutes || 0}m Late`;
++                    } else if (type === 'EARLY_ARRIVAL') {
++                        title = 'Early Extra Time';
++                        color = '#10B981';
++                        icon = 'hourglass-start';
++                        desc = `${session.earlyExtraMinutes || 0}m Early Extra`;
+                     } else if (type === 'OVERTIME') {
+                         title = 'Overtime Recorded';
+                         color = '#8B5CF6';
+                         icon = 'stopwatch';
++                        desc = `${session.overtimeMinutes || 0}m Overtime`;
++                    } else if (type === 'SECOND_SHIFT') {
++                        title = 'Pending 2nd Shift';
++                        color = '#EF4444';
++                        icon = 'exclamation-circle';
++                        desc = 'Employee checked in for a second shift.';
+                     }
+ 
++                    if (session.comment) desc += ` — "${session.comment}"`;
++
+                     alerts.push({
+                         id: session.id,
+                         type: 'discrepancy',
+                         icon: icon,
+                         title: title,
+                         user: session.employeeName,
+-                        desc: type.replace('_', ' '),
++                        desc: desc,
+                         color: color,
+                         isActionable: true
+                     });
+                 }
+             });
+-            if (window.renderAlertHub) window.renderAlertHub(alerts);
++            window.renderActionRequired(alerts);
+ 
+             // Build Table
+             const tbody = document.getElementById('live-status-tbody');
+@@ -1078,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
+                         progressPct = Math.min((elapsedMs / (9 * 60 * 60 * 1000)) * 100, 100);
+                     }
+ 
+-                    const role = s.fullTime === 'yes' ? 'Full Time' : 'Part Time';
++                    const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
+                     const timeStr = new Date(s.session.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+ 
+                     rowsHtml += `
+@@ -1095,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
+                 window.staffData.filter(s => !s.session && s.isActive !== false).forEach(s => {
+                     if (filterValue === 'working' || filterValue === 'break') return;
+ 
+-                    const role = s.fullTime === 'yes' ? 'Full Time' : 'Part Time';
++                    const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
+                     rowsHtml += `
+                         <tr>
+                             <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #94A3B8;">${s.name}</div></div></td>
+@@ -1200,76 +1250,325 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+ 
+     // SPA Employee Management Logic
++    let allEmployeesForSPA = [];
++
+     function fetchEmployeesForSPA() {
++        const container = document.getElementById('spa-employee-list');
++        if (!container) return;
++
+         fetch('/api/employees')
+             .then(res => res.json())
+             .then(employees => {
+-                const container = document.getElementById('spa-employee-list');
+-                if (!container) return;
+-
+-                let tableHTML = `
+-                <div class="table-wrapper">
+-                    <table class="status-table">
+-                        <thead>
+-                            <tr>
+-                                <th>Name</th>
+-                                <th>Status</th>
+-                                <th>Actions</th>
+-                            </tr>
+-                        </thead>
+-                        <tbody>
+-                `;
+-
+-                if (employees.length === 0) {
+-                    tableHTML += `<tr><td colspan="3" style="text-align: center;">No employees found.</td></tr>`;
+-                } else {
+-                    employees.forEach(emp => {
+-                        tableHTML += `
+-                            <tr>
+-                                <td>
+-                                    <div style="display:flex; align-items:center; gap:10px;">
+-                                        <div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600;">
+-                                            ${(emp.name ? emp.name.charAt(0).toUpperCase() : '?')}
+-                                        </div>
+-                                        <div style="font-weight: 500;">${emp.name}</div>
+-                                    </div>
+-                                </td>
+-                                <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${emp.isActive === false ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; color:${emp.isActive === false ? '#ef4444' : '#10b981'};">${emp.isActive === false ? 'Deactivated' : 'Active'}</span></td>
+-                                 <td>
+-                                    <div class="actions-cell">
+-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="spaToggleEmployeeStatus('${emp.id}', ${emp.isActive !== false})"><i class="fas fa-${emp.isActive === false ? 'check' : 'ban'}"></i> <span>${emp.isActive === false ? 'Activate' : 'Deactivate'}</span></button>
+-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.openFaceRegistration('${emp.id}')"><i class="fas fa-camera"></i> <span>Face</span></button>
+-                                        <button class="action-btn secondary" style="padding: 6px 10px; font-size: 12px; border-radius: 8px;" onclick="window.spaEditEmployee('${emp.id}')"><i class="fas fa-edit"></i> <span>Edit</span></button>
+-                                        <button class="action-btn danger" style="padding: 6px 10px; font-size: 12px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 8px;" onclick="spaDeleteEmployee('${emp.id}')"><i class="fas fa-trash"></i> <span>Delete</span></button>
+-                                    </div>
+-                                </td>
+-                            </tr>
+-                        `;
+-                    });
+-                }
+-
+-                tableHTML += `
+-                        </tbody>
+-                    </table>
+-                </div>
+-                `;
+-                container.innerHTML = tableHTML;
++                allEmployeesForSPA = employees;
++                renderEmployeesSPA(employees);
+             })
+             .catch(err => {
+                 console.error('Error fetching employees:', err);
+-                const container = document.getElementById('spa-employee-list');
+-                if (container) container.innerHTML = '<p style="color:red; padding: 20px;">Failed to load employees.</p>';
++                container.innerHTML = '<p style="color:red; padding: 20px;">Failed to load employees.</p>';
+             });
+     }
+ 
++    function renderEmployeesSPA(employees) {
++        const container = document.getElementById('spa-employee-list');
++        if (!container) return;
++
++        if (employees.length === 0) {
++            container.innerHTML = `
++                <div style="padding: 100px 40px; text-align: center; color: #94A3B8;">
++                    <i class="fas fa-users-slash" style="font-size: 48px; opacity: 0.2; margin-bottom: 16px;"></i>
++                    <p style="font-weight: 600;">No staff records found matching your search.</p>
++                </div>`;
++            return;
++        }
++
++        let listHTML = `
++        <div class="modern-table-container" style="background: white; border-radius: 20px; overflow: hidden; border: 1px solid #F1F5F9;">
++            <table class="status-table">
++                <thead>
++                    <tr style="background: #F8FAFC; border-bottom: 1px solid #F1F5F9;">
++                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Staff Member</th>
++                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Availability</th>
++                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B; text-align: right;">Command Actions</th>
++                    </tr>
++                </thead>
++                <tbody>
++        `;
++
++        employees.forEach(emp => {
++            const isActive = emp.isActive !== false;
++            const initial = (emp.name ? emp.name.charAt(0).toUpperCase() : '?');
++            const empRole = emp['blood-group'] || 'Staff Member';
++
++            listHTML += `
++                <tr class="employee-row" style="transition: background 0.2s; border-bottom: 1px solid #F8FAFC;">
++                    <td style="padding: 20px 24px;">
++                        <div style="display:flex; align-items:center; gap:16px;">
++                            <div style="width:44px; height:44px; border-radius:14px; background: ${isActive ? 'linear-gradient(135deg, #F95A2C 0%, #FF8C42 100%)' : '#E2E8F0'}; color:white; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 18px; box-shadow: 0 4px 12px ${isActive ? 'rgba(249, 90, 44, 0.2)' : 'rgba(0,0,0,0.05)'};">
++                                ${initial}
++                            </div>
++                            <div>
++                                <div style="font-weight: 700; color: #1E293B; font-size: 15px;">${emp.name}</div>
++                                <div style="font-size: 12px; color: #94A3B8; font-weight: 500;">ID: ${emp.employeeId || 'EM-99'} • ${empRole}</div>
++                            </div>
++                        </div>
++                    </td>
++                    <td style="padding: 20px 24px;">
++                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: ${isActive ? '#DCFCE7' : '#FEE2E2'}; color: ${isActive ? '#166534' : '#991B1B'}; border: 1px solid ${isActive ? '#BBF7D0' : '#FECACA'};">
++                            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
++                            ${isActive ? 'Active' : 'Deactivated'}
++                        </span>
++                    </td>
++                    <td style="padding: 20px 24px; text-align: right;">
++                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
++                            <button class="icon-action-btn" title="${isActive ? 'Deactivate' : 'Activate'}" 
++                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
++                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#0F172A'" 
++                                onmouseout="this.style.background='white'; this.style.color='#64748B'"
++                                onclick="spaToggleEmployeeStatus('${emp.id}', ${isActive})">
++                                <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
++                            </button>
++                            <button class="icon-action-btn" title="Biometric Setup" 
++                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
++                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#F95A2C'; this.style.borderColor='#F95A2C'" 
++                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
++                                onclick="window.openFaceRegistration('${emp.id}')">
++                                <i class="fas fa-camera"></i>
++                            </button>
++                            <button class="icon-action-btn" title="Quick Edit" 
++                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
++                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#3B82F6'; this.style.borderColor='#3B82F6'" 
++                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
++                                onclick="window.spaEditEmployee('${emp.id}')">
++                                <i class="fas fa-edit"></i>
++                            </button>
++                            <button class="icon-action-btn" title="Remove Record" 
++                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #FEE2E2; background: #FFF1F2; color: #EF4444; cursor: pointer; transition: all 0.2s;"
++                                onmouseover="this.style.background='#EF4444'; this.style.color='white'" 
++                                onmouseout="this.style.background='#FFF1F2'; this.style.color='#EF4444'"
++                                onclick="spaDeleteEmployee('${emp.id}')">
++                                <i class="fas fa-trash-alt"></i>
++                            </button>
++                        </div>
++                    </td>
++                </tr>
++            `;
++        });
++
++        listHTML += `
++                </tbody>
++            </table>
++        </div>
++        `;
++        container.innerHTML = listHTML;
++
++        if (!document.getElementById('emp-row-hover-style')) {
++            const style = document.createElement('style');
++            style.id = 'emp-row-hover-style';
++            style.innerHTML = '.employee-row:hover { background: #F8FAFC !important; }';
++            document.head.appendChild(style);
++        }
++    }
++
++    // Attach search listener
++    const spaEmpSearch = document.getElementById('spa-employee-search');
++    if (spaEmpSearch) {
++        spaEmpSearch.addEventListener('input', (e) => {
++            const query = e.target.value.toLowerCase().trim();
++            if (!query) {
++                renderEmployeesSPA(allEmployeesForSPA);
++                return;
++            }
++            const filtered = allEmployeesForSPA.filter(emp =>
++                (emp.name && emp.name.toLowerCase().includes(query)) ||
++                (emp.employeeId && emp.employeeId.toLowerCase().includes(query))
++            );
++            renderEmployeesSPA(filtered);
++        });
++    }
++
+     // Attach to "+ Add New Employee" button if it exists
+-    const spaAddEmployeeBtn = document.getElementById('spa-add-employee-btn');
+-    if (spaAddEmployeeBtn) {
+-        spaAddEmployeeBtn.addEventListener('click', () => {
+-            window.location.href = '/add_employee';
++    // --- ADD EMPLOYEE SPA SLIDE-OVER LOGIC ---
++    let currentAddStep = 1;
++
++    // Expose globally so inline onclick handlers in HTML can call these
++    window.goBackAdd = function() {
++        if (currentAddStep > 1) {
++            currentAddStep--;
++            updateAddStepUI();
++        }
++    };
++
++    window.openAddEmployeePanel = function () {
++        const panel = document.getElementById('add-employee-panel');
++        const overlay = document.getElementById('add-employee-overlay');
++        const form = document.getElementById('spa-add-employee-form');
++        if (form) form.reset();
++        currentAddStep = 1;
++        updateAddStepUI();
++        if (panel && overlay) {
++            overlay.classList.add('show');
++            panel.classList.add('show');
++        } else {
++            console.error("SPA ERROR: Add Employee Panel not found in DOM");
++        }
++    };
++
++    window.closeAddEmployeePanel = function () {
++        const panel = document.getElementById('add-employee-panel');
++        const overlay = document.getElementById('add-employee-overlay');
++        if (panel && overlay) {
++            overlay.classList.remove('show');
++            panel.classList.remove('show');
++        }
++    };
++
++    function updateAddStepUI() {
++        // Scope to ONLY the add employee form (not edit panel)
++        const addForm = document.getElementById('spa-add-employee-form');
++        if (addForm) {
++            addForm.querySelectorAll('.spa-step').forEach((s, i) => {
++                s.classList.toggle('active', (i + 1) === currentAddStep);
++            });
++        }
++        // Scope stepper dots to ONLY the add panel
++        const addPanel = document.getElementById('add-employee-panel');
++        if (addPanel) {
++            addPanel.querySelectorAll('.step-dot').forEach((d, i) => {
++                d.classList.toggle('active', (i + 1) === currentAddStep);
++                d.classList.toggle('completed', (i + 1) < currentAddStep);
++            });
++            for (let li = 1; li <= 3; li++) {
++                const ln = document.getElementById('add-line-' + li);
++                if (ln) ln.classList.toggle('completed', currentAddStep > li);
++            }
++        }
++        const prevBtn = document.getElementById('spa-btn-prev');
++        const nextBtn = document.getElementById('spa-btn-next');
++        const submitBtn = document.getElementById('spa-btn-submit');
++
++        if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'flex';
++
++        if (currentAddStep === 4) {
++            if (nextBtn) nextBtn.style.display = 'none';
++            if (submitBtn) submitBtn.style.display = 'flex';
++        } else {
++            if (nextBtn) nextBtn.style.display = 'flex';
++            if (submitBtn) submitBtn.style.display = 'none';
++        }
++    }
++
++    const nextStepBtn = document.getElementById('spa-btn-next');
++    if (nextStepBtn) {
++        nextStepBtn.addEventListener('click', () => {
++            const activeStep = document.getElementById(`spa-step-${currentAddStep}`);
++            if (!activeStep) return;
++            const inputs = activeStep.querySelectorAll('input[required], select[required]');
++            let valid = true;
++            inputs.forEach(i => {
++                if (!i.value.trim()) {
++                    i.style.borderColor = '#EF4444';
++                    valid = false;
++                } else {
++                    i.style.borderColor = '#E2E8F0';
++                }
++            });
++
++            if (valid) {
++                currentAddStep++;
++                updateAddStepUI();
++            }
++        });
++    }
++
++    const prevStepBtn = document.getElementById('spa-btn-prev');
++    if (prevStepBtn) {
++        prevStepBtn.addEventListener('click', () => {
++            if (currentAddStep > 1) {
++                currentAddStep--;
++                updateAddStepUI();
++            }
++        });
++    }
++
++    const spaAddForm = document.getElementById('spa-add-employee-form');
++    if (spaAddForm) {
++        spaAddForm.addEventListener('submit', async (e) => {
++            e.preventDefault();
++            const p1 = document.getElementById('spa-pass-1').value;
++            const p2 = document.getElementById('spa-pass-2').value;
++            if (p1 !== p2) return nammaModalSystem.alert("Passwords do not match!");
++
++            const btn = document.getElementById('spa-btn-submit');
++            const originalHtml = btn ? btn.innerHTML : 'Finish & Save';
++            if (btn) {
++                btn.disabled = true;
++                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
++            }
++
++            const formData = new FormData(e.target);
++            const data = Object.fromEntries(formData.entries());
++
++            if (data['full-time'] === 'no' || data['fullTime'] === 'no') {
++                if (data.basicSalary) data.basicSalary = String(parseFloat(data.basicSalary) * 240);
++            }
++
++            // Convert 12h format to 24h for backend
++            const convertTo24h = (h, m, p) => {
++                let hour = parseInt(h);
++                if (p === 'PM' && hour < 12) hour += 12;
++                if (p === 'AM' && hour === 12) hour = 0;
++                return `${String(hour).padStart(2, '0')}:${m}`;
++            };
++
++            data['startTime'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
++            data['endTime'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
++            data['workingDays'] = formData.getAll('working-days').join(',');
++            data['employeeId'] = data['employee-id'];
++
++            // Legacy compatibility
++            data['start-time'] = data['startTime'];
++            data['end-time'] = data['endTime'];
++            data['working-days'] = data['workingDays'];
++
++            // Cleanup temp 12h fields
++            ['start-hour', 'start-min', 'start-period', 'end-hour', 'end-min', 'end-period'].forEach(f => delete data[f]);
++            data.isActive = true;
++
++            try {
++                const res = await fetch('/api/employees', {
++                    method: 'POST',
++                    headers: { 'Content-Type': 'application/json' },
++                    body: JSON.stringify(data)
++                });
++                const result = await res.json();
++                if (result.success) {
++                    await nammaModalSystem.alert("Employee added successfully!");
++                    window.closeAddEmployeePanel();
++                    if (typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
++                } else {
++                    await nammaModalSystem.alert("Error: " + result.message);
++                }
++            } catch (err) {
++                await nammaModalSystem.alert("Server communication failed.");
++            } finally {
++                if (btn) {
++                    btn.disabled = false;
++                    btn.innerHTML = originalHtml;
++                }
++            }
+         });
+     }
+ 
++    // Event Delegation for Add Employee Button
++    document.addEventListener('click', (e) => {
++        const btn = e.target.closest('#spa-add-employee-btn');
++        if (btn) {
++            if (typeof window.openAddEmployeePanel === 'function') {
++                window.openAddEmployeePanel();
++            }
++        }
++    });
++
+     // Global action: Toggle Employee Status
+     window.spaToggleEmployeeStatus = async function (id, isCurrentlyActive) {
+         const action = isCurrentlyActive ? 'deactivate' : 'activate';
+@@ -1456,30 +1755,39 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+         grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">Loading snapshots...</p>';
+ 
+-        fetch(`/api/esr-jpgs?employeeId=${employeeId}`)
++        // Use the correct shift-summary API
++        fetch(`/api/shift-summary`)
+             .then(res => res.json())
+             .then(data => {
+-                if (data.success && data.jpgs && data.jpgs.length > 0) {
++                if (data.success && data.reports && data.reports.length > 0) {
++                    // Filter for this specific employee if provided
++                    const filteredReports = employeeId ? data.reports.filter(r => r.employeeId === employeeId) : data.reports;
++
++                    if (filteredReports.length === 0) {
++                        grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found.</p>';
++                        return;
++                    }
++
+                     grid.innerHTML = '';
+-                    data.jpgs.forEach(jpg => {
+-                        const imageUrl = `data:image/jpeg;base64,${jpg.jpgData}`;
++                    filteredReports.forEach(report => {
++                        const imageUrl = `/api/shift-summary/${report.id}/image`;
+                         const item = document.createElement('div');
+                         item.className = 'jpg-item';
+                         item.innerHTML = `
+                             <img src="${imageUrl}" alt="ESR" onclick="window.showEsrFullscreen('${imageUrl}')">
+                             <div class="jpg-info">
+-                                <span>${jpg.date}</span>
+-                                <span>Shift: ${jpg.shift_id}</span>
++                                <span>${report.date}</span>
++                                <span>ID: ${report.id.split('_').pop()}</span>
+                             </div>
+                         `;
+                         grid.appendChild(item);
+                     });
+                 } else {
+-                    grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found for this employee.</p>';
++                    grid.innerHTML = '<p style="padding: 20px; text-align: center; color: #64748b;">No snapshots found.</p>';
+                 }
+             })
+             .catch(err => {
+-                console.error('Error fetching ESR JPGs:', err);
++                console.error('Error fetching ESR snapshots:', err);
+                 grid.innerHTML = '<p style="color:red; text-align: center;">Error loading snapshots.</p>';
+             });
+     }
+@@ -1541,23 +1849,34 @@ document.addEventListener('DOMContentLoaded', () => {
+     });
+ 
+     // Global action: Edit Employee
++
++    // --- EDIT EMPLOYEE SPA SLIDE-OVER LOGIC ---
++    window.openEditEmployeePanel = function () {
++        const panel = document.getElementById('edit-employee-panel');
++        const overlay = document.getElementById('edit-employee-overlay');
++        if (panel && overlay) {
++            overlay.classList.add('show');
++            panel.classList.add('show');
++        }
++    };
++
++    window.closeEditEmployeePanel = function () {
++        const panel = document.getElementById('edit-employee-panel');
++        const overlay = document.getElementById('edit-employee-overlay');
++        if (panel && overlay) {
++            overlay.classList.remove('show');
++            panel.classList.remove('show');
++        }
++    };
++
+     window.spaEditEmployee = function (id) {
+         fetch('/api/employees/' + id)
+             .then(res => res.json())
+             .then(emp => {
+-                // Helper: set value + handle select elements correctly
+                 const setVal = (vid, val) => {
+                     const el = document.getElementById(vid);
+                     if (!el) return;
+                     if (el.tagName === 'SELECT') {
+-                        // Find the matching option (case-insensitive)
+-                        const target = (val || '').toString().toLowerCase();
+-                        for (const opt of el.options) {
+-                            if (opt.value.toLowerCase() === target || opt.text.toLowerCase() === target) {
+-                                el.value = opt.value;
+-                                return;
+-                            }
+-                        }
+                         el.value = val || '';
+                     } else {
+                         el.value = val !== undefined && val !== null ? val : '';
+@@ -1566,74 +1885,82 @@ document.addEventListener('DOMContentLoaded', () => {
+ 
+                 setVal('spa-edit-id', emp.id || emp._id);
+                 setVal('spa-edit-name', emp.name);
+-                setVal('spa-edit-employee-id', emp.employeeId);
+-                setVal('spa-edit-address', emp.address);
+-                setVal('spa-edit-blood-group', emp.bloodGroup);
++                setVal('spa-edit-employee-id', emp.employeeId || emp['employee-id'] || emp.username);
+                 setVal('spa-edit-phone', emp.phone);
+-                setVal('spa-edit-guardian-name', emp.guardianName);
+-                setVal('spa-edit-relationship', emp.relationship);
+-                setVal('spa-edit-guardian-phone', emp.guardianPhone);
+-                setVal('spa-edit-aadhar-number', emp.aadharNumber);
++                setVal('spa-edit-aadhar-number', emp['aadhar-number'] || emp.aadharNumber);
++                setVal('spa-edit-email', emp.email);
++                setVal('spa-edit-address', emp.address);
++                setVal('spa-edit-username', emp.username);
++                setVal('spa-edit-password', emp.password);
++                setVal('spa-edit-break-time', emp['break-time'] || emp.breakTime || 30);
++                setVal('spa-edit-guardian-name', emp['guardian-name'] || emp.guardianName);
++                setVal('spa-edit-guardian-phone', emp['guardian-phone'] || emp.guardianPhone);
++                setVal('spa-edit-guardian-relationship', emp['guardian-relationship'] || emp.guardianRelationship || emp.relationship);
++                setVal('spa-edit-bank-name', emp['bank-name'] || emp.bankName);
++                setVal('spa-edit-bank-branch', emp['bank-branch'] || emp.bankBranch);
++                setVal('spa-edit-account-number', emp['account-number'] || emp.accountNumber);
++                setVal('spa-edit-account-holder-name', emp['account-holder-name'] || emp.accountHolderName);
++                setVal('spa-edit-ifsc-code', emp['ifsc-code'] || emp.ifscCode);
++                setVal('spa-edit-pan-number', emp['pan-number'] || emp.panNumber);
++                let basic = parseFloat(emp.basicSalary || emp['basic-salary'] || emp['basicSalary']) || '';
++                const isPartTime = (emp['full-time'] === 'no' || emp.fullTime === 'no');
++                if (isPartTime && basic) {
++                    basic = basic / 240;
++                }
++                setVal('spa-edit-basic-salary', basic);
++                setVal('spa-edit-lop-per-day', emp.lopPerDay || '');
++                setVal('spa-edit-lop-per-hour', emp.lopPerHour || '');
++                setVal('spa-edit-esi', emp.esi || emp.ESI);
+ 
+-                // DOB - normalize to date input format
++                setVal('spa-edit-joining-date', emp['joining-date'] || emp.joiningDate);
++                setVal('spa-edit-pf-number', emp['pf-number'] || emp.pfNumber);
++                setVal('spa-edit-uan-number', emp['uan-number'] || emp.uanNumber);
++                setVal('spa-edit-location', emp.location);
++
++                setVal('spa-edit-gender', emp.gender);
++                setVal('spa-edit-marital-status', emp['marital-status'] || emp.maritalStatus);
++                const spaEditFullTimeSelect = document.getElementById('spa-edit-full-time');
++                if (spaEditFullTimeSelect) {
++                    spaEditFullTimeSelect.value = emp['full-time'] || emp.fullTime || 'yes';
++                    spaEditFullTimeSelect.dispatchEvent(new Event('change'));
++                }
+                 const dobEl = document.getElementById('spa-edit-dob');
+                 if (dobEl) {
+                     try { dobEl.value = emp.dob ? new Date(emp.dob).toISOString().split('T')[0] : ''; }
+-                    catch (e) { dobEl.value = emp.dob || ''; }
++                    catch (e) { dobEl.value = ''; }
++                    dobEl.dispatchEvent(new Event('change'));
+                 }
+ 
+-                setVal('spa-edit-gender', emp.gender);
+-                setVal('spa-edit-marital-status', emp.maritalStatus);
+-                setVal('spa-edit-email', emp.email);
+-                setVal('spa-edit-bank-name', emp.bankName);
+-                setVal('spa-edit-bank-branch', emp.bankBranch);
+-                setVal('spa-edit-ifsc-code', emp.ifscCode);
+-                setVal('spa-edit-account-number', emp.accountNumber);
+-                setVal('spa-edit-account-holder-name', emp.accountHolderName);
+-                setVal('spa-edit-pan-number', emp.panNumber);
+-
+-                // Full-time select
+-                const fullTimeEl = document.getElementById('spa-edit-full-time');
+-                if (fullTimeEl) {
+-                    fullTimeEl.value = emp.fullTime || 'yes';
+-                    fullTimeEl.dispatchEvent(new Event('change'));
+-                }
+-                setVal('spa-edit-start-time', emp.startTime);
+-                setVal('spa-edit-end-time', emp.endTime);
+-                setVal('spa-edit-break-time', emp.breakTime);
+-
+-                // Working days checkboxes
+-                const days = emp.workingDays
+-                    ? (Array.isArray(emp.workingDays) ? emp.workingDays : emp.workingDays.split(',').map(d => d.trim()))
+-                    : [];
+-                document.querySelectorAll('input[name="working-days"]').forEach(cb => {
++                const days = (emp.workingDays || '').split(',');
++                document.querySelectorAll('#spa-edit-employee-form input[name="working-days"]').forEach(cb => {
+                     cb.checked = days.includes(cb.value);
+                 });
+ 
+-                setVal('spa-edit-username', emp.username);
+-                setVal('spa-edit-password', emp.password);
++                const convertTo12h = (timeStr, prefix) => {
++                    if (!timeStr) return;
++                    try {
++                        const [h24, m] = timeStr.split(':');
++                        let hour = parseInt(h24);
++                        let period = 'AM';
++                        if (hour >= 12) {
++                            period = 'PM';
++                            if (hour > 12) hour -= 12;
++                        } else if (hour === 0) {
++                            hour = 12;
++                        }
++                        setVal(`spa-edit-${prefix}-hour`, String(hour).padStart(2, '0'));
++                        setVal(`spa-edit-${prefix}-min`, m);
++                        setVal(`spa-edit-${prefix}-period`, period);
++                    } catch (e) { }
++                };
+ 
+-                // Open modal with animation
+-                const modal = document.getElementById('spa-edit-employee-modal');
+-                if (modal) {
+-                    modal.style.display = 'flex';
+-                    setTimeout(() => modal.classList.add('show'), 10);
+-                }
++                convertTo12h(emp.startTime, 'start');
++                convertTo12h(emp.endTime, 'end');
++
++                window.openEditEmployeePanel();
+             })
+             .catch(err => console.error('Error fetching employee:', err));
+     };
+-
+-    // Make edit modal closer workable
+-    document.querySelectorAll('.close-spa-edit, .close-spa-edit-btn').forEach(btn => {
+-        btn.addEventListener('click', () => {
+-            const modal = document.getElementById('spa-edit-employee-modal');
+-            if (modal) {
+-                modal.classList.remove('show');
+-                setTimeout(() => modal.style.display = 'none', 300);
+-            }
+-        });
+-    });
+-
+     // Handle Edit form submission
+     const spaEditSaveBtn = document.getElementById('spa-edit-save-btn');
+     if (spaEditSaveBtn) {
+@@ -1648,76 +1975,178 @@ document.addEventListener('DOMContentLoaded', () => {
+             const formData = new FormData(form);
+             const data = Object.fromEntries(formData.entries());
+ 
+-            // Handling checkboxes intentionally
+-            data['working-days'] = formData.getAll('working-days').join(',');
+-
+-            // Transform data structure equivalent to edit handling:
+-            const mappedData = {
+-                name: data.name,
+-                employeeId: data['employee-id'],
+-                address: data.address,
+-                bloodGroup: data['blood-group'],
+-                phone: data.phone,
+-                guardianName: data['guardian-name'],
+-                relationship: data.relationship,
+-                guardianPhone: data['guardian-phone'],
+-                aadharNumber: data['aadhar-number'],
+-                dob: data.dob,
+-                gender: data.gender,
+-                maritalStatus: data['marital-status'],
+-                email: data.email,
+-                bankName: data['bank-name'],
+-                bankBranch: data['bank-branch'],
+-                ifscCode: data['ifsc-code'],
+-                accountNumber: data['account-number'],
+-                accountHolderName: data['account-holder-name'],
+-                panNumber: data['pan-number'],
+-                fullTime: data['full-time'],
+-                startTime: data['start-time'],
+-                endTime: data['end-time'],
+-                breakTime: data['break-time'],
+-                workingDays: data['working-days'],
+-                username: data.username,
+-                password: data.password
++            // Convert 12h format to 24h for backend
++            const convertTo24h = (h, m, p) => {
++                let hour = parseInt(h);
++                if (p === 'PM' && hour < 12) hour += 12;
++                if (p === 'AM' && hour === 12) hour = 0;
++                return `${String(hour).padStart(2, '0')}:${m}`;
+             };
+ 
++            data['startTime'] = convertTo24h(data['start-hour'], data['start-min'], data['start-period']);
++            data['endTime'] = convertTo24h(data['end-hour'], data['end-min'], data['end-period']);
++            data['workingDays'] = formData.getAll('working-days').join(',');
++            data['employeeId'] = data['employee-id'];
++            data['guardianRelationship'] = data['guardian-relationship'];
++
++            if (data['full-time'] === 'no' || data['fullTime'] === 'no') {
++                if (data.basicSalary) data.basicSalary = String(parseFloat(data.basicSalary) * 240);
++                if (data['basic-salary']) data['basic-salary'] = String(parseFloat(data['basic-salary']) * 240);
++            }
++
++            const btn = document.getElementById('spa-edit-save-btn');
++            const originalHtml = btn.innerHTML;
++            btn.disabled = true;
++            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
++
+             fetch('/api/employees/' + id, {
+                 method: 'PUT',
+                 headers: { 'Content-Type': 'application/json' },
+-                body: JSON.stringify(mappedData)
++                body: JSON.stringify(data)
+             })
+                 .then(res => res.json())
+                 .then(async (result) => {
++                    btn.disabled = false;
++                    btn.innerHTML = originalHtml;
+                     if (result.success) {
+-                        await nammaModalSystem.alert('Employee details updated successfully!');
+-                        const modal = document.getElementById('spa-edit-employee-modal');
+-                        modal.classList.remove('show');
+-                        setTimeout(() => modal.style.display = 'none', 300);
++                        await nammaModalSystem.alert('Employee record modernized & saved!');
++                        window.closeEditEmployeePanel();
+                         fetchEmployeesForSPA();
+                     } else {
+                         await nammaModalSystem.alert('Error updating employee: ' + result.message);
+                     }
+                 })
+                 .catch(async (err) => {
++                    btn.disabled = false;
++                    btn.innerHTML = originalHtml;
+                     console.error(err);
+-                    await nammaModalSystem.alert('Failed to connect to server.');
++                    await nammaModalSystem.alert('Server error while saving.');
+                 });
+         });
+     }
+ 
++    // --- PDF EXPORT LOGIC ---
++    window.downloadEmployeePDF = function () {
++        const form = document.getElementById('spa-edit-employee-form');
++        if (!form) return;
++
++        const formData = new FormData(form);
++        const data = Object.fromEntries(formData.entries());
++        const empName = data.name || 'Employee';
++        const empId = data['employee-id'] || 'N/A';
++
++        // Create a temporary container for the PDF content
++        const element = document.createElement('div');
++        element.style.padding = '40px';
++        element.style.fontFamily = "'Outfit', 'Inter', sans-serif";
++        element.style.color = '#1E293B';
++        element.style.background = '#FFFFFF';
++
++        element.innerHTML = `
++            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 20px; margin-bottom: 30px;">
++                <div>
++                    <h1 style="margin: 0; color: #0F172A; font-size: 28px; font-weight: 800;">Staff Profile</h1>
++                    <p style="margin: 5px 0 0; color: #64748B; font-size: 14px; font-weight: 500;">Extensive Manager | Official Record</p>
++                </div>
++                <div style="text-align: right;">
++                    <div style="background: #F95A2C; color: white; padding: 8px 16px; border-radius: 10px; font-weight: 700; display: inline-block;">
++                        ID: ${empId}
++                    </div>
++                </div>
++            </div>
++
++            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
++                <!-- Column 1: Personal -->
++                <div>
++                    <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Personal Details</h3>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Full Name:</strong> <span style="display: block; font-size: 15px; font-weight: 600;">${empName}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Phone:</strong> <span style="display: block; font-size: 15px;">${data.phone || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Email:</strong> <span style="display: block; font-size: 15px;">${data.email || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Aadhar:</strong> <span style="display: block; font-size: 15px;">${data['aadhar-number'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">DOB:</strong> <span style="display: block; font-size: 15px;">${data.dob || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Address:</strong> <span style="display: block; font-size: 14px; line-height: 1.5;">${data.address || 'N/A'}</span></div>
++                </div>
++
++                <!-- Column 2: Employment & Banking -->
++                <div>
++                    <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Work & Financials</h3>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Employment:</strong> <span style="display: block; font-size: 15px;">${data['full-time'] === 'yes' ? 'Full Time' : 'Part Time'}</span></div>
++
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Joining Date:</strong> <span style="display: block; font-size: 15px;">${data['joining-date'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Salary:</strong> <span style="display: block; font-size: 16px; font-weight: 700; color: #16A34A;">₹${data.basicSalary || '0'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Bank Name:</strong> <span style="display: block; font-size: 15px;">${data['bank-name'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">A/C Number:</strong> <span style="display: block; font-size: 15px;">${data['account-number'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">IFSC:</strong> <span style="display: block; font-size: 15px;">${data['ifsc-code'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PAN:</strong> <span style="display: block; font-size: 15px;">${data['pan-number'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PF Number:</strong> <span style="display: block; font-size: 15px;">${data['pf-number'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">PF UAN:</strong> <span style="display: block; font-size: 15px;">${data['uan-number'] || 'N/A'}</span></div>
++                    <div style="margin-bottom: 10px;"><strong style="font-size: 12px; color: #64748B;">Location:</strong> <span style="display: block; font-size: 15px;">${data.location || 'N/A'}</span></div>
++                </div>
++            </div>
++
++            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
++                <h3 style="color: #F95A2C; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 15px;">Guardian & Emergency</h3>
++                <div style="display: flex; gap: 40px;">
++                    <div><strong style="font-size: 12px; color: #64748B;">Name:</strong> <span style="display: block; font-size: 15px;">${data['guardian-name'] || 'N/A'}</span></div>
++                    <div><strong style="font-size: 12px; color: #64748B;">Relation:</strong> <span style="display: block; font-size: 15px;">${data['guardian-relationship'] || 'N/A'}</span></div>
++                    <div><strong style="font-size: 12px; color: #64748B;">Phone:</strong> <span style="display: block; font-size: 15px;">${data['guardian-phone'] || 'N/A'}</span></div>
++                </div>
++            </div>
++
++            <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #94A3B8;">
++                This is a digitally generated document from Extensive Manager ERP System. <br>
++                Generated on ${new Date().toLocaleString()}
++            </div>
++        `;
++
++        const opt = {
++            margin: 0,
++            filename: `Staff_Profile_${empId}_${empName.replace(/\s+/g, '_')}.pdf`,
++            image: { type: 'jpeg', quality: 0.98 },
++            html2canvas: { scale: 2, useCORS: true },
++            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
++        };
++
++        html2pdf().set(opt).from(element).save();
++    };
++
+     // Toggle full-time specific fields in Edit Modal
+     const spaEditFullTimeSelect = document.getElementById('spa-edit-full-time');
+     if (spaEditFullTimeSelect) {
+         spaEditFullTimeSelect.addEventListener('change', (e) => {
+             const timeGroups = document.querySelectorAll('.spa-edit-time-group');
++            const label = document.getElementById('spa-edit-basic-salary-label');
+             if (e.target.value === 'yes') {
+-                timeGroups.forEach(group => group.style.display = 'block');
++                timeGroups.forEach(group => group.style.display = 'flex');
++                if (label) label.innerHTML = 'Monthly Basic salary *';
+             } else {
+                 timeGroups.forEach(group => group.style.display = 'none');
++                if (label) label.innerHTML = 'Hourly Pay Rate *';
+             }
+         });
+     }
+ 
++    // Toggle full-time specific fields in Add Modal
++    const addEmployeeForm = document.getElementById('spa-add-employee-form');
++    if (addEmployeeForm) {
++        const addFullTimeSelect = addEmployeeForm.querySelector('select[name="full-time"]');
++        if (addFullTimeSelect) {
++            addFullTimeSelect.addEventListener('change', (e) => {
++                const timeGroups = document.querySelectorAll('.spa-add-time-group');
++                const label = document.getElementById('spa-add-basic-salary-label');
++                if (e.target.value === 'yes') {
++                    timeGroups.forEach(group => group.style.display = 'flex');
++                    if (label) label.innerHTML = 'Monthly Basic salary *';
++                } else {
++                    timeGroups.forEach(group => group.style.display = 'none');
++                    if (label) label.innerHTML = 'Hourly Pay Rate *';
++                }
++            });
++            // Initial trigger
++            addFullTimeSelect.dispatchEvent(new Event('change'));
++        }
++    }
++
+     // Make SPA edit modal draggable
+     const spaEditModalParams = document.getElementById('spa-edit-employee-modal');
+     const spaEditModalTitleBar = document.querySelector('.modal-title-bar');
+@@ -1843,6 +2272,7 @@ document.addEventListener('DOMContentLoaded', () => {
+                     await nammaModalSystem.alert('Credentials updated successfully! Kicking off session for security...');
+                     // FORCE LOGOUT
+                     localStorage.removeItem('adminLoggedIn');
++                    try { await fetch('/logout', { method: 'POST' }); } catch(e) {}
+                     window.location.href = '/';
+                 } else {
+                     await nammaModalSystem.alert(result.message || 'Verification failed');
+@@ -1962,7 +2392,8 @@ document.addEventListener('DOMContentLoaded', () => {
+                 const result = await res.json();
+                 if (result.success) {
+                     await nammaModalSystem.alert('Settings restored to defaults! Logging out for security...');
+-                    window.location.href = '/logout';
++                    await fetch('/logout', { method: 'POST' });
++                    window.location.href = '/';
+                 }
+             } catch (err) { await nammaModalSystem.alert('Failed to reset settings'); }
+         });
+@@ -2028,7 +2459,7 @@ document.addEventListener('DOMContentLoaded', () => {
+             return {
+                 'Employee Name': s.name,
+                 'Employee ID': s.id,
+-                'Role': s.fullTime === 'yes' ? 'Full Time' : 'Part Time',
++                'Role': (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time',
+                 'Status': s.statusText,
+                 'Check-In': checkInStr,
+                 'Check-Out': checkOutStr,
+@@ -2134,10 +2565,32 @@ document.addEventListener('DOMContentLoaded', () => {
+             try {
+                 // Fetch raw logs and reconstruct sessions client-side
+                 const res = await fetch('/api/attendance/logs/raw?filter=' + dateFilter);
++                
++                const contentType = res.headers.get('content-type');
++                if (!contentType || !contentType.includes('application/json')) {
++                    if (res.redirected) {
++                        window.location.href = '/';
++                        return;
++                    }
++                    const text = await res.text();
++                    throw new Error(`API returned non-JSON response. Status: ${res.status}. ${text.substring(0, 50)}`);
++                }
++                
+                 const data = await res.json();
+                 if (!data.success) return;
+ 
+                 const logs = data.logs || [];
++                
++                // Fix: Ensure employees are loaded so shift times can be mapped correctly
++                if (allEmployeesForSPA.length === 0) {
++                    try {
++                        const empRes = await fetch('/api/employees');
++                        if (empRes.ok && empRes.headers.get('content-type')?.includes('application/json')) {
++                            allEmployeesForSPA = await empRes.json();
++                        }
++                    } catch(e) { console.error('Failed to load employees for sessions', e); }
++                }
++
+                 window.calculateAdminSummary(logs); // Update KPI cards
+ 
+                 // Build sessions map per employee per day
+@@ -2155,21 +2608,30 @@ document.addEventListener('DOMContentLoaded', () => {
+                             checkOutTs: null,
+                             totalBreakMs: 0,
+                             currentBreakStart: null,
+-                            lastEventTs: null
++                            lastEventTs: null,
++                            hasSecondShiftWarning: false
+                         };
+                     }
+                     const m = sessionsMap[empId];
+                     const t = new Date(log.timestamp).getTime() || Date.now();
+                     const action = (log.action || log.type || '').toUpperCase();
+ 
+-                    if (action === 'CLOCK_IN' || action === 'CLOCK_IN_PENDING' || action === 'CHECK_IN' || action === 'IN') {
++                    if (action.includes('CLOCK_IN') || action.includes('CHECK_IN') || action === 'IN' || action === 'EARLY_ARRIVAL' || action === 'LATE_ARRIVAL') {
+                         if (m.checkInTs === null) m.checkInTs = t; // only first check-in (including late arrivals)
++                        
++                        if (action === 'CLOCK_IN_SECOND_SHIFT' || action === 'SECOND_SHIFT') {
++                            m.hasSecondShiftWarning = true;
++                        }
+                     } else if (action === 'BREAK_START') {
+                         m.currentBreakStart = t;
+                     } else if (action === 'BREAK_END' && m.currentBreakStart) {
+                         m.totalBreakMs += (t - m.currentBreakStart);
+                         m.currentBreakStart = null;
+-                    } else if (action === 'CLOCK_OUT' || action === 'CHECK_OUT' || action === 'OUT') {
++                    } else if (action && (action.includes('CLOCK_OUT') || action.includes('CHECK_OUT') || action === 'OUT')) {
++                        if (m.currentBreakStart) {
++                            m.totalBreakMs += (t - m.currentBreakStart);
++                            m.currentBreakStart = null;
++                        }
+                         m.checkOutTs = t; // always update to latest checkout
+                     }
+                     m.lastEventTs = t;
+@@ -2226,12 +2688,25 @@ document.addEventListener('DOMContentLoaded', () => {
+             // Required work hours (standard minus net)
+             const workHrMin = Math.min(netWorkMin, REQUIRED_MINUTES);
+ 
+-            // Late time: minutes after 9 AM the employee checked in
++            // Late time: dynamically calculated based on employee's shift
+             let lateMin = 0;
+             if (s.checkInTs) {
+                 const checkInDate = new Date(s.checkInTs);
+                 const shiftStart = new Date(checkInDate);
+-                shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
++                
++                let startHour = SHIFT_START_HOUR;
++                let startMin = 0;
++                
++                // Dynamically fetch employee's shift start time
++                const emp = (allEmployeesForSPA || []).find(e => e.id === s.empId);
++                const shiftStartStr = emp ? (emp['start-time'] || emp.startTime) : null;
++                if (shiftStartStr) {
++                    const [h, m] = shiftStartStr.split(':').map(Number);
++                    startHour = h;
++                    startMin = m;
++                }
++
++                shiftStart.setHours(startHour, startMin, 0, 0);
+                 lateMin = Math.max(0, toMin(checkInDate - shiftStart));
+             }
+ 
+@@ -2242,8 +2717,10 @@ document.addEventListener('DOMContentLoaded', () => {
+             if (!s.checkOutTs && !isActive) remarks.push('<span style="color:#EF4444;">No Checkout</span>');
+             if (extraMin > 0) remarks.push('<span style="color:#10B981;">+' + extraMin + 'm OT</span>');
+             if (lateMin > 10) remarks.push('<span style="color:#EF4444;">Late ' + lateMin + 'm</span>');
+-            if (lateMin <= 10 && netWorkMin >= REQUIRED_MINUTES) remarks.push('<span style="color:#10B981;">✓ On Time</span>');
+-            const remarksHtml = remarks.length ? remarks.join(', ') : '–';
++            if (s.hasSecondShiftWarning) remarks.push('<span style="color:#EF4444;font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Pending 2nd Shift</span>');
++            if (lateMin <= 10 && netWorkMin >= REQUIRED_MINUTES && !s.hasSecondShiftWarning) remarks.push('<span style="color:#10B981;">✅ On Time</span>');
++            
++            const remarksHtml = remarks.length ? remarks.join(', ') : '-';
+ 
+             const eInit = s.empName.charAt(0).toUpperCase();
+             const rowBg = isActive ? 'background: rgba(16,185,129,0.04);' : '';
+@@ -2279,6 +2756,7 @@ document.addEventListener('DOMContentLoaded', () => {
+         let html = '';
+         logs.forEach(log => {
+             const time = new Date(log.timestamp).toLocaleString('en-IN', {
++                timeZone: 'Asia/Kolkata',
+                 day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
+             });
+ 
+@@ -2291,6 +2769,15 @@ document.addEventListener('DOMContentLoaded', () => {
+             else if (typeLabel === 'CLOCK_OUT' || typeLabel === 'OUT') { typeColor = '#EF4444'; typeLabel = 'Check Out'; statusClass = 'idle'; }
+             else if (typeLabel === 'BREAK_START') { typeColor = '#F59E0B'; typeLabel = 'Break Start'; statusClass = 'on_break'; }
+             else if (typeLabel === 'BREAK_END') { typeColor = '#3B82F6'; typeLabel = 'Break End'; statusClass = 'working'; }
++            else if (typeLabel === 'LATE_ARRIVAL') { typeColor = '#EF4444'; typeLabel = 'Late Arrival'; statusClass = 'working'; }
++            else if (typeLabel === 'EARLY_ARRIVAL') { typeColor = '#10B981'; typeLabel = 'Early Arrival'; statusClass = 'working'; }
++            else if (typeLabel === 'DISCREPANCY_APPROVE') { typeColor = '#3B82F6'; typeLabel = 'Discrepancy Approved'; statusClass = 'idle'; }
++            else if (typeLabel === 'DISCREPANCY_DECLINE') { typeColor = '#64748B'; typeLabel = 'Discrepancy Declined'; statusClass = 'idle'; }
++            else if (typeLabel.includes('_')) { 
++                // Generic fallback for any other backend keys: "SOME_BACKEND_KEY" -> "Some Backend Key"
++                typeLabel = typeLabel.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); 
++                typeColor = '#64748B';
++            }
+ 
+             const checked = window.selectedLogIds.has(log.id) ? 'checked' : '';
+ 
+@@ -2359,51 +2846,42 @@ document.addEventListener('DOMContentLoaded', () => {
+         }
+     };
+ 
++    // --- NEW GLOBAL ALERT STATE ---
++    window.dashboardAlerts = {
++        attendance: [],
++        integrity: []
++    };
++
+     window.calculateAdminSummary = function (logs) {
+         if (!logs) return;
+         const empSet = new Set();
+         let currentlyWorking = new Set();
+         let onBreak = new Set();
+-
+-        // This simulates reconstructing the daily sessions to find accurate total hours
+         const sessionsMap = {};
+ 
+         logs.forEach(log => {
+             empSet.add(log.employeeId);
+             const empId = log.employeeId;
++            if (log.statusAfter === 'WORKING') { currentlyWorking.add(empId); onBreak.delete(empId); }
++            else if (log.statusAfter === 'ON_BREAK') { onBreak.add(empId); currentlyWorking.delete(empId); }
++            else if (log.statusAfter === 'IDLE') { currentlyWorking.delete(empId); onBreak.delete(empId); }
+ 
+-            // Latest status tracking
+-            if (log.statusAfter === 'WORKING') {
+-                currentlyWorking.add(empId);
+-                onBreak.delete(empId);
+-            } else if (log.statusAfter === 'ON_BREAK') {
+-                onBreak.add(empId);
+-                currentlyWorking.delete(empId);
+-            } else if (log.statusAfter === 'IDLE') {
+-                currentlyWorking.delete(empId);
+-                onBreak.delete(empId);
+-            }
+-
+-            // Session reconstruction engine (Local simulation of server rebuilding)
+             if (!sessionsMap[empId]) sessionsMap[empId] = { totalWorkMs: 0, currentCheckIn: null, currentBreakStart: null, totalBreakMs: 0 };
+             const m = sessionsMap[empId];
+             const t = new Date(log.timestamp).getTime();
+-
+-            if (log.action === 'CLOCK_IN') m.currentCheckIn = t;
++            if (log.action && (log.action.includes('CLOCK_IN') || log.action === 'EARLY_ARRIVAL' || log.action === 'LATE_ARRIVAL')) m.currentCheckIn = t;
+             else if (log.action === 'BREAK_START') m.currentBreakStart = t;
+-            else if (log.action === 'BREAK_END' && m.currentBreakStart) {
+-                m.totalBreakMs += (t - m.currentBreakStart);
+-                m.currentBreakStart = null;
+-            }
+-            else if (log.action === 'CLOCK_OUT' && m.currentCheckIn) {
+-                let sessionWork = (t - m.currentCheckIn);
+-                // Assume breaks inside this session are captured globally for simplicity here
+-                m.totalWorkMs += sessionWork;
+-                m.currentCheckIn = null;
++            else if (log.action === 'BREAK_END' && m.currentBreakStart) { m.totalBreakMs += (t - m.currentBreakStart); m.currentBreakStart = null; }
++            else if (log.action && log.action.includes('CLOCK_OUT') && m.currentCheckIn) { 
++                if (m.currentBreakStart) {
++                    m.totalBreakMs += (t - m.currentBreakStart);
++                    m.currentBreakStart = null;
++                }
++                m.totalWorkMs += (t - m.currentCheckIn); 
++                m.currentCheckIn = null; 
+             }
+         });
+ 
+-        // Add currently active incomplete sessions
+         const nowMs = Date.now();
+         Object.values(sessionsMap).forEach(m => {
+             if (m.currentBreakStart) m.totalBreakMs += (nowMs - m.currentBreakStart);
+@@ -2413,7 +2891,7 @@ document.addEventListener('DOMContentLoaded', () => {
+         let totalWorkMsGlobal = 0;
+         let totalOvertimeMsGlobal = 0;
+         let totalLessTimeMsGlobal = 0;
+-        const requiredMs = 8 * 60 * 60 * 1000; // 8 hours
++        const requiredMs = 8 * 60 * 60 * 1000;
+ 
+         Object.values(sessionsMap).forEach(m => {
+             const actualWork = Math.max(0, m.totalWorkMs - m.totalBreakMs);
+@@ -2423,8 +2901,6 @@ document.addEventListener('DOMContentLoaded', () => {
+         });
+ 
+         const fmtHrs = (ms) => Math.floor(ms / 3600000) + 'h ' + Math.floor((ms % 3600000) / 60000) + 'm';
+-
+-        // --- DASHboard KPI Sync ---
+         const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+ 
+         setTxt('kpi-total-emps', empSet.size);
+@@ -2433,103 +2909,66 @@ document.addEventListener('DOMContentLoaded', () => {
+         setTxt('kpi-total-hrs', fmtHrs(totalWorkMsGlobal));
+         setTxt('kpi-total-ot', fmtHrs(totalOvertimeMsGlobal));
+         setTxt('kpi-total-lt', fmtHrs(totalLessTimeMsGlobal));
+-
+-        // Dashboard specific cards
+         setTxt('dash-working', currentlyWorking.size);
+         setTxt('dash-break', onBreak.size);
+-        setTxt('dash-checkins', logs.filter(l => (l.action || l.type || '').toUpperCase().includes('IN')).length);
+-
+-        // --- ALERT HUB LOGIC ---
+-        const alerts = [];
+-        const SHIFT_START_HOUR = 9;
+-        const now = new Date();
+-        const isToday = logs.length > 0 && new Date(logs[0].timestamp).toDateString() === now.toDateString();
+-
+-        // 1. Missing Check-outs (Only if it's "Today" or we're looking at live data)
+-        if (isToday) {
+-            Object.keys(sessionsMap).forEach(empId => {
+-                const s = sessionsMap[empId];
+-                if (s.currentCheckIn && !currentlyWorking.has(empId) && !onBreak.has(empId)) {
+-                    // This case shouldn't really happen with current logic, but a safety check
+-                }
+-            });
+-        }
+-
+-        // 2. Late Arrivals (>10 mins)
+-        Object.keys(sessionsMap).forEach(empId => {
+-            const s = sessionsMap[empId];
+-            if (s.currentCheckIn) {
+-                const checkInDate = new Date(s.currentCheckIn);
+-                const shiftStart = new Date(checkInDate);
+-                shiftStart.setHours(SHIFT_START_HOUR, 0, 0, 0);
+-                const lateMin = Math.floor((checkInDate - shiftStart) / 60000);
+-                if (lateMin > 10) {
+-                    alerts.push({
+-                        type: 'late',
+-                        title: 'Late Arrival',
+-                        user: logs.find(l => l.employeeId === empId)?.employeeName || 'Staff',
+-                        desc: `Checked in ${lateMin}m late`,
+-                        color: '#EF4444'
+-                    });
+-                }
+-            }
+-        });
+ 
+-        // 3. System Alerts (e.g. No activity yet today)
+-        if (isToday && logs.length === 0) {
+-            alerts.push({ type: 'info', title: 'Zero Activity', user: 'System', desc: 'No check-ins recorded today yet.', color: '#3B82F6' });
+-        }
+-
+-        renderAlertHub(alerts);
++        // We now rely on loadDashboardData's engine for Action Required alerts
+     };
+ 
+-    window.renderAlertHub = function (alerts) {
+-        const section = document.getElementById('alert-hub-section');
+-        const container = document.getElementById('alert-list-container');
+-        const badge = document.getElementById('alert-count-badge');
+-        if (!section || !container) return;
++    window.renderActionRequired = function (manualAlerts) {
++        const listContainer = document.getElementById('action-required-list');
++        if (!listContainer) return;
++
++        // Use manualAlerts passed from loadDashboardData if available, fallback to global
++        const alerts = manualAlerts || window.dashboardAlerts.attendance || [];
+ 
+         if (alerts.length === 0) {
+-            section.style.display = 'none';
++            listContainer.innerHTML = `
++                <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
++                    <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5; color: #10B981;"></i>
++                    <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
++                </div>`;
+             return;
+         }
+ 
+-        section.style.display = 'block';
+-        badge.textContent = `${alerts.length} Issue${alerts.length > 1 ? 's' : ''}`;
++        listContainer.innerHTML = alerts.map(a => {
++            let actionHtml = '';
++            if (a.isActionable) {
++                if (a.type === 'bill_verification') {
++                    actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">${a.actionLabel || 'VERIFY'}</button>`;
++                } else {
++                    actionHtml = `
++                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap;">IGNORE</button>
++                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">APPROVE</button>
++                    `;
++                }
++            } else {
++                actionHtml = `<span style="font-size: 10px; color: #94a3b8; font-weight: 700; background: #f8fafc; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; text-transform: uppercase; white-space: nowrap;">INFO</span>`;
++            }
+ 
+-        container.innerHTML = alerts.map(a => `
+-            <div style="background: white; border: 1px solid ${a.color}33; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 8px;">
+-                <div style="width: 40px; height: 40px; border-radius: 12px; background: ${a.color}15; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+-                    <i class="fas fa-${a.icon || 'info-circle'}"></i>
+-                </div>
+-                <div style="flex: 1;">
+-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+-                        <div>
+-                            <div style="font-weight: 700; font-size: 14px; color: #1E293B;">${a.user}</div>
+-                            <div style="font-size: 11px; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${a.desc}</div>
+-                        </div>
+-                        ${a.isActionable ? `
+-                            <div style="display: flex; gap: 6px;">
+-                                <button onclick="window.reviewAttendance('${a.id}', 'approve')" 
+-                                    style="padding: 4px 10px; border-radius: 8px; background: #10B981; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
+-                                    <i class="fas fa-check"></i> Approve
+-                                </button>
+-                                <button onclick="window.reviewAttendance('${a.id}', 'decline')" 
+-                                    style="padding: 4px 10px; border-radius: 8px; background: #EF4444; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px;">
+-                                    <i class="fas fa-times"></i> Decline
+-                                </button>
+-                            </div>
+-                        ` : ''}
++            return `
++            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
++                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
++                    <div style="width: 38px; height: 38px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">
++                        <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
++                    </div>
++                    <div style="flex: 1; min-width: 0;">
++                        <div style="font-weight: 700; font-size: 14px; color: #1E293B; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.user}</div>
++                        <div style="font-size: 11.5px; color: #64748B; font-weight: 600; line-height: 1.4; word-break: break-word;">${a.desc || a.title}</div>
+                     </div>
+                 </div>
++                <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
++                    ${actionHtml}
++                </div>
+             </div>
+-        `).join('');
++            `;
++        }).join('');
+     };
+ 
+     /**
+      * API Handler for Attendance Review
+      */
+-    window.reviewAttendance = async function (sessionId, action) {
++    window.reviewAttendance = async function (event, sessionId, action) {
+         try {
+             const btn = event.currentTarget;
+             const originalHtml = btn.innerHTML;
+@@ -2561,8 +3000,8 @@ document.addEventListener('DOMContentLoaded', () => {
+         if (!(await nammaModalSystem.confirm('Are you sure you want to completely erase the selected raw logs? This will recalculate sessions.', { theme: 'danger' }))) return;
+         const ids = Array.from(window.selectedLogIds);
+         try {
+-            const res = await fetch('/api/attendance/logs', {
+-                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
++            const res = await fetch('/api/attendance/logs/delete', {
++                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ logIds: ids })
+             });
+             const data = await res.json();
+@@ -2575,17 +3014,66 @@ document.addEventListener('DOMContentLoaded', () => {
+     }
+ 
+     window.bulkChangeAction = async function () {
+-        const newAction = await nammaModalSystem.prompt('Enter new action (CLOCK_IN, BREAK_START, BREAK_END, CLOCK_OUT):', { placeholder: 'e.g. CLOCK_IN' });
++        // Show a clean visual picker instead of a raw text prompt
++        const newAction = await new Promise((resolve) => {
++            const overlay = document.createElement('div');
++            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
++            
++            const types = [
++                { label: 'Check In',    value: 'CLOCK_IN',    icon: 'fa-sign-in-alt',  color: '#10B981', bg: '#ECFDF5', border: '#6EE7B7' },
++                { label: 'Break Start', value: 'BREAK_START', icon: 'fa-coffee',        color: '#F59E0B', bg: '#FFFBEB', border: '#FCD34D' },
++                { label: 'Break End',   value: 'BREAK_END',   icon: 'fa-play-circle',   color: '#3B82F6', bg: '#EFF6FF', border: '#93C5FD' },
++                { label: 'Check Out',   value: 'CLOCK_OUT',   icon: 'fa-sign-out-alt',  color: '#EF4444', bg: '#FEF2F2', border: '#FCA5A5' },
++            ];
++
++            overlay.innerHTML = `
++                <div style="background:#FFFFFF;border-radius:24px;padding:32px;width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.2);">
++                    <div style="font-size:18px;font-weight:800;color:#0F172A;margin-bottom:6px;">Change Event Type</div>
++                    <div style="font-size:13px;color:#94A3B8;margin-bottom:24px;">Select the new type for the selected log(s)</div>
++                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
++                        ${types.map(t => `
++                            <button data-val="${t.value}" style="background:${t.bg};border:1.5px solid ${t.border};border-radius:14px;padding:16px;cursor:pointer;text-align:left;transition:all 0.15s;">
++                                <i class="fas ${t.icon}" style="font-size:20px;color:${t.color};display:block;margin-bottom:8px;"></i>
++                                <div style="font-size:13px;font-weight:700;color:#1E293B;">${t.label}</div>
++                                <div style="font-size:10px;color:#94A3B8;margin-top:2px;">${t.value}</div>
++                            </button>
++                        `).join('')}
++                    </div>
++                    <button id="type-picker-cancel" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
++                </div>`;
++
++            document.body.appendChild(overlay);
++
++            overlay.querySelectorAll('[data-val]').forEach(btn => {
++                btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.03)');
++                btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
++                btn.addEventListener('click', () => {
++                    document.body.removeChild(overlay);
++                    resolve(btn.dataset.val);
++                });
++            });
++            overlay.querySelector('#type-picker-cancel').addEventListener('click', () => {
++                document.body.removeChild(overlay);
++                resolve(null);
++            });
++        });
++
+         if (!newAction) return;
+         const ids = Array.from(window.selectedLogIds);
+         try {
+             const res = await fetch('/api/attendance/logs/bulk-edit', {
+                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
+-                body: JSON.stringify({ logIds: ids, newAction: newAction.toUpperCase() })
++                body: JSON.stringify({ logIds: ids, newAction })
+             });
+             if ((await res.json()).success) {
++                // Instantly recalculate the backend sessions so the face scanner stays in perfect sync
++                await fetch('/api/attendance/sessions/recalculate', { method: 'POST' });
++                
+                 window.selectedLogIds.clear();
+                 window.fetchLogsRealtime();
++                if (__currentAttendanceView === 'sessions') {
++                    window.fetchDailySessions();
++                }
+             }
+         } catch (e) { await nammaModalSystem.alert('Edit failed'); }
+     }
+@@ -2631,15 +3119,64 @@ document.addEventListener('DOMContentLoaded', () => {
+     }
+ 
+     window.openFaceRegistration = async function (employeeId) {
+-        currentRegId = employeeId;
+-        const modal = document.getElementById('face-register-modal');
+-        if (modal) {
+-            modal.style.display = 'flex';
+-            setTimeout(() => modal.classList.add('show'), 10);
+-        }
++        try {
++            // Check if scanner page is open/active
++            const hbRes = await fetch('/api/scanner/heartbeat');
++            const hb = await hbRes.json();
++            if (!hb || !hb.active) {
++                await nammaModalSystem.alert(`The scanner page is not currently open on any device. Please make sure the scanner is open before sending a request.`, { theme: 'warning' });
++                return;
++            }
++
++            // Pre-check: Does this employee already have a face model?
++            const res = await fetch('/api/employees/' + employeeId);
++            const emp = await res.json();
++
++            if (emp.faceDescriptor) {
++                const proceed = await nammaModalSystem.confirm(`Existing biometric data found for ${emp.name}. Do you want to delete the old model and register a new one?`, {
++                    confirmText: "Delete and Re-scan",
++                    cancelText: "Cancel",
++                    theme: "danger"
++                });
++
++                if (!proceed) return;
++            }
++
++            const sendRequest = await nammaModalSystem.confirm(`Send face registration request for ${emp.name} to the scanner page?`, {
++                confirmText: "Send to Scanner",
++                cancelText: "Register Locally Here",
++                theme: "default"
++            });
++
++            if (sendRequest) {
++                const xsrf = document.cookie.match(new RegExp('(^| )xsrf-token=([^;]+)'))?.[2];
++                const reqRes = await fetch('/api/admin/face-requests', {
++                    method: 'POST',
++                    headers: {
++                        'Content-Type': 'application/json',
++                        'X-XSRF-TOKEN': xsrf
++                    },
++                    body: JSON.stringify({ employeeId, employeeName: emp.name })
++                });
++                if (reqRes.ok) {
++                    await nammaModalSystem.alert(`Face registration request successfully sent to scanner for ${emp.name}. You can complete it on the scanner page under 'Face Register'.`);
++                    return;
++                }
++            }
+ 
+-        await loadModels();
+-        startCamera();
++            currentRegId = employeeId;
++            const modal = document.getElementById('face-register-modal');
++            if (modal) {
++                modal.style.display = 'flex';
++                setTimeout(() => modal.classList.add('show'), 10);
++            }
++
++            await loadModels();
++            startCamera();
++        } catch (err) {
++            console.error('Error checking employee face data:', err);
++            await nammaModalSystem.alert('Failed to initialize biometric check. Please try again.');
++        }
+     };
+ 
+     window.closeFaceRegistration = function () {
+@@ -2675,7 +3212,10 @@ document.addEventListener('DOMContentLoaded', () => {
+         const video = document.getElementById('face-reg-video');
+         if (video && video.srcObject) {
+             video.srcObject.getTracks().forEach(t => t.stop());
++            video.srcObject = null;
+         }
++        const modal = document.getElementById('face-register-modal');
++        if (modal) modal.classList.remove('face-ready');
+     }
+ 
+     async function startDetectionLoop() {
+@@ -2697,33 +3237,68 @@ document.addEventListener('DOMContentLoaded', () => {
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+ 
+             if (detections) {
++                const modal = document.getElementById('face-register-modal');
+                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
+-                faceapi.draw.drawDetections(canvas, resizedDetections);
+-                if (status) {
+-                    status.textContent = 'Face detected. Hold steady...';
+-                    status.style.color = '#10B981';
++
++                // Custom Smart Rendering Logic
++                const box = resizedDetections.detection.box;
++                const centerX = box.x + box.width / 2;
++                const centerY = box.y + box.height / 2;
++
++                // Smart check: Is face centered in the guide?
++                const isCentered = Math.abs(centerX - displaySize.width / 2) < 70 &&
++                    Math.abs(centerY - displaySize.height / 2) < 70;
++
++                if (isCentered) {
++                    if (modal && !modal.classList.contains('face-ready')) {
++                        modal.classList.add('face-ready');
++                    }
++                    if (status) {
++                        status.textContent = 'Face Locked. Optimal Positioning.';
++                        status.style.color = '#10B981';
++                        document.getElementById('face-reg-status-pill').style.borderColor = '#10B981';
++                    }
++                    captureBtn.disabled = false;
++                    window.lastDescriptor = detections.descriptor;
++                } else {
++                    if (modal) modal.classList.remove('face-ready');
++                    if (status) {
++                        status.textContent = 'Align face with center guide...';
++                        status.style.color = '#64748B';
++                        document.getElementById('face-reg-status-pill').style.borderColor = '#E2E8F0';
++                    }
++                    captureBtn.disabled = true;
+                 }
+-                if (captureBtn) captureBtn.disabled = false;
+-                window.lastDescriptor = detections.descriptor;
++
++                // We don't draw the detection box anymore, the guide handles it visually
+             } else {
++                const modal = document.getElementById('face-register-modal');
++                if (modal) modal.classList.remove('face-ready');
+                 if (status) {
+-                    status.textContent = 'Position your face in the center';
++                    status.textContent = 'No face detected. Scanning...';
+                     status.style.color = '#64748B';
++                    document.getElementById('face-reg-status-pill').style.borderColor = '#E2E8F0';
+                 }
+-                if (captureBtn) captureBtn.disabled = true;
++                captureBtn.disabled = true;
+             }
++
+             if (detectionActive) requestAnimationFrame(detect);
+         };
+         detect();
+     }
+ 
+-    if (document.getElementById('capture-face-btn')) {
+-        document.getElementById('capture-face-btn').addEventListener('click', async () => {
+-            if (!window.lastDescriptor || !currentRegId) return;
++    // Attach to button only once
++    const captureBtn = document.getElementById('capture-face-btn');
++    if (captureBtn && !captureBtn.dataset.listenerAttached) {
++        captureBtn.dataset.listenerAttached = 'true';
++        captureBtn.addEventListener('click', async () => {
++            if (!window.lastDescriptor || !currentRegId) {
++                await nammaModalSystem.alert('Biometric focus lost. Please align your face again.');
++                return;
++            }
+ 
+-            const btn = document.getElementById('capture-face-btn');
+-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+-            btn.disabled = true;
++            captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing...';
++            captureBtn.disabled = true;
+ 
+             try {
+                 const res = await fetch('/api/employees/' + currentRegId + '/face', {
+@@ -2735,6 +3310,7 @@ document.addEventListener('DOMContentLoaded', () => {
+                 if (data.success) {
+                     await nammaModalSystem.alert('Biometric registration successful!');
+                     window.closeFaceRegistration();
++                    if (typeof fetchEmployeesForSPA === 'function') fetchEmployeesForSPA();
+                 } else {
+                     await nammaModalSystem.alert('Failed to register: ' + data.message);
+                 }
+@@ -2742,286 +3318,1106 @@ document.addEventListener('DOMContentLoaded', () => {
+                 await nammaModalSystem.alert('Cloud synchronization failed.');
+                 console.error(err);
+             } finally {
+-                btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register';
+-                btn.disabled = false;
++                captureBtn.innerHTML = '<i class="fas fa-fingerprint"></i> Complete Registration';
++                // Button state will be managed by detection loop after reset
+             }
+         });
+     }
+ 
+ 
+ 
++
++
+     window.editSingleLog = async function (logId) {
+         window.selectedLogIds.clear();
+         window.selectedLogIds.add(logId);
+         window.bulkChangeAction(); // Automatically hooks into the robust bulk API but passing single ID
+     };
+-    console.log("Admin Dashboard v5.2.1 Hub Alpha Loaded");
++    console.log("Admin Dashboard v5.5.0 ULTRA - New Staff System Ready");
+ 
+     // ==========================================
+-    // PAYSLIP SYSTEM LOGIC
+-    // ==========================================
++    
++    window.addEventListener('error', function (e) {
++        const tbody = document.getElementById('attendance-logs-tbody');
++        if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
++    });
+ 
+-    window.openPayslipConfig = async function() {
+-        const modal = document.getElementById('payslip-config-modal');
+-        const select = document.getElementById('payslip-employee-select');
+-        
+-        if (!modal || !select) return;
++// --- SHIFT SUMMARY DASHBOARD LOGIC ---
++    window.loadShiftSummaries = async function (date = null) {
++        const grid = document.getElementById('shift-summary-grid');
++        if (!grid) return;
++
++        grid.innerHTML = `
++        <div class="loading-placeholder" style="grid-column: 1/-1; text-align: center; padding: 100px;">
++            <i class="fas fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary-accent); margin-bottom: 16px;"></i>
++            <p style="color: #64748b;">Fetching cloud reports...</p>
++        </div>
++    `;
++
++        try {
++            const url = date ? `/api/shift-summary?date=${date}` : '/api/shift-summary';
++            const response = await fetch(url);
++            const data = await response.json();
++
++            if (data.success && data.reports && data.reports.length > 0) {
++                grid.innerHTML = '';
++                data.reports.forEach(report => {
++                    const card = document.createElement('div');
++                    card.className = 'shift-summary-card';
++                    card.onclick = () => window.showShiftReportDetails(report.id);
++
++                    const avatarInitials = (report.employeeName || 'U').substring(0, 1).toUpperCase();
++
++                    card.innerHTML = `
++                    <div class="shift-card-header">
++                        <div class="shift-card-user">
++                            <div class="shift-user-avatar">${avatarInitials}</div>
++                            <div class="shift-user-info">
++                                <h4>${report.employeeName || 'Unknown Employee'}</h4>
++                                <span>${report.date}</span>
++                            </div>
++                        </div>
++                        <div style="display:flex; align-items:center; gap:8px;">
++                            <span class="shift-badge-id">#${report.shift_id || 'N/A'}</span>
++                            <button onclick="window.deleteShiftReport('${report.id}', event)" class="modern-btn" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" title="Delete Report" onmouseover="this.style.background='#fecaca'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#fee2e2'; this.style.transform='scale(1)';">
++                                <i class="fas fa-trash-alt"></i>
++                            </button>
++                        </div>
++                    </div>
++                    <div class="shift-card-metrics">
++                        <div class="shift-metric">
++                            <span>Employee ID</span>
++                            <strong>${report.employeeId}</strong>
++                        </div>
++                        <div class="shift-metric">
++                            <span>Type</span>
++                            <strong>TEXT / CLOUD</strong>
++                        </div>
++                        <div class="shift-metric">
++                            <span>Status</span>
++                            <strong class="shift-status-encrypted"><i class="fas fa-lock"></i> SECURE</strong>
++                        </div>
++                    </div>
++                    <div class="shift-card-footer">
++                        <div class="secure-tag">
++                            <i class="fas fa-shield-alt"></i> 256-bit AES
++                        </div>
++                        <div class="open-link">
++                            Open Report <i class="fas fa-arrow-right"></i>
++                        </div>
++                    </div>
++                `;
++                    grid.appendChild(card);
++                });
++            } else {
++                grid.innerHTML = `
++                <div style="grid-column: 1/-1; text-align: center; padding: 100px; background: rgba(255,255,255,0.5); border-radius: 20px; border: 1px dashed #cbd5e1;">
++                    <i class="fas fa-folder-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 16px;"></i>
++                    <p style="color: #64748b;">No shift reports found for this period.</p>
++                </div>
++            `;
++            }
++        } catch (error) {
++            console.error('Error loading summaries:', error);
++            grid.innerHTML = '<p style="color:red; text-align:center; grid-column:1/-1;">Error loading reports from cloud.</p>';
++        }
++    };
+ 
+-        // Reset and Load Employees
+-        select.innerHTML = '<option value="">Loading employees...</option>';
++    window.showShiftReportDetails = async function (reportId) {
++        const modal = document.getElementById('esr-detail-modal');
++        const textArea = document.getElementById('esr-detail-text');
++        const imageArea = document.getElementById('esr-detail-image');
++        const subtitle = document.getElementById('esr-detail-subtitle');
++
++        if (!modal) return;
++
++        // Reset and Show Modal
++        textArea.innerHTML = 'Decrypting secure report data...';
+         modal.style.display = 'flex';
+         setTimeout(() => modal.classList.add('show'), 10);
+ 
+         try {
+-            const res = await fetch('/api/employees');
+-            const data = await res.json();
+-            if (data.success && data.employees) {
+-                select.innerHTML = '<option value="">Choose Employee...</option>';
+-                data.employees.forEach(emp => {
+-                    const opt = document.createElement('option');
+-                    opt.value = emp.id;
+-                    opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
+-                    select.appendChild(opt);
+-                });
++            // Fetch Text Report
++            const textResponse = await fetch(`/api/esr-reports/${reportId}`);
++            const textData = await textResponse.json();
++
++            if (textData.success) {
++                textArea.innerHTML = renderBeautifulEsr(textData.report, textData.metadata);
++                subtitle.textContent = `Employee: ${textData.metadata.employeeName || 'N/A'} | Date: ${textData.metadata.date} | ID: ${textData.metadata.shift_id}`;
++
++                // If verified, append the management bar
++                if (textData.metadata.verified) {
++                    const ver = textData.metadata.verification_data || {};
++                    const hasRemarks = ver.remarks !== 'No';
++
++                    const mgmtBar = document.createElement('div');
++                    mgmtBar.className = 'esr-rendered-section';
++                    mgmtBar.style.marginTop = '24px';
++                    mgmtBar.style.border = '2px solid #F1F5F9';
++                    mgmtBar.style.background = '#FFFFFF';
++
++                    mgmtBar.innerHTML = `
++                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
++                        <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Audit Management</h4>
++                        <span class="pill ${hasRemarks ? 'absent' : 'working'}">${hasRemarks ? 'REMARKS PENDING' : 'AUDIT SOLVED'}</span>
++                    </div>
++                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
++                        <button class="modern-btn secondary" onclick="window.editBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
++                            <i class="fas fa-edit"></i> Edit Audit
++                        </button>
++                        ${hasRemarks ? `
++                        <button class="modern-btn" onclick="window.solveBillRemarks('${reportId}')" style="font-size:12px; padding:12px; background:#10B981; color:white; border:none;">
++                            <i class="fas fa-check-double"></i> Mark Solved
++                        </button>` : ''}
++                        <button class="modern-btn accent" onclick="window.deleteBillVerification('${reportId}')" style="font-size:12px; padding:12px;">
++                            <i class="fas fa-trash-alt"></i> Delete Audit
++                        </button>
++                    </div>
++                `;
++                    textArea.appendChild(mgmtBar);
++                }
+             } else {
+-                select.innerHTML = '<option value="">Failed to load employees</option>';
++                textArea.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Error loading cloud report or no data found.</div>';
+             }
+-        } catch (err) {
+-            console.error('Error loading employees for payslip:', err);
+-            select.innerHTML = '<option value="">Error loading staff</option>';
++        } catch (error) {
++            console.error('Error showing report details:', error);
++            textArea.textContent = 'Critical error during decryption. Please check network.';
+         }
++    };
++
++    window.renderBeautifulEsr = function (text, metadata) {
++        if (!text) return '';
++
++        // Helper to extract values using regex
++        const extract = (pattern) => {
++            const match = text.match(pattern);
++            return match ? match[1].trim() : '0';
++        };
++
++        const details = {
++            name: metadata.employeeName || text.match(/Report for (.*)/)?.[1] || 'Guest',
++            start: extract(/- Start: (.*)/),
++            end: extract(/- End: (.*)/),
++            id: metadata.shift_id || extract(/- ID: (.*)/),
++            upiPinelab: extract(/- UPI Pinelab: ₹(.*)/),
++            cardPinelab: extract(/- Card Pinelab: ₹(.*)/),
++            upiPaytm: extract(/- UPI Paytm: ₹(.*)/),
++            cardPaytm: extract(/- Card Paytm: ₹(.*)/),
++            cash: extract(/- Cash: ₹(.*)/),
++            retail: extract(/- Retail Credit: ₹(.*)/),
++            added: extract(/- Added: (.*?),/),
++            edited: extract(/Edited: (.*?),/),
++            deleted: extract(/Deleted: (.*)/)
++        };
++
++        return `
++        <div class="esr-rendered-container">
++            <div class="esr-rendered-section">
++                <h4><i class="fas fa-info-circle"></i> Shift Details</h4>
++                <div class="esr-grid-details">
++                    <div class="esr-detail-item"><span class="esr-detail-label">Employee:</span> <span class="esr-detail-value">${details.name}</span></div>
++                    <div class="esr-detail-item"><span class="esr-detail-label">Shift ID:</span> <span class="esr-detail-value">#${details.id}</span></div>
++                    <div class="esr-detail-item"><span class="esr-detail-label">Start Time:</span> <span class="esr-detail-value">${details.start}</span></div>
++                    <div class="esr-detail-item"><span class="esr-detail-label">End Time:</span> <span class="esr-detail-value">${details.end}</span></div>
++                </div>
++            </div>
++
++            <div class="esr-rendered-section">
++                <h4><i class="fas fa-wallet"></i> Financial Summary</h4>
++                <div class="esr-grid-collections">
++                    <div class="esr-col-card esr-col-upi-pinelab">
++                        <div class="esr-col-label">UPI PINELAB</div>
++                        <div class="esr-col-value">₹${details.upiPinelab}</div>
++                    </div>
++                    <div class="esr-col-card esr-col-card-pinelab">
++                        <div class="esr-col-label">CARD PINELAB</div>
++                        <div class="esr-col-value">₹${details.cardPinelab}</div>
++                    </div>
++                    <div class="esr-col-card esr-col-cash">
++                        <div class="esr-col-label">CASH</div>
++                        <div class="esr-col-value">₹${details.cash}</div>
++                    </div>
++                    <div class="esr-col-card esr-col-upi-paytm">
++                        <div class="esr-col-label">UPI PAYTM</div>
++                        <div class="esr-col-value">₹${details.upiPaytm}</div>
++                    </div>
++                    <div class="esr-col-card esr-col-card-paytm">
++                        <div class="esr-col-label">CARD PAYTM</div>
++                        <div class="esr-col-value">₹${details.cardPaytm}</div>
++                    </div>
++                    <div class="esr-col-card esr-col-retail">
++                        <div class="esr-col-label">RETAIL CREDIT</div>
++                        <div class="esr-col-value">₹${details.retail}</div>
++                    </div>
++                </div>
++            </div>
+ 
+-        // Set default month to current
+-        const now = new Date();
+-        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+-        document.getElementById('payslip-month-input').value = monthStr;
++            <div class="esr-rendered-section" style="margin-bottom: 0;">
++                <h4><i class="fas fa-chart-line"></i> Activity Audit</h4>
++                <div class="esr-metrics-row">
++                    <div class="esr-metric-item">
++                        <div class="m-val m-green">${details.added}</div>
++                        <div class="m-lbl">New Records</div>
++                    </div>
++                    <div class="esr-metric-item">
++                        <div class="m-val m-blue">${details.edited}</div>
++                        <div class="m-lbl">Edited</div>
++                    </div>
++                    <div class="esr-metric-item">
++                        <div class="m-val m-red">${details.deleted}</div>
++                        <div class="m-lbl">Deleted</div>
++                    </div>
++                </div>
++            </div>
++            
++            <div class="esr-security-footer">
++                <i class="fas fa-shield-alt"></i> Decrypted Security Payload
++            </div>
++        </div>
++    `;
+     };
+ 
+-    window.closePayslipConfig = function() {
+-        const modal = document.getElementById('payslip-config-modal');
++    window.closeEsrDetailModal = function () {
++        const modal = document.getElementById('esr-detail-modal');
+         if (modal) {
+             modal.classList.remove('show');
+             setTimeout(() => modal.style.display = 'none', 300);
+         }
+     };
+ 
+-    window.closePayslipPreview = function() {
+-        const modal = document.getElementById('payslip-preview-modal');
+-        if (modal) {
+-            modal.classList.remove('show');
+-            setTimeout(() => modal.style.display = 'none', 300);
++    window.printCurrentEsr = function () {
++        const reportHtml = document.getElementById('esr-detail-text').innerHTML;
++        const printWindow = window.open('', '_blank');
++        printWindow.document.write(`
++        <html>
++            <head>
++                <title>Shift Report - ${formatIST(new Date()).split(',')[0]}</title>
++                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
++                <style>
++                    body { font-family: 'Inter', sans-serif; padding: 40px; position: relative; }
++                    .watermark {
++                        position: fixed;
++                        top: 50%;
++                        left: 50%;
++                        transform: translate(-50%, -50%) rotate(-45deg);
++                        font-size: 80px;
++                        font-weight: 900;
++                        color: rgba(180, 180, 180, 0.12);
++                        z-index: 9999;
++                        white-space: nowrap;
++                        pointer-events: none;
++                        user-select: none;
++                        text-transform: uppercase;
++                    }
++                    .esr-rendered-section { border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; background: #f8fafc; position: relative; }
++                    .esr-rendered-section h4 { margin: 0 0 16px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
++                    .esr-grid-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
++                    .esr-detail-item { display: flex; justify-content: space-between; padding: 4px 0; }
++                    .esr-detail-label { color: #64748b; font-weight: 500; }
++                    .esr-detail-value { color: #1e293b; font-weight: 700; }
++                    .esr-grid-collections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
++                    .esr-col-card { padding: 16px 12px; border-radius: 14px; text-align: center; border: 1px solid #e2e8f0; }
++                    .esr-col-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
++                    .esr-col-value { font-size: 18px; font-weight: 800; }
++                    .esr-metrics-row { background: #f1f5f9; border-radius: 16px; padding: 16px; display: flex; justify-content: space-around; text-align: center; }
++                    .esr-metric-item .m-val { font-size: 24px; font-weight: 800; }
++                    .esr-metric-item .m-lbl { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; }
++                    .m-green { color: #10b981; } .m-blue { color: #3b82f6; } .m-red { color: #ef4444; }
++                    @media print {
++                        .watermark { -webkit-print-color-adjust: exact; }
++                    }
++                </style>
++            </head>
++            <body>
++                <div class="watermark">Pinpointstartups</div>
++                <h1 style="text-align:center; font-size:24px; margin-bottom:40px; position: relative;">End Shift Report Summary</h1>
++                ${reportHtml}
++            </body>
++        </html>
++    `);
++        printWindow.document.close();
++        setTimeout(() => {
++            printWindow.print();
++        }, 500);
++    };
++
++    // --- BILL VERIFICATION LOGIC ---
++    let currentBvReportId = null;
++    let currentBvStructuredData = null;
++
++    window.openBillVerification = function (reportId) {
++        currentBvReportId = reportId;
++        const overlay = document.getElementById('bill-verification-overlay');
++        const loading = document.getElementById('bv-loading');
++        const step1 = document.getElementById('bv-step-1');
++        const step2 = document.getElementById('bv-step-2');
++
++        overlay.classList.add('show');
++        loading.style.display = 'block';
++        step1.style.display = 'none';
++        step2.style.display = 'none';
++
++        // Fetch report to get structured data (for Pinelab/Paytem detection)
++        fetch('/api/esr-reports/' + reportId)
++            .then(res => res.json())
++            .then(data => {
++                loading.style.display = 'none';
++                step1.style.display = 'block';
++                currentBvStructuredData = data.structured_data || {};
++            })
++            .catch(() => {
++                loading.style.display = 'none';
++                step1.style.display = 'block';
++            });
++    };
++
++    window.closeBillVerification = function () {
++        const overlay = document.getElementById('bill-verification-overlay');
++        overlay.classList.remove('show');
++        // Reset form
++        document.getElementById('bv-step-1').style.display = 'block';
++        document.getElementById('bv-step-2').style.display = 'none';
++        document.getElementById('bv-type').value = '';
++        document.getElementById('bv-subtype').value = '';
++        document.getElementById('bv-bill-error-group').style.display = 'none';
++        document.getElementById('bv-differences-group').style.display = 'none';
++        document.getElementById('bv-manual-text-group').style.display = 'none';
++        document.getElementById('bv-diff-cash').value = '';
++        document.getElementById('bv-manual-text').value = '';
++    };
++
++    window.toBvStep2 = function () {
++        document.getElementById('bv-step-1').style.display = 'none';
++        document.getElementById('bv-step-2').style.display = 'block';
++    };
++
++    window.backToBvStep1 = function () {
++        document.getElementById('bv-step-1').style.display = 'block';
++        document.getElementById('bv-step-2').style.display = 'none';
++    };
++
++    window.handleBvTypeChange = function () {
++        const type = document.getElementById('bv-type').value;
++        const errorGroup = document.getElementById('bv-bill-error-group');
++        const manualGroup = document.getElementById('bv-manual-text-group');
++
++        errorGroup.style.display = type === 'Bill Error' ? 'block' : 'none';
++        manualGroup.style.display = (type === 'Other' || type === 'Bill Error') ? 'block' : 'none';
++
++        if (type !== 'Bill Error') {
++            document.getElementById('bv-subtype').value = '';
++            document.getElementById('bv-differences-group').style.display = 'none';
+         }
+     };
+ 
+-    window.printPayslip = function() {
+-        window.print();
++    window.handleBvSubtypeChange = function () {
++        const subtype = document.getElementById('bv-subtype').value;
++        const diffGroup = document.getElementById('bv-differences-group');
++        const upiRow = document.getElementById('bv-diff-upi-row');
++
++        if (subtype === 'Bill difference issue') {
++            diffGroup.style.display = 'block';
++            // Inject dynamic UPI inputs based on ESR
++            let upiHtml = '';
++            if (currentBvStructuredData) {
++                if (currentBvStructuredData.upiPinelab > 0 || currentBvStructuredData.cardPinelab > 0) {
++                    upiHtml += `<div class="input-group">
++                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
++                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Pinelab)</label>
++                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
++                            <button type="button" onclick="window.toggleDiffType('pinelab', 'shortage')" id="btn-pinelab-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
++                            <button type="button" onclick="window.toggleDiffType('pinelab', 'excess')" id="btn-pinelab-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
++                        </div>
++                    </div>
++                    <div style="position: relative;">
++                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
++                        <input type="number" id="bv-diff-pinelab" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
++                        <input type="hidden" id="bv-type-pinelab" value="excess">
++                    </div>
++                </div>`;
++                }
++                if (currentBvStructuredData.upiPaytm > 0 || currentBvStructuredData.cardPaytm > 0) {
++                    upiHtml += `<div class="input-group">
++                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
++                        <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (Paytm)</label>
++                        <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
++                            <button type="button" onclick="window.toggleDiffType('paytm', 'shortage')" id="btn-paytm-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
++                            <button type="button" onclick="window.toggleDiffType('paytm', 'excess')" id="btn-paytm-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
++                        </div>
++                    </div>
++                    <div style="position: relative;">
++                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
++                        <input type="number" id="bv-diff-paytm" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
++                        <input type="hidden" id="bv-type-paytm" value="excess">
++                    </div>
++                </div>`;
++                }
++            }
++            // Fallback if no specific data detected
++            if (!upiHtml) {
++                upiHtml = `<div class="input-group">
++                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
++                    <label style="font-size: 13px; font-weight: 700; color: #9A3412; display: block; margin: 0;">UPI Difference (General)</label>
++                    <div class="diff-toggle" style="display: flex; background: #FFD6CC; border-radius: 8px; overflow: hidden; padding: 2px;">
++                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'shortage')" id="btn-upi-gen-shortage" style="background: transparent; color: #9A3412; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Shortage</button>
++                        <button type="button" onclick="window.toggleDiffType('upi-gen', 'excess')" id="btn-upi-gen-excess" style="background: #FFFFFF; color: #16A34A; border: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Excess</button>
++                    </div>
++                </div>
++                <div style="position: relative;">
++                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #F95A2C; font-weight: 600;">₹</span>
++                    <input type="number" id="bv-diff-upi-gen" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; height: 48px; border-radius: 12px; border: 1px solid #FFD6CC; padding: 0 16px 0 35px !important; outline: none; font-weight: 700; font-size: 16px; color: #431407; background: #FFFFFF; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
++                    <input type="hidden" id="bv-type-upi-gen" value="excess">
++                </div>
++            </div>`;
++            }
++            upiRow.innerHTML = upiHtml;
++        } else {
++            diffGroup.style.display = 'none';
++        }
+     };
+ 
+-    const payslipConfigForm = document.getElementById('payslip-config-form');
+-    if (payslipConfigForm) {
+-        payslipConfigForm.addEventListener('submit', async (e) => {
+-            e.preventDefault();
+-            const employeeId = document.getElementById('payslip-employee-select').value;
+-            const month = document.getElementById('payslip-month-input').value; // YYYY-MM
++    window.saveBillVerification = async function (remarkChoice) {
++        let payload = {
++            reportId: currentBvReportId,
++            remarks: remarkChoice
++        };
++
++        if (remarkChoice === 'Yes') {
++            payload.type = document.getElementById('bv-type').value;
++            payload.subType = document.getElementById('bv-subtype').value;
++            payload.manualText = document.getElementById('bv-manual-text').value;
++
++            const getDiffValue = (idBase) => {
++                const el = document.getElementById(`bv-diff-${idBase}`);
++                if (!el) return 0;
++                let val = parseFloat(el.value) || 0;
++                const typeEl = document.getElementById(`bv-type-${idBase}`);
++                if (typeEl && typeEl.value === 'shortage') val = -val;
++                return val;
++            };
++
++            payload.differences = {
++                cash: getDiffValue('cash')
++            };
++
++            const pinelabVal = getDiffValue('pinelab');
++            if (pinelabVal !== 0 || document.getElementById('bv-diff-pinelab')) payload.differences.pinelab = pinelabVal;
+             
+-            if (!employeeId || !month) return;
++            const paytmVal = getDiffValue('paytm');
++            if (paytmVal !== 0 || document.getElementById('bv-diff-paytm')) payload.differences.paytm = paytmVal;
++            
++            const upiGenVal = getDiffValue('upi-gen');
++            if (upiGenVal !== 0 || document.getElementById('bv-diff-upi-gen')) payload.differences.upi_general = upiGenVal;
++        }
+ 
+-            const btn = e.target.querySelector('button');
+-            const originalHtml = btn.innerHTML;
+-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating Attendance...';
+-            btn.disabled = true;
++        try {
++            const res = await fetch('/api/admin/verify-bill', {
++                method: 'POST',
++                headers: { 'Content-Type': 'application/json' },
++                body: JSON.stringify(payload)
++            });
++            const result = await res.json();
++            if (result.success) {
++                await nammaModalSystem.alert("Bill verification saved successfully!");
++                window.closeBillVerification();
++                window.loadDashboardData(); // Refresh notifications
++                if (document.getElementById('bill-report-view').style.display === 'block') {
++                    window.loadBillVerificationReports();
++                }
++            } else {
++                await nammaModalSystem.alert("Error: " + result.message);
++            }
++        } catch (err) {
++            await nammaModalSystem.alert("Failed to connect to server.");
++        }
++    };
++
++    window.toggleDiffType = function(idBase, type) {
++        document.getElementById(`bv-type-${idBase}`).value = type;
++        const btnShortage = document.getElementById(`btn-${idBase}-shortage`);
++        const btnExcess = document.getElementById(`btn-${idBase}-excess`);
++        
++        if (type === 'shortage') {
++            btnShortage.style.background = '#FFFFFF';
++            btnShortage.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
++            btnShortage.style.color = '#DC2626'; // Red
++            
++            btnExcess.style.background = 'transparent';
++            btnExcess.style.boxShadow = 'none';
++            btnExcess.style.color = '#16A34A';
++        } else {
++            btnExcess.style.background = '#FFFFFF';
++            btnExcess.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
++            btnExcess.style.color = '#16A34A'; // Green
++            
++            btnShortage.style.background = 'transparent';
++            btnShortage.style.boxShadow = 'none';
++            btnShortage.style.color = '#9A3412';
++        }
++    };
++
++    // --- NEW VERIFICATION MANAGEMENT FUNCTIONS ---
++        window.deleteBillVerification = async function (reportId) {
++            const proceed = await nammaModalSystem.confirm("Are you sure you want to delete this verification? This will reset the report to 'Unverified' status.", {
++                confirmText: "Yes, Delete",
++                cancelText: "Keep it",
++                theme: "danger"
++            });
++            if (!proceed) return;
+ 
+             try {
+-                // 1. Fetch Employee Details
+-                const empRes = await fetch(`/api/employees/${employeeId}`);
+-                const empData = await empRes.json();
+-                const employee = empData.employee || empData;
+-
+-                // 2. Fetch Attendance for calculation
+-                const attnRes = await fetch(`/api/reports/attendance-grid?month=${month}`);
+-                const attnData = await attnRes.json();
+-                
+-                let workedDays = 0;
+-                let lopDays = 0;
+-                let stdDays = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
+-
+-                if (attnData.success && attnData.grid) {
+-                    const empRow = attnData.grid.find(r => r.id === employeeId);
+-                    if (empRow && empRow.daily) {
+-                        const dailyValues = Object.values(empRow.daily);
+-                        workedDays = dailyValues.filter(v => v.status === 'P').length;
+-                        lopDays = dailyValues.filter(v => v.status === 'A').length;
+-                    }
++                const res = await fetch(`/api/admin/verify-bill/${reportId}`, { method: 'DELETE' });
++                const result = await res.json();
++                if (result.success) {
++                    await nammaModalSystem.alert("Verification deleted successfully.");
++                    window.closeEsrDetailModal();
++                    window.loadBillVerificationReports();
++                } else {
++                    await nammaModalSystem.alert("Error deleting verification: " + result.message);
+                 }
++            } catch (err) {
++                await nammaModalSystem.alert("Failed to connect to server.");
++            }
++        };
+ 
+-                // 3. Gather Inputs
+-                const basic = parseFloat(document.getElementById('payslip-basic-input').value) || 0;
+-                const ot = parseFloat(document.getElementById('payslip-ot-input').value) || 0;
+-                const esi = document.getElementById('payslip-esi-input').value || 'N/A';
+-                const billingDiff = parseFloat(document.getElementById('payslip-billing-diff-input').value) || 0;
+-                const leaveBalance = document.getElementById('payslip-leave-balance').value || 2;
+-                const location = document.getElementById('payslip-location-input').value || 'SULLIA, KARNATAKA';
+-
+-                // Calculations
+-                const grossEarnings = basic + ot;
+-                const esiValue = isNaN(parseFloat(esi)) ? 0 : parseFloat(esi);
+-                const grossDeductions = esiValue + billingDiff + (lopDays * (basic / stdDays));
+-                const netSalary = Math.round(grossEarnings - grossDeductions);
+-
+-                // 4. Render Payslip
+-                const monthName = new Date(month + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
+-                
+-                const renderingArea = document.getElementById('payslip-rendering-area');
+-                renderingArea.innerHTML = `
+-                    <div class="payslip-container">
+-                        <div class="payslip-header">Pay Slip for the month of ${monthName}</div>
+-                        <div class="payslip-main-box">
+-                            <div class="payslip-logo-section">
+-                                <h1 style="margin:0; font-size: 24px; color: #5B21B6; letter-spacing: 2px;">NAMMA MART</h1>
+-                                <p style="margin:0; font-size: 10px; font-weight: bold; color: #5B21B6;">SIGNATURE OF QUALITY -</p>
+-                            </div>
+-                            <div class="payslip-address-section">
+-                                SULLIA, KARNATAKA - 574239<br>
+-                                Ph: 08257-230230, 230231
+-                            </div>
++        window.solveBillRemarks = async function (reportId) {
++            const proceed = await nammaModalSystem.confirm("Mark this bill as 'Solved' (Set remarks to No)?", {
++                confirmText: "Mark Solved",
++                cancelText: "Cancel"
++            });
++            if (!proceed) return;
+ 
+-                            <table class="payslip-table">
+-                                <tr>
+-                                    <td class="payslip-label">Employee ID</td>
+-                                    <td class="payslip-value">${employee.username || employee['employee-id'] || 'N/A'}</td>
+-                                    <td class="payslip-label">Location</td>
+-                                    <td class="payslip-value">${location}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">Employee Name</td>
+-                                    <td class="payslip-value" style="font-weight: bold; text-transform: uppercase;">${employee.name}</td>
+-                                    <td class="payslip-label">STD Days</td>
+-                                    <td class="payslip-value">${stdDays}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">Designation</td>
+-                                    <td class="payslip-value">Customer Representative</td>
+-                                    <td class="payslip-label">Worked Days</td>
+-                                    <td class="payslip-value">${workedDays}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">Department</td>
+-                                    <td class="payslip-value">Operations</td>
+-                                    <td class="payslip-label">LOP Days</td>
+-                                    <td class="payslip-value">${lopDays}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">Joining Date</td>
+-                                    <td class="payslip-value">NOT SPECIFIED</td>
+-                                    <td class="payslip-label">Leave Balance</td>
+-                                    <td class="payslip-value">${leaveBalance}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">ESI Number</td>
+-                                    <td class="payslip-value">NOT SPECIFIED</td>
+-                                    <td class="payslip-label">PF Number</td>
+-                                    <td class="payslip-value">N/A</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">Bank Name</td>
+-                                    <td class="payslip-value">${employee['bank-name'] || 'N/A'}</td>
+-                                    <td class="payslip-label">A/C Number</td>
+-                                    <td class="payslip-value">${employee['account-number'] || 'N/A'}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td class="payslip-label">PAN Number</td>
+-                                    <td class="payslip-value">${employee['pan-number'] || 'N/A'}</td>
+-                                    <td class="payslip-label">PF UAN Number</td>
+-                                    <td class="payslip-value">N/A</td>
+-                                </tr>
+-                            </table>
+-
+-                            <table class="payslip-table" style="margin-top: 20px;">
+-                                <tr class="payslip-section-title">
+-                                    <td style="width: 25%;">EARNINGS</td>
+-                                    <td style="width: 25%;">AMOUNT</td>
+-                                    <td style="width: 25%;">DEDUCTIONS</td>
+-                                    <td style="width: 25%;">AMOUNT</td>
+-                                </tr>
+-                                <tr>
+-                                    <td>Basic</td>
+-                                    <td style="text-align: right;">${basic.toFixed(2)}</td>
+-                                    <td>ESI</td>
+-                                    <td style="text-align: right;">${esi}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td>Holiday Pay / OT</td>
+-                                    <td style="text-align: right;">${ot.toFixed(2)}</td>
+-                                    <td>Billing Difference</td>
+-                                    <td style="text-align: right;">${billingDiff.toFixed(2)}</td>
+-                                </tr>
+-                                <tr>
+-                                    <td></td>
+-                                    <td></td>
+-                                    <td>LOP</td>
+-                                    <td style="text-align: right;">${(lopDays * (basic / stdDays)).toFixed(2)}</td>
+-                                </tr>
+-                                <tr class="payslip-total-row">
+-                                    <td>Gross Earnings</td>
+-                                    <td style="text-align: right;">${grossEarnings.toFixed(2)}</td>
+-                                    <td>Gross Deductions</td>
+-                                    <td style="text-align: right;">${grossDeductions.toFixed(2)}</td>
+-                                </tr>
+-                            </table>
+-
+-                            <div class="payslip-net-salary">
+-                                NET SALARY: Rs. ${netSalary} /-<br>
+-                                <span style="font-size: 10px; font-weight: normal;">(Rupees ${numberToWords(netSalary)} Only)</span>
+-                            </div>
++            try {
++                // Fetch existing data first to preserve differences
++                const res1 = await fetch(`/api/esr-reports/${reportId}`);
++                const data1 = await res1.json();
++                const existing = data1.metadata.verification_data || {};
++
++                const payload = {
++                    reportId,
++                    remarks: "No",
++                    type: existing.type || "Other",
++                    subType: existing.subType || "",
++                    differences: existing.differences || {},
++                    manualText: existing.manualText || "Marked as solved by Admin"
++                };
+ 
+-                            <div class="payslip-signature-area">
+-                                <div class="payslip-signature-line">Employer Signature</div>
+-                            </div>
+-                        </div>
+-                        <div style="text-align: center; font-size: 9px; color: #666; margin-top: 10px;">
+-                            This is a computer generated payslip and does not require a physical signature.
+-                        </div>
+-                    </div>
+-                `;
++                const res2 = await fetch('/api/admin/verify-bill', {
++                    method: 'POST',
++                    headers: { 'Content-Type': 'application/json' },
++                    body: JSON.stringify(payload)
++                });
++                const result = await res2.json();
++                if (result.success) {
++                    await nammaModalSystem.alert("Audit solved successfully.");
++                    window.showShiftReportDetails(reportId); // Refresh the modal
++                    window.loadBillVerificationReports(); // Refresh the table
++                }
++            } catch (err) {
++                await nammaModalSystem.alert("Failed to solve remarks.");
++            }
++        };
+ 
+-                // 5. Open Preview
+-                window.closePayslipConfig();
+-                const previewModal = document.getElementById('payslip-preview-modal');
+-                previewModal.style.display = 'flex';
+-                setTimeout(() => previewModal.classList.add('show'), 10);
++        window.editBillVerification = async function (reportId) {
++            // 1. Close the current detail modal
++            window.closeEsrDetailModal();
++
++            // 2. Open the verification overlay
++            window.openBillVerification(reportId);
++
++            // 3. Pre-fill existing data
++            try {
++                const res = await fetch(`/api/esr-reports/${reportId}`);
++                const data = await res.json();
++                if (data.metadata && data.metadata.verification_data) {
++                    const v = data.metadata.verification_data;
++                    setTimeout(() => {
++                        document.getElementById('bv-type').value = v.type || '';
++                        window.handleBvTypeChange();
++                        document.getElementById('bv-subtype').value = v.subType || '';
++                        window.handleBvSubtypeChange();
++                        if (v.differences) {
++                            if (v.differences.cash) document.getElementById('bv-diff-cash').value = v.differences.cash;
++                            if (v.differences.pinelab) {
++                                const pl = document.getElementById('bv-diff-pinelab');
++                                if (pl) pl.value = v.differences.pinelab;
++                            }
++                            if (v.differences.paytm) {
++                                const pt = document.getElementById('bv-diff-paytm');
++                                if (pt) pt.value = v.differences.paytm;
++                            }
++                            if (v.differences.upi_general) {
++                                const ug = document.getElementById('bv-diff-upi-gen');
++                                if (ug) ug.value = v.differences.upi_general;
++                            }
++                        }
++                        document.getElementById('bv-manual-text').value = v.manualText || '';
++                    }, 500); // Wait for openBillVerification fetch to finish
++                }
++            } catch (e) {
++                console.error("Error pre-filling edit form", e);
++            }
++        };
++
++        const BV_SAVE_PARITY = true;
++
++        // --- BILL REPORTING Logic ---
++        window.loadBillVerificationReports = async function () {
++            try {
++                const res = await fetch('/api/admin/bill-verification-reports');
++                const data = await res.json();
++                const tbody = document.getElementById('bill-reports-tbody');
++                if (!tbody) return;
++
++                // Upgrade to modern-table styling
++                const table = tbody.closest('table');
++                if (table) {
++                    table.className = 'modern-table';
++                    table.style.marginTop = '0';
++                }
++
++                if (!data.success || data.history.length === 0) {
++                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#94a3b8; background:white; border-radius:16px;">No bill verification reports found.</td></tr>';
++                    return;
++                }
++
++                tbody.innerHTML = data.history.map(rep => {
++                    const ver = rep.verification_data || {};
++                    const diffs = ver.differences || {};
++                    let diffStr = [];
++                    if (diffs.cash) diffStr.push(`<div style="color:#ef4444; margin-bottom:2px; font-size:12px;">Cash: ${diffs.cash}</div>`);
++                    if (diffs.pinelab) diffStr.push(`<div style="color:#3b82f6; margin-bottom:2px; font-size:12px;">PL: ${diffs.pinelab}</div>`);
++                    if (diffs.paytm) diffStr.push(`<div style="color:#10b981; margin-bottom:2px; font-size:12px;">PT: ${diffs.paytm}</div>`);
++                    if (diffs.upi_general) diffStr.push(`<div style="color:#64748b; margin-bottom:2px; font-size:12px;">UPI: ${diffs.upi_general}</div>`);
++
++                    const hasRemarks = ver.remarks !== 'No';
++
++                    return `
++                <tr>
++                    <td>
++                        <div style="font-weight:800; color:#0f172a; font-size:14px;">${rep.employeeName}</div>
++                        <div style="font-size:11px; color:#64748b; margin-top:2px; font-weight:600;">Shift ID: ${rep.id.slice(-6).toUpperCase()}</div>
++                    </td>
++                    <td style="font-weight:700; color:#475569; font-size:13px;">${rep.date}</td>
++                    <td>
++                        <span class="pill ${hasRemarks ? 'absent' : 'working'}" style="font-size:10px; padding:6px 12px; letter-spacing:0.5px; font-weight:800;">
++                            ${hasRemarks ? 'HAS REMARKS' : 'NO REMARKS'}
++                        </span>
++                    </td>
++                    <td>
++                        <div style="font-weight:700; font-size:12px; color:#1e293b;">${ver.type || '-'}</div>
++                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.subType || ''}</div>
++                    </td>
++                    <td style="font-family:'Inter', sans-serif;">
++                        ${diffStr.join('') || '<span style="color:#cbd5e1;">-</span>'}
++                    </td>
++                    <td>
++                        <div style="font-weight:700; font-size:13px; color:#0f172a;">${ver.verifiedBy || '-'}</div>
++                        <div style="font-size:11px; color:#94a3b8; font-weight:600;">${ver.verifiedAt ? new Date(ver.verifiedAt).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : ''}</div>
++                    </td>
++                    <td>
++                        <button class="action-btn secondary" onclick="window.viewShiftReport('${rep.id}')" style="width:36px; height:36px; padding:0; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border:none; transition: all 0.2s ease;">
++                            <i class="fas fa-eye" style="font-size:14px; color:#1e293b;"></i>
++                        </button>
++                    </td>
++                </tr>
++            `;
++                }).join('');
+ 
+             } catch (err) {
+-                console.error('Error generating payslip:', err);
+-                await nammaModalSystem.alert('Failed to generate payslip. Please check console for details.');
+-            } finally {
+-                btn.innerHTML = originalHtml;
+-                btn.disabled = false;
++                console.error(err);
++            }
++        };
++
++        window.showBillReportingView = function () {
++            const billView = document.getElementById('bill-report-view');
++            const masterBtn = document.querySelector('.master-report-btn');
++
++            if (billView) {
++                // Use central SPA switcher to hide others correctly
++                window.switchSpaView(billView, masterBtn);
++                window.loadBillVerificationReports();
++            }
++        };
++
++        window.backToStudioHub = function () {
++            const hub = document.getElementById('master-reports-hub-v2');
++            const masterBtn = document.querySelector('.master-report-btn');
++            if (hub) {
++                window.switchSpaView(hub, masterBtn);
++            }
++        };
++
++        window.viewShiftReport = function (id) {
++            if (typeof window.showShiftReportDetails === 'function') {
++                window.showShiftReportDetails(id);
++            }
++        };
++
++    });// --- DRAGGABLE POPUP LOGIC ---
++window.makeDraggable = function(panelId, headerSelector) {
++    const panel = document.getElementById(panelId);
++    if (!panel) return;
++    const header = panel.querySelector(headerSelector);
++    if (!header) return;
++
++    let isDragging = false;
++    let startX, startY, initialLeft, initialTop;
++
++    header.addEventListener('mousedown', (e) => {
++        if (e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) return; // Ignore close button clicks
++        
++        isDragging = true;
++        panel.classList.add('dragging');
++        
++        // Get initial mouse position
++        startX = e.clientX;
++        startY = e.clientY;
++        
++        const rect = panel.getBoundingClientRect();
++        initialLeft = rect.left;
++        initialTop = rect.top;
++
++        // Set inline positions based on current rect so it doesn't jump
++        panel.style.left = initialLeft + 'px';
++        panel.style.top = initialTop + 'px';
++        panel.style.transform = 'none';
++
++        document.addEventListener('mousemove', onMouseMove);
++        document.addEventListener('mouseup', onMouseUp);
++    });
++
++    function onMouseMove(e) {
++        if (!isDragging) return;
++        const dx = e.clientX - startX;
++        const dy = e.clientY - startY;
++        
++        panel.style.left = (initialLeft + dx) + 'px';
++        panel.style.top = (initialTop + dy) + 'px';
++    }
++
++    function onMouseUp() {
++        if (isDragging) {
++            isDragging = false;
++            panel.classList.remove('dragging');
++            document.removeEventListener('mousemove', onMouseMove);
++            document.removeEventListener('mouseup', onMouseUp);
++        }
++    }
++};
++
++document.addEventListener('DOMContentLoaded', () => {
++    setTimeout(() => {
++        if(window.makeDraggable) {
++            window.makeDraggable('add-employee-panel', '.side-panel-header');
++            window.makeDraggable('edit-employee-panel', '.side-panel-header');
++        }
++        
++        // Wrap the open functions to reset inline styles
++        const _openAdd = window.openAddEmployeePanel;
++        window.openAddEmployeePanel = function() {
++            const p = document.getElementById('add-employee-panel');
++            if(p) {
++                p.style.left = '';
++                p.style.top = '';
++                p.style.transform = '';
++            }
++            if(_openAdd) _openAdd();
++        };
++
++        const _openEdit = window.openEditEmployeePanel;
++        window.openEditEmployeePanel = function(id) {
++            const p = document.getElementById('edit-employee-panel');
++            if(p) {
++                p.style.left = '';
++                p.style.top = '';
++                p.style.transform = '';
++            }
++            if(_openEdit) _openEdit(id);
++        };
++    }, 1000);
++});
++// --- EDIT EMPLOYEE STORY MODE LOGIC ---
++let currentEditStep = 1;
++const maxEditSteps = 3;
++
++window.updateEditStepUI = function() {
++    const form = document.getElementById('spa-edit-employee-form');
++    if(!form) return;
++    
++    // Update steps
++    form.querySelectorAll('.spa-step').forEach((s, i) => {
++        if ((i + 1) === currentEditStep) {
++            s.classList.add('active');
++        } else {
++            s.classList.remove('active');
++        }
++    });
++
++    // Update stepper dots
++    const stepper = document.getElementById('edit-stepper');
++    if(stepper) {
++        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
++            const stepNum = i + 1;
++            if (stepNum === currentEditStep) {
++                d.classList.add('active');
++                d.classList.remove('completed');
++            } else if (stepNum < currentEditStep) {
++                d.classList.remove('active');
++                d.classList.add('completed');
++            } else {
++                d.classList.remove('active', 'completed');
+             }
+         });
+     }
+ 
+-    function numberToWords(num) {
+-        const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+-        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
++    // Update buttons
++    const prevBtn = document.getElementById('spa-edit-prev-btn');
++    const nextBtn = document.getElementById('spa-edit-next-btn');
++    const saveBtn = document.getElementById('spa-edit-save-btn');
++
++    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'block';
++    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'block';
++    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'block' : 'none';
++};
+ 
+-        if ((num = num.toString()).length > 9) return 'overflow';
+-        let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{1})(\d{2})$/);
+-        if (!n) return ''; 
+-        let str = '';
+-        str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+-        str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+-        str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Hundred ' : '';
+-        str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + ' ' : '';
+-        return str.trim();
++window.nextEditStep = function() {
++    if (currentEditStep < maxEditSteps) {
++        currentEditStep++;
++        window.updateEditStepUI();
+     }
+-});
++};
+ 
+-window.addEventListener('error', function (e) {
+-    const tbody = document.getElementById('attendance-logs-tbody');
+-    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">GLOBAL ERROR: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</td></tr>';
+-});
++window.prevEditStep = function() {
++    if (currentEditStep > 1) {
++        currentEditStep--;
++        window.updateEditStepUI();
++    }
++};
++
++// Reset step on open
++const _originalOpenEdit = window.openEditEmployeePanel;
++window.openEditEmployeePanel = function(id) {
++    currentEditStep = 1;
++    if(window.updateEditStepUI) window.updateEditStepUI();
++    if(_originalOpenEdit) _originalOpenEdit(id);
++};
++// =============================================
++// UPDATED EDIT STEP UI - with line animation
++// =============================================
++window.updateEditStepUI = function() {
++    const form = document.getElementById('spa-edit-employee-form');
++    if(!form) return;
++    
++    // Update steps
++    form.querySelectorAll('.spa-step').forEach((s, i) => {
++        s.classList.toggle('active', (i + 1) === currentEditStep);
++    });
++
++    // Update stepper dots + lines
++    const stepper = document.getElementById('edit-stepper');
++    if(stepper) {
++        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
++            const stepNum = i + 1;
++            d.classList.remove('active', 'completed');
++            if (stepNum === currentEditStep) d.classList.add('active');
++            else if (stepNum < currentEditStep) d.classList.add('completed');
++        });
++        // Animate lines
++        const line1 = document.getElementById('edit-line-1');
++        const line2 = document.getElementById('edit-line-2');
++        if(line1) line1.classList.toggle('completed', currentEditStep > 1);
++        if(line2) line2.classList.toggle('completed', currentEditStep > 2);
++    }
++
++    // Update buttons
++    const prevBtn = document.getElementById('spa-edit-prev-btn');
++    const nextBtn = document.getElementById('spa-edit-next-btn');
++    const saveBtn = document.getElementById('spa-edit-save-btn');
++    if(prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
++    if(nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
++    if(saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
++};
++
++// =============================================
++// UPDATED ADD STEP UI - with line animation
++// =============================================
++window._updateAddStepUIEnhanced = function() {
++    const maxAdd = 4;
++    const stepper = document.querySelector('#add-employee-panel .stepper-minimal');
++    if(stepper) {
++        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
++            const stepNum = i + 1;
++            d.classList.remove('active', 'completed');
++            if (stepNum === currentAddStep) d.classList.add('active');
++            else if (stepNum < currentAddStep) d.classList.add('completed');
++        });
++        for(let i = 1; i <= 3; i++) {
++            const line = document.getElementById('add-line-' + i);
++            if(line) line.classList.toggle('completed', currentAddStep > i);
++        }
++    }
++};
++
++// Patch the existing updateAddStepUI
++const _baseUpdateAdd = window.updateAddStepUI;
++window.updateAddStepUI = function() {
++    if(_baseUpdateAdd) _baseUpdateAdd();
++    if(window._updateAddStepUIEnhanced) window._updateAddStepUIEnhanced();
++};
++// =============================================
++// FIX: Scope spa-step selectors per panel
++// =============================================
++
++// Override updateAddStepUI to scope ONLY to add-employee-form
++window.updateAddStepUI = function() {
++    const form = document.getElementById('spa-add-employee-form');
++    if (!form) return;
++
++    // Show/hide steps scoped to add form only
++    form.querySelectorAll('.spa-step').forEach((s, i) => {
++        s.classList.toggle('active', (i + 1) === currentAddStep);
++    });
+ 
+-window.addEventListener('unhandledrejection', function (e) {
+-    const tbody = document.getElementById('attendance-logs-tbody');
+-    if (tbody) tbody.innerHTML = '<tr><td colspan=6 style="color:red; padding:40px;">PROMISE ERROR: ' + e.reason + '</td></tr>';
++    // Stepper dots in add panel
++    const addPanel = document.getElementById('add-employee-panel');
++    if (addPanel) {
++        addPanel.querySelectorAll('.step-dot').forEach((d, i) => {
++            const stepNum = i + 1;
++            d.classList.remove('active', 'completed');
++            if (stepNum === currentAddStep) d.classList.add('active');
++            else if (stepNum < currentAddStep) d.classList.add('completed');
++        });
++        for (let i = 1; i <= 3; i++) {
++            const line = document.getElementById('add-line-' + i);
++            if (line) line.classList.toggle('completed', currentAddStep > i);
++        }
++    }
++
++    // Buttons
++    const prevBtn = document.getElementById('spa-btn-prev');
++    const nextBtn = document.getElementById('spa-btn-next');
++    const submitBtn = document.getElementById('spa-btn-submit');
++    if (prevBtn) prevBtn.style.display = currentAddStep === 1 ? 'none' : 'inline-flex';
++    if (currentAddStep === 4) {
++        if (nextBtn) nextBtn.style.display = 'none';
++        if (submitBtn) submitBtn.style.display = 'inline-flex';
++    } else {
++        if (nextBtn) nextBtn.style.display = 'inline-flex';
++        if (submitBtn) submitBtn.style.display = 'none';
++    }
++};
++
++// Override updateEditStepUI to scope ONLY to edit-employee-form  
++window.updateEditStepUI = function() {
++    const form = document.getElementById('spa-edit-employee-form');
++    if (!form) return;
++
++    form.querySelectorAll('.spa-step').forEach((s, i) => {
++        s.classList.toggle('active', (i + 1) === currentEditStep);
++    });
++
++    const stepper = document.getElementById('edit-stepper');
++    if (stepper) {
++        stepper.querySelectorAll('.step-dot').forEach((d, i) => {
++            const stepNum = i + 1;
++            d.classList.remove('active', 'completed');
++            if (stepNum === currentEditStep) d.classList.add('active');
++            else if (stepNum < currentEditStep) d.classList.add('completed');
++        });
++        const line1 = document.getElementById('edit-line-1');
++        const line2 = document.getElementById('edit-line-2');
++        if (line1) line1.classList.toggle('completed', currentEditStep > 1);
++        if (line2) line2.classList.toggle('completed', currentEditStep > 2);
++    }
++
++    const prevBtn = document.getElementById('spa-edit-prev-btn');
++    const nextBtn = document.getElementById('spa-edit-next-btn');
++    const saveBtn = document.getElementById('spa-edit-save-btn');
++    if (prevBtn) prevBtn.style.display = currentEditStep === 1 ? 'none' : 'inline-flex';
++    if (nextBtn) nextBtn.style.display = currentEditStep === maxEditSteps ? 'none' : 'inline-flex';
++    if (saveBtn) saveBtn.style.display = currentEditStep === maxEditSteps ? 'inline-flex' : 'none';
++};
++
++// DOB Age validation for Marital Status
++document.addEventListener('DOMContentLoaded', () => {
++    function handleDobChange(dobInput, maritalGroup) {
++        if (!dobInput || !maritalGroup) return;
++        
++        const validateAge = () => {
++            if (!dobInput.value) {
++                maritalGroup.style.display = 'block';
++                return;
++            }
++            const dob = new Date(dobInput.value);
++            const today = new Date();
++            let age = today.getFullYear() - dob.getFullYear();
++            const m = today.getMonth() - dob.getMonth();
++            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
++                age--;
++            }
++            
++            if (age < 18) {
++                maritalGroup.style.display = 'none';
++                if (window.nammaModalSystem && typeof window.nammaModalSystem.alert === 'function') {
++                    window.nammaModalSystem.alert('Child labouring is illegal. Employee is under 18.');
++                } else {
++                    alert('Child labouring is illegal. Employee is under 18.');
++                }
++            } else {
++                maritalGroup.style.display = 'block';
++            }
++        };
++
++        dobInput.addEventListener('change', validateAge);
++    }
++
++    const editDob = document.getElementById('spa-edit-dob');
++    const editMaritalGroup = document.getElementById('spa-edit-marital-group');
++    if (editDob && editMaritalGroup) handleDobChange(editDob, editMaritalGroup);
++
++    const addForm = document.getElementById('spa-add-employee-form');
++    if (addForm) {
++        const addDob = addForm.querySelector('input[name="dob"]');
++        const addMaritalGroup = document.getElementById('spa-add-marital-group');
++        if (addDob && addMaritalGroup) handleDobChange(addDob, addMaritalGroup);
++    }
+ });
++
++window.deleteShiftReport = async function(reportId, event) {
++    event.stopPropagation();
++    if (window.nammaModalSystem && window.nammaModalSystem.confirm) {
++        const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
++        if (!confirmed) return;
++        await processDelete();
++    } else {
++        // Fallback (though native confirm seems to be disabled)
++        try {
++            const confirmed = await window.nammaModalSystem.confirm("Are you sure you want to permanently delete this shift report?");
++            if (!confirmed) return;
++        } catch(e) {
++            // Very last resort if somehow nammaModalSystem isn't ready
++        }
++        await processDelete();
++    }
++
++    async function processDelete() {
++        try {
++            const response = await fetch(`/api/shift-summary/${reportId}`, { method: 'DELETE' });
++            const data = await response.json();
++            if (data.success) {
++                const dateFilter = document.getElementById('shift-summary-date-filter');
++                window.loadShiftSummaries(dateFilter ? dateFilter.value : null);
++            } else {
++                if (window.nammaModalSystem && window.nammaModalSystem.alert) {
++                    window.nammaModalSystem.alert("Failed to delete report: " + data.message);
++                } else {
++                    alert("Failed to delete report: " + data.message);
++                }
++            }
++        } catch (err) {
++            console.error("Error deleting report:", err);
++        }
++    }
++};
++
