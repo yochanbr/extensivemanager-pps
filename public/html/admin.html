@@ -437,9 +437,9 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-grid" style="display: flex; gap: 24px; align-items: flex-start;">
-                            <div class="live-status-section" style="width: 700px; flex-shrink: 0;">
-                                <div class="section-header">
+                        <div class="dashboard-grid" style="display: flex; gap: 24px; align-items: stretch;">
+                            <div class="live-status-section" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 540px;">
+                                <div class="section-header" style="flex-shrink: 0;">
                                     <h3>Live Attendance Monitor</h3>
                                     <div style="display: flex; gap: 10px;">
                                         <select id="live-status-filter" class="filter-dropdown">
@@ -452,7 +452,7 @@
                                             style="background: white; color: black; border: 1px solid #E2E8F0;">
                                     </div>
                                 </div>
-                                <div class="table-wrapper">
+                                <div class="table-wrapper" style="flex: 1; overflow-y: auto;">
                                     <table class="status-table">
                                         <thead>
                                             <tr>
@@ -468,11 +468,11 @@
                             </div>
 
                             <!-- Action Required Card -->
-                            <div class="live-status-section action-required-panel" style="flex: 1; min-width: 300px; display: flex; flex-direction: column; max-height: 520px;">
+                            <div class="live-status-section action-required-panel" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 540px;">
                                 <div class="section-header" style="flex-shrink: 0;">
                                     <h3 style="color: #F95A2C;"><i class="fas fa-exclamation-circle"></i> Action Required</h3>
                                 </div>
-                                <div id="action-required-list" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px; overflow-y: auto; padding-right: 4px;">
+                                <div id="action-required-list" style="flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px;">
                                     <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
                                         <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
                                         <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
