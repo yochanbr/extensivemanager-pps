@@ -263,6 +263,18 @@ const verifyAuth = (roles) => (req, res, next) => {
     next();
 };
 
+
+function isAdminRequest(req) {
+    try {
+        const token = req.cookies && req.cookies.accessToken;
+        if (!token) return false;
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return decoded && decoded.role === 'admin';
+    } catch(e) {
+        return false;
+    }
+}
+
 const verifyAdmin = verifyAuth(['admin']);
 const verifyEmployee = verifyAuth(['employee', 'admin']);
 
@@ -654,26 +666,45 @@ app.post('/api/employees', verifyAdmin, async (req, res) => {
     }
 });
 
-// Get all employees
+// Get all employees (Protected: sensitive fields decrypted only for admin)
 app.get('/api/employees', async (req, res) => {
-    const snapshot = await db.employees().get();
-    const employees = snapshot.docs.map(doc => {
-        const data = doc.data();
-        data.id = doc.id;
-        // Decrypt sensitive fields
-        ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
-            if (data[field]) {
-                try {
-                    data[field] = decrypt(data[field]);
-                } catch(e) {
-                    // Fallback if data was saved unencrypted before this fix
-                    data[field] = data[field];
-                }
+    try {
+        const isAdmin = isAdminRequest(req);
+        const snapshot = await db.employees().get();
+        const employees = snapshot.docs.map(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            
+            // If not admin (e.g. scanner kiosk), omit sensitive PII
+            if (!isAdmin) {
+                delete data.password;
+                delete data['aadhar-number'];
+                delete data['pan-number'];
+                delete data['account-number'];
+                delete data.phone;
+                delete data.email;
+                delete data.address;
+                return data;
             }
+
+            // Decrypt sensitive fields for authorized admin
+            ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+                if (data[field]) {
+                    try {
+                        data[field] = decrypt(data[field]);
+                    } catch(e) {
+                        data[field] = data[field];
+                    }
+                }
+            });
+            delete data.password;
+            return data;
         });
-        return data;
-    });
-    res.json(employees);
+        res.json(employees);
+    } catch (e) {
+        console.error('Error fetching employees:', e);
+        res.status(500).json({ success: false, message: 'Server error loading employees.' });
+    }
 });
 
 // Delete an employee
@@ -705,22 +736,42 @@ app.get('/api/broadcast', async (req, res) => {
 
 
 
-// Get a single employee by ID
+// Get a single employee by ID (Protected: sensitive fields decrypted only for admin)
 app.get('/api/employees/:id', async (req, res) => {
     try {
         const employeeId = req.params.id;
         const doc = await db.employees().doc(employeeId).get();
         if (doc.exists) {
             const emp = doc.data();
+            emp.id = doc.id;
+            
             if (emp.isActive === false) {
                 return res.status(403).json({ success: false, message: 'You are not allowed by admin', code: 'USER_DEACTIVATED' });
             }
 
-            // Decrypt sensitive fields
-            ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
-                if (emp[field]) emp[field] = decrypt(emp[field]);
-            });
+            const isAdmin = isAdminRequest(req);
+            if (!isAdmin) {
+                delete emp.password;
+                delete emp['aadhar-number'];
+                delete emp['pan-number'];
+                delete emp['account-number'];
+                delete emp.phone;
+                delete emp.email;
+                delete emp.address;
+                return res.json(emp);
+            }
 
+            // Decrypt sensitive fields for admin
+            ['phone', 'email', 'address', 'aadhar-number', 'pan-number', 'account-number'].forEach(field => {
+                if (emp[field]) {
+                    try {
+                        emp[field] = decrypt(emp[field]);
+                    } catch(err) {
+                        emp[field] = emp[field];
+                    }
+                }
+            });
+            delete emp.password;
             res.json(emp);
         } else {
             res.status(404).json({ success: false, message: 'Employee not found.' });

@@ -1,3 +1,15 @@
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+window.escapeHtml = escapeHtml;
+
 // --- SECURITY GUARD --- //
 // Admin is securely protected by Server-Side JWT Middlewares. 
 // No client-side checks needed.
