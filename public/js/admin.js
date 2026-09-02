@@ -685,11 +685,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const viewReportsBtnEl = document.querySelector('.view-reports-btn');
+    const viewReportsBtnEl = document.querySelector('.view-report-btn') || document.querySelector('.view-reports-btn');
     const viewEsrJpgsBtnEl = document.querySelector('.view-esr-jpgs-btn');
     if (dashboardBtn) dashboardBtn.addEventListener('click', () => switchSpaView(dashboardView, dashboardBtn));
     if (manageEmployeesBtn) manageEmployeesBtn.addEventListener('click', () => switchSpaView(employeesView, manageEmployeesBtn));
     if (viewReportsBtnEl) viewReportsBtnEl.addEventListener('click', () => switchSpaView(reportsView, viewReportsBtnEl));
+    if (viewReportBtn && viewReportBtn !== viewReportsBtnEl) viewReportBtn.addEventListener('click', () => switchSpaView(reportsView, viewReportBtn));
     if (viewEsrJpgsBtnEl) viewEsrJpgsBtnEl.addEventListener('click', () => switchSpaView(shiftSummaryView, viewEsrJpgsBtnEl));
     if (attendanceBtn) attendanceBtn.addEventListener('click', () => {
         switchSpaView(attendanceView, attendanceBtn);
