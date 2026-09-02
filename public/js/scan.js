@@ -1,3 +1,21 @@
+
+// Kiosk Device Authentication Handshake
+async function ensureKioskAuthenticated() {
+    try {
+        const storedSecret = localStorage.getItem('kiosk_secret') || 'kiosk_pps_nammamart_sec_2026';
+        const res = await fetch('/api/scanner/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kioskSecret: storedSecret })
+        });
+        const data = await res.json();
+        return data.success;
+    } catch(e) {
+        console.warn('Kiosk auth handshake warning:', e);
+        return false;
+    }
+}
+
 // ─── Nothing Phone SFX Engine ─────────────────────────────────────────────
 const SFX = (() => {
     let ctx = null;
@@ -117,8 +135,9 @@ async function initScanner() {
             faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         ]);
 
-        statusText.textContent = 'Syncing biometric data...';
+        statusText.textContent = 'Authenticating kiosk & syncing biometrics...';
         progress.style.width = '60%';
+        await ensureKioskAuthenticated();
         const res = await fetch('/api/scanner/descriptors');
         const data = await res.json();
         const descriptors = data.descriptors || (Array.isArray(data) ? data : []);

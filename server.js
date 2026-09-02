@@ -264,6 +264,23 @@ const verifyAuth = (roles) => (req, res, next) => {
 };
 
 
+
+// Kiosk Authentication Secret
+const KIOSK_SECRET_KEY = process.env.KIOSK_SECRET_KEY || 'kiosk_pps_nammamart_sec_2026';
+
+function verifyKioskOrAdmin(req, res, next) {
+    // 1. Check if Admin Session Cookie exists
+    if (isAdminRequest(req)) {
+        return next();
+    }
+    // 2. Check for Kiosk Header or Session
+    const kioskToken = req.headers['x-kiosk-secret'] || req.cookies['kiosk_token'];
+    if (kioskToken && kioskToken === KIOSK_SECRET_KEY) {
+        return next();
+    }
+    return res.status(403).json({ success: false, message: 'Forbidden: Kiosk device authorization required.' });
+}
+
 function isAdminRequest(req) {
     try {
         const token = req.cookies && req.cookies.accessToken;
@@ -290,13 +307,15 @@ app.use('/api', (req, res, next) => {
     if (req.path === '/attendance/scan' && req.method === 'POST') return next();
     // Scanner heartbeat is public (kiosk has no auth token)
     if (req.path === '/scanner/heartbeat') return next();
+    if (req.path === '/scanner/auth' && req.method === 'POST') return next();
     if (req.path === '/scanner/descriptors' && req.method === 'GET') return next();
+    // /scanner/descriptors is now protected by verifyKioskOrAdmin
     // Face requests GET is public (scanner needs to poll without auth)
     if (req.path === '/admin/face-requests' && req.method === 'GET') return next();
     // Face requests DELETE is public (scanner clears after registration)
     if (req.path.startsWith('/admin/face-requests/') && req.method === 'DELETE') return next();
     // Face descriptor registration is public (scanner has no auth token)
-    if (req.path.match(/^\/employees\/[^/]+\/face$/) && req.method === 'POST') return next();
+    // /employees/:id/face is now protected by verifyKioskOrAdmin
     
     // Password Reset APIs are public
     if (req.path === '/request-reset-otp' && req.method === 'POST') return next();
@@ -820,7 +839,7 @@ app.put('/api/employees/:id', verifyAdmin, async (req, res) => {
  * Dedicated Biometric Template Endpoint for Scanner Kiosk
  * Only returns active employee IDs and mathematical face embeddings needed for on-device matching.
  */
-app.get('/api/scanner/descriptors', async (req, res) => {
+app.get('/api/scanner/descriptors', apiLimiter, verifyKioskOrAdmin, async (req, res) => {
     try {
         const snapshot = await db.employees().where('isActive', '!=', false).get();
         const descriptors = [];
@@ -842,7 +861,7 @@ app.get('/api/scanner/descriptors', async (req, res) => {
 });
 
 // Register or update an employee's face descriptor
-app.post('/api/employees/:id/face', async (req, res) => {
+app.post('/api/employees/:id/face', apiLimiter, verifyKioskOrAdmin, async (req, res) => {
     try {
         const employeeId = req.params.id;
         const { descriptor } = req.body;
@@ -2398,6 +2417,22 @@ app.delete('/api/admin/face-requests/:id', async (req, res) => {
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }
+});
+
+
+// Kiosk Device Token Exchange (Sets HTTP-Only Kiosk Cookie on verified device initialization)
+app.post('/api/scanner/auth', apiLimiter, (req, res) => {
+    const { kioskSecret } = req.body;
+    if (kioskSecret && kioskSecret === KIOSK_SECRET_KEY) {
+        res.cookie('kiosk_token', KIOSK_SECRET_KEY, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+        return res.json({ success: true, message: 'Kiosk device authenticated successfully.' });
+    }
+    return res.status(401).json({ success: false, message: 'Invalid kiosk secret key.' });
 });
 
 // Scanner Heartbeat APIs

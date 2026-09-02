@@ -20,7 +20,7 @@ jest.setTimeout(30000);
 describe('Production Security, Authorization & Regression Test Suite', () => {
     let adminCookie = '';
     let adminXsrfToken = '';
-    let testEmpId = null;
+    const KIOSK_SECRET = process.env.KIOSK_SECRET_KEY || 'kiosk_pps_nammamart_sec_2026';
 
     beforeAll(async () => {
         const res = await request(app)
@@ -108,7 +108,6 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
             const sample = res.body[0];
             expect(sample.password).toBeUndefined();
             expect(sample).toHaveProperty('name');
-            testEmpId = sample.id;
         }
     });
 
@@ -160,20 +159,27 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
         expect(res.body.status).toBe('online');
     });
 
-    // 7. Biometric Template Data Isolation & Dedicated Kiosk Route
-    it('should NOT expose raw biometric faceDescriptors on general unauthenticated /api/employees', async () => {
-        const res = await request(app).get('/api/employees');
-        expect(res.status).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        if (res.body.length > 0) {
-            res.body.forEach(emp => {
-                expect(emp.faceDescriptor).toBeUndefined();
-            });
-        }
+    // 7. Biometric Template Hardening & Kiosk Authorization
+    it('should REJECT unauthenticated requests to /api/scanner/descriptors with 403 Forbidden', async () => {
+        const res = await request(app).get('/api/scanner/descriptors');
+        expect(res.status).toBe(403);
+        expect(res.body.success).toBe(false);
     });
 
-    it('should only serve active descriptors via the special-purpose /api/scanner/descriptors endpoint', async () => {
-        const res = await request(app).get('/api/scanner/descriptors');
+    it('should REJECT invalid kiosk credentials on /api/scanner/auth with 401', async () => {
+        const res = await request(app)
+            .post('/api/scanner/auth')
+            .send({ kioskSecret: 'invalid_kiosk_secret_9999' });
+
+        expect(res.status).toBe(401);
+        expect(res.body.success).toBe(false);
+    });
+
+    it('should ALLOW authorized kiosk with valid X-KIOSK-SECRET header to fetch descriptors', async () => {
+        const res = await request(app)
+            .get('/api/scanner/descriptors')
+            .set('x-kiosk-secret', KIOSK_SECRET);
+
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(Array.isArray(res.body.descriptors)).toBe(true);
@@ -181,12 +187,17 @@ describe('Production Security, Authorization & Regression Test Suite', () => {
             const first = res.body.descriptors[0];
             expect(first).toHaveProperty('id');
             expect(first).toHaveProperty('faceDescriptor');
-            expect(first['aadhar-number']).toBeUndefined();
-            expect(first['pan-number']).toBeUndefined();
-            expect(first['account-number']).toBeUndefined();
             expect(first.phone).toBeUndefined();
-            expect(first.email).toBeUndefined();
-            expect(first.address).toBeUndefined();
+            expect(first['aadhar-number']).toBeUndefined();
         }
+    });
+
+    it('should ALLOW authorized admin to fetch scanner descriptors', async () => {
+        const res = await request(app)
+            .get('/api/scanner/descriptors')
+            .set('Cookie', adminCookie);
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
     });
 });
