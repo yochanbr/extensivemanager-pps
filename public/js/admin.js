@@ -1265,14 +1265,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchLiveStatus();
         initCharts();
         setInterval(fetchDashboardStats, 60000);
-
-
         setInterval(fetchLiveStatus, 60000);
     }
 
 
     // SPA Employee Management Logic
     let allEmployeesForSPA = [];
+    fetchEmployeesForSPA();
 
     function fetchEmployeesForSPA() {
         const container = document.getElementById('spa-employee-list');
