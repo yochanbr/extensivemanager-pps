@@ -4,7 +4,8 @@
   "description": "Premium Retail Operating System by Pinpoint Startups",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest --forceExit"
   },
   "engines": {
     "node": "24.x"

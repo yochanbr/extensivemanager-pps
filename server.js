@@ -229,7 +229,7 @@ const revokeSession = async (req, res) => {
 };
 
 const verifyAuth = (roles) => (req, res, next) => {
-    const isApi = req.path.startsWith('/api/');
+    const isApi = (req.originalUrl && req.originalUrl.startsWith('/api')) || req.path.startsWith('/api') || req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
     
     // CSRF Protection for state-changing requests
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
@@ -610,12 +610,13 @@ app.post('/api/employees', verifyAdmin, async (req, res) => {
     try {
         const employeeData = req.body;
 
-        if (!employeeData['employee-id'] || !employeeData.password) {
+        const empId = employeeData['employee-id'] || employeeData.username;
+        if (!empId || !employeeData.password) {
             return res.status(400).json({ success: false, message: 'Employee ID and password are required.' });
         }
 
         // Set username to employee-id
-        employeeData.username = employeeData['employee-id'];
+        employeeData.username = empId;
         delete employeeData['employee-id'];
 
         if (employeeData['full-time'] === 'no') {
@@ -3123,24 +3124,24 @@ app.get('/api/update-status', (req, res) => res.json({ updateInProgress: false }
 app.post('/api/update-app', (req, res) => res.status(403).json({ success: false, message: "Cloud updates are managed via GitHub/Vercel." }));
 app.get('/api/system/status', (req, res) => res.json({ status: "Online", platform: "Vercel", database: "Firebase Firestore" }));
 
-if (fs.existsSync('key.pem') && fs.existsSync('cert.pem') && !isVercel) {
-    const options = {
-        key: fs.readFileSync('key.pem'),
-        cert: fs.readFileSync('cert.pem')
-    };
-    https.createServer(options, app).listen(port, "0.0.0.0", () => {
-        console.log(`SECURE Server is running on https://localhost:${port}`);
-        console.log('To access from other devices on your network securely, use your local IP address.');
-        console.log(`Example: https://192.168.1.100:${port}`);
-
-    });
-} else if (!isVercel) {
-    app.listen(port, "0.0.0.0", () => {
-        console.log(`Server is running on http://localhost:${port}`);
-        console.log('To access from other devices on your network, use your local IP address.');
-        console.log(`Example: http://192.168.1.100:${port}`);
-
-    });
+if (require.main === module && !isVercel) {
+    if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
+        const options = {
+            key: fs.readFileSync('key.pem'),
+            cert: fs.readFileSync('cert.pem')
+        };
+        https.createServer(options, app).listen(port, "0.0.0.0", () => {
+            console.log(`SECURE Server is running on https://localhost:${port}`);
+            console.log('To access from other devices on your network securely, use your local IP address.');
+            console.log(`Example: https://192.168.1.100:${port}`);
+        });
+    } else {
+        app.listen(port, "0.0.0.0", () => {
+            console.log(`Server is running on http://localhost:${port}`);
+            console.log('To access from other devices on your network, use your local IP address.');
+            console.log(`Example: http://192.168.1.100:${port}`);
+        });
+    }
 }
 
 // ==========================================

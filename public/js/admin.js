@@ -4421,3 +4421,18 @@ window.deleteShiftReport = async function(reportId, event) {
     }
 };
 
+
+
+// Accessibility: Global ESC key modal closer
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (typeof window.closeBillVerification === 'function') window.closeBillVerification();
+        if (typeof window.closeAttendanceMatrix === 'function') window.closeAttendanceMatrix();
+        if (typeof window.closeReportSelection === 'function') window.closeReportSelection();
+        if (typeof window.closeFaceRegistration === 'function') window.closeFaceRegistration();
+        if (typeof window.closeShiftReportModal === 'function') window.closeShiftReportModal();
+        if (typeof window.closeEditEmployeePanel === 'function') window.closeEditEmployeePanel();
+        if (typeof window.closeAddEmployeePanel === 'function') window.closeAddEmployeePanel();
+        if (typeof window.closeEsrDetailModal === 'function') window.closeEsrDetailModal();
+    }
+});
