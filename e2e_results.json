@@ -1,0 +1,51 @@
+{
+  "total": 11,
+  "passed": 11,
+  "failed": 0,
+  "details": [
+    {
+      "testName": "Unauthenticated /admin redirects to login",
+      "status": "PASS"
+    },
+    {
+      "testName": "Admin Browser Login to Dashboard",
+      "status": "PASS"
+    },
+    {
+      "testName": "Dashboard Sidebar Navigation rendered in DOM",
+      "status": "PASS"
+    },
+    {
+      "testName": "SPA Navigation to Employee Directory (#employees-view)",
+      "status": "PASS"
+    },
+    {
+      "testName": "Modal Open & Escape Key Dismissal Routine verified",
+      "status": "PASS"
+    },
+    {
+      "testName": "SPA Navigation to Attendance Sessions (#attendance-view)",
+      "status": "PASS"
+    },
+    {
+      "testName": "SPA Navigation to Master Reporting Studio",
+      "status": "PASS"
+    },
+    {
+      "testName": "Mobile Viewport (375x812) Layout verified",
+      "status": "PASS"
+    },
+    {
+      "testName": "Tablet Viewport (768x1024) Layout verified",
+      "status": "PASS"
+    },
+    {
+      "testName": "Kiosk Scanner (/scan) UI Load & Element Rendering",
+      "status": "PASS"
+    },
+    {
+      "testName": "Biometric descriptors NOT persisted in client storage",
+      "status": "PASS"
+    }
+  ]
+}
