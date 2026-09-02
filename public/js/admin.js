@@ -4481,14 +4481,18 @@ window.openPayslipConfig = async function() {
     try {
         const res = await fetch('/api/employees');
         const data = await res.json();
-        if (data.success && data.employees) {
+        const employees = Array.isArray(data) ? data : (data.employees || []);
+        
+        if (employees.length > 0) {
             select.innerHTML = '<option value="">Choose Employee...</option>';
-            data.employees.forEach(emp => {
+            employees.forEach(emp => {
                 const opt = document.createElement('option');
                 opt.value = emp.id;
                 opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
                 select.appendChild(opt);
             });
+        } else if (Array.isArray(data) && data.length === 0) {
+            select.innerHTML = '<option value="">No employees found</option>';
         } else {
             select.innerHTML = '<option value="">Failed to load employees</option>';
         }
