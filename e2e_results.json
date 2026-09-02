@@ -1,6 +1,6 @@
 {
-  "total": 11,
-  "passed": 11,
+  "total": 12,
+  "passed": 12,
   "failed": 0,
   "details": [
     {
@@ -29,6 +29,10 @@
     },
     {
       "testName": "SPA Navigation to Master Reporting Studio",
+      "status": "PASS"
+    },
+    {
+      "testName": "Quick Payslip Modal Open on Click",
       "status": "PASS"
     },
     {

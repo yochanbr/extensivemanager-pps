@@ -725,6 +725,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const payslipCard = document.querySelector('.payslip-report-card');
+    if (payslipCard) {
+        payslipCard.addEventListener('click', () => {
+            if (typeof window.openPayslipConfig === 'function') {
+                window.openPayslipConfig();
+            }
+        });
+    }
+
     // Dynamic greeting based on time of day
     const dynamicGreeting = document.getElementById('dynamic-greeting');
     if (dynamicGreeting) {
