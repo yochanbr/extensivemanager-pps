@@ -1152,13 +1152,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
                     const timeStr = new Date(s.session.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500;">${s.name}</div></div></td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
-                            <td style="color:#64748b; white-space: nowrap;">${timeStr}</td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${s.bg}; color:${s.statusColor}; white-space: nowrap;">${s.statusText}</span></td>
+                            <td><div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:50%; background:#e2e8f0; color:#475569; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
+                            <td><span style="padding:3px 8px; border-radius:8px; font-size:11px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
+                            <td style="color:#64748b; font-size:12px; white-space: nowrap;">${timeStr}</td>
+                            <td><span style="padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; background:${s.bg}; color:${s.statusColor}; white-space: nowrap;">${s.statusText}</span></td>
                         </tr>
                     `;
                 });
@@ -1170,10 +1169,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:10px; min-width: 140px;"><div style="width:32px; height:32px; border-radius:50%; background:#f1f5f9; color:#64748b; display:flex; justify-content:center; align-items:center; font-weight:600; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #94A3B8;">${s.name}</div></div></td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
-                            <td style="color:#94A3B8; white-space: nowrap;">--:--</td>
-                            <td><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:#FEE2E2; color:#EF4444; white-space: nowrap;">Absent</span></td>
+                            <td><div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:50%; background:#f1f5f9; color:#94a3b8; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
+                            <td><span style="padding:3px 8px; border-radius:8px; font-size:11px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
+                            <td style="color:#94a3b8; font-size:12px; white-space: nowrap;">--:--</td>
+                            <td><span style="padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; background:#FEE2E2; color:#EF4444; white-space: nowrap;">Absent</span></td>
                         </tr>
                     `;
                 });
