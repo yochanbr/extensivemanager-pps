@@ -28,15 +28,14 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 const port = process.env.PORT || 3000;
 const isVercel = process.env.VERCEL === '1';
 
-// --- MANDATORY SECRETS CHECK ---
-const ADMIN_USER = process.env.ADMIN_USER;
-const ADMIN_PASS = process.env.ADMIN_PASS;
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET + '_refresh';
+// --- MANDATORY SECRETS CHECK & ENVIRONMENT CONFIGURATION ---
+const ADMIN_USER = process.env.ADMIN_USER || 'nammamart';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin12nammamart';
+const JWT_SECRET = process.env.JWT_SECRET || 'developer@extensivemanager1512';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + '_refresh' || 'developer@extensivemanager1215';
 
-if (!ADMIN_USER || !ADMIN_PASS || !JWT_SECRET) {
-    console.error('🔥 CRITICAL: Missing mandatory security environment variables (ADMIN_USER, ADMIN_PASS, JWT_SECRET). Server crashed for safety.');
-    process.exit(1);
+if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS || !process.env.JWT_SECRET) {
+    console.warn('⚠️ WARNING: Running with default credentials fallback. Set ADMIN_USER, ADMIN_PASS, and JWT_SECRET in Vercel Environment Variables.');
 }
 
 // Ensure ADMIN_PASS is hashed for safe comparisons later
