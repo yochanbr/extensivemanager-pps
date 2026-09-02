@@ -4478,27 +4478,42 @@ window.openPayslipConfig = async function() {
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 
+    // Helper to populate select
+    const populateSelect = (list) => {
+        if (!list || list.length === 0) return false;
+        select.innerHTML = '<option value="">Choose Employee...</option>';
+        list.forEach(emp => {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = `${emp.name || 'Unnamed'} (${emp.username || emp.employeeId || emp['employee-id'] || 'No ID'})`;
+            select.appendChild(opt);
+        });
+        return true;
+    };
+
+    // Use cached list immediately if present
+    if (typeof allEmployeesForSPA !== 'undefined' && allEmployeesForSPA && allEmployeesForSPA.length > 0) {
+        populateSelect(allEmployeesForSPA);
+    }
+
     try {
         const res = await fetch('/api/employees');
-        const data = await res.json();
-        const employees = Array.isArray(data) ? data : (data.employees || []);
-        
-        if (employees.length > 0) {
-            select.innerHTML = '<option value="">Choose Employee...</option>';
-            employees.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = `${emp.name} (${emp.username || emp['employee-id'] || 'No ID'})`;
-                select.appendChild(opt);
-            });
-        } else if (Array.isArray(data) && data.length === 0) {
-            select.innerHTML = '<option value="">No employees found</option>';
-        } else {
+        if (res.ok) {
+            const data = await res.json();
+            const employees = Array.isArray(data) ? data : (data.employees || data.data || []);
+            if (employees.length > 0) {
+                populateSelect(employees);
+            } else if (select.options.length <= 1) {
+                select.innerHTML = '<option value="">No active employees found</option>';
+            }
+        } else if (select.options.length <= 1) {
             select.innerHTML = '<option value="">Failed to load employees</option>';
         }
     } catch (err) {
         console.error('Error loading employees for payslip:', err);
-        select.innerHTML = '<option value="">Error loading staff</option>';
+        if (select.options.length <= 1) {
+            select.innerHTML = '<option value="">Error loading staff</option>';
+        }
     }
 
     // Set default month to current
