@@ -1295,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (employees.length === 0) {
             container.innerHTML = `
-                <div style="padding: 100px 40px; text-align: center; color: #94A3B8;">
+                <div style="padding: 100px 40px; text-align: center; color: var(--text-muted);">
                     <i class="fas fa-users-slash" style="font-size: 48px; opacity: 0.2; margin-bottom: 16px;"></i>
                     <p style="font-weight: 600;">No staff records found matching your search.</p>
                 </div>`;
@@ -1303,13 +1303,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let listHTML = `
-        <div class="modern-table-container" style="background: white; border-radius: 20px; overflow: hidden; border: 1px solid #F1F5F9;">
+        <div class="table-wrapper">
             <table class="status-table">
                 <thead>
-                    <tr style="background: #F8FAFC; border-bottom: 1px solid #F1F5F9;">
-                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Staff Member</th>
-                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B;">Availability</th>
-                        <th style="padding: 20px 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748B; text-align: right;">Command Actions</th>
+                    <tr>
+                        <th>Staff Member</th>
+                        <th>Availability</th>
+                        <th style="text-align: right;">Command Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1321,52 +1321,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const empRole = emp['blood-group'] || 'Staff Member';
 
             listHTML += `
-                <tr class="employee-row" style="transition: background 0.2s; border-bottom: 1px solid #F8FAFC;">
-                    <td style="padding: 20px 24px;">
+                <tr>
+                    <td>
                         <div style="display:flex; align-items:center; gap:16px;">
-                            <div style="width:44px; height:44px; border-radius:14px; background: ${isActive ? 'linear-gradient(135deg, #F95A2C 0%, #FF8C42 100%)' : '#E2E8F0'}; color:white; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 18px; box-shadow: 0 4px 12px ${isActive ? 'rgba(249, 90, 44, 0.2)' : 'rgba(0,0,0,0.05)'};">
+                            <div style="width:40px; height:40px; border-radius:10px; background: ${isActive ? 'var(--primary-accent)' : 'var(--bg-hover)'}; color:${isActive ? 'white' : 'var(--text-muted)'}; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 16px; box-shadow: 0 4px 12px ${isActive ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.05)'};">
                                 ${initial}
                             </div>
                             <div>
-                                <div style="font-weight: 700; color: #1E293B; font-size: 15px;">${emp.name}</div>
-                                <div style="font-size: 12px; color: #94A3B8; font-weight: 500;">ID: ${emp.employeeId || 'EM-99'} • ${empRole}</div>
+                                <div style="font-weight: 700; color: var(--text-heading); font-size: 14px;">${emp.name}</div>
+                                <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">ID: ${emp.employeeId || 'EM-99'} &bull; ${empRole}</div>
                             </div>
                         </div>
                     </td>
-                    <td style="padding: 20px 24px;">
-                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: ${isActive ? '#DCFCE7' : '#FEE2E2'}; color: ${isActive ? '#166534' : '#991B1B'}; border: 1px solid ${isActive ? '#BBF7D0' : '#FECACA'};">
-                            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+                    <td>
+                        <span class="pill ${isActive ? 'working' : 'absent'}">
                             ${isActive ? 'Active' : 'Deactivated'}
                         </span>
                     </td>
-                    <td style="padding: 20px 24px; text-align: right;">
+                    <td style="text-align: right;">
                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                            <button class="icon-action-btn" title="${isActive ? 'Deactivate' : 'Activate'}" 
-                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#0F172A'" 
-                                onmouseout="this.style.background='white'; this.style.color='#64748B'"
-                                onclick="spaToggleEmployeeStatus('${emp.id}', ${isActive})">
+                            <button class="icon-btn" title="${isActive ? 'Deactivate' : 'Activate'}" onclick="spaToggleEmployeeStatus('${emp.id}', ${isActive})">
                                 <i class="fas fa-${isActive ? 'ban' : 'check'}"></i>
                             </button>
-                            <button class="icon-action-btn" title="Biometric Setup" 
-                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#F95A2C'; this.style.borderColor='#F95A2C'" 
-                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
-                                onclick="window.openFaceRegistration('${emp.id}')">
+                            <button class="icon-btn" title="Biometric Setup" onclick="window.openFaceRegistration('${emp.id}')">
                                 <i class="fas fa-camera"></i>
                             </button>
-                            <button class="icon-action-btn" title="Quick Edit" 
-                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#F8FAFC'; this.style.color='#3B82F6'; this.style.borderColor='#3B82F6'" 
-                                onmouseout="this.style.background='white'; this.style.color='#64748B'; this.style.borderColor='#E2E8F0'"
-                                onclick="window.spaEditEmployee('${emp.id}')">
+                            <button class="icon-btn" title="Quick Edit" onclick="window.spaEditEmployee('${emp.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="icon-action-btn" title="Remove Record" 
-                                style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid #FEE2E2; background: #FFF1F2; color: #EF4444; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#EF4444'; this.style.color='white'" 
-                                onmouseout="this.style.background='#FFF1F2'; this.style.color='#EF4444'"
-                                onclick="spaDeleteEmployee('${emp.id}')">
+                            <button class="icon-btn" title="Remove Record" onclick="spaDeleteEmployee('${emp.id}')" style="color: var(--danger);">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -1381,13 +1364,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         `;
         container.innerHTML = listHTML;
-
-        if (!document.getElementById('emp-row-hover-style')) {
-            const style = document.createElement('style');
-            style.id = 'emp-row-hover-style';
-            style.innerHTML = '.employee-row:hover { background: #F8FAFC !important; }';
-            document.head.appendChild(style);
-        }
     }
 
     // Attach search listener

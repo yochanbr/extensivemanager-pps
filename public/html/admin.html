@@ -505,20 +505,19 @@
                     </div>
 
                     <div id="employees-view" style="display: none;">
-                        <div class="live-status-section" style="border-radius: 28px; padding: 32px; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.02);">
-                            <div class="section-header" style="margin-bottom: 32px; flex-wrap: wrap; gap: 20px;">
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <h3 style="font-size: 24px; font-weight: 800; color: #0F172A; margin: 0;">Staff Management</h3>
-                                    <span style="font-size: 13px; color: #94A3B8; font-weight: 500;">Monitor and control employee directory access</span>
+                        <div class="settings-card" style="padding: 24px;">
+                            <div class="settings-card-header" style="justify-content: space-between; margin-bottom: 24px;">
+                                <div>
+                                    <h3 style="font-size: 20px; font-weight: 800; color: var(--text-heading); margin: 0;">Staff Management</h3>
+                                    <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Monitor and control employee directory access</span>
                                 </div>
-                                <div style="display: flex; gap: 12px; align-items: center; flex: 1; justify-content: flex-end; min-width: 300px;">
-                                    <div class="search-bar" style="width: 280px; box-shadow: none; border: 1px solid #E2E8F0; height: 48px;">
-                                        <i class="fas fa-search" style="color: #94A3B8; margin-right: 12px;"></i>
-                                        <input type="text" id="spa-employee-search" placeholder="Search staff name or ID..." style="background: transparent; border: none; outline: none; width: 100%; font-size: 13px;">
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <div class="search-bar" style="width: 280px; border: 1px solid var(--border); height: 40px; border-radius: var(--radius); padding: 0 16px; display: flex; align-items: center; background: var(--bg);">
+                                        <i class="fas fa-search" style="color: var(--text-muted); margin-right: 12px;"></i>
+                                        <input type="text" id="spa-employee-search" placeholder="Search staff name or ID..." style="background: transparent; border: none; outline: none; width: 100%; font-size: 13px; color: var(--text-heading);">
                                     </div>
-                                    <button id="spa-add-employee-btn" class="action-btn" onclick="window.openAddEmployeePanel()"
-                                        style="background: #0F172A; color: white; border-radius: 14px; padding: 0 24px; height: 48px; display: flex; align-items: center; gap: 10px; font-weight: 700; transition: transform 0.2s; border: none; cursor: pointer;">
-                                        <i class="fas fa-user-plus"></i> <span style="font-size: 14px;">Add New Employee</span>
+                                    <button id="spa-add-employee-btn" class="primary-btn" onclick="window.openAddEmployeePanel()" style="height: 40px;">
+                                        <i class="fas fa-user-plus"></i> <span>Add Employee</span>
                                     </button>
                                 </div>
                             </div>
