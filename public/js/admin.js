@@ -1153,9 +1153,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
                     const timeStr = new Date(s.session.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    const avatarContent = s.faceImage ? `<img src="${s.faceImage}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; flex-shrink:0;">` : `<div style="width:28px; height:28px; border-radius:50%; background:#e2e8f0; color:#475569; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div>`;
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:50%; background:#e2e8f0; color:#475569; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
+                            <td><div style="display:flex; align-items:center; gap:8px;">${avatarContent}<div style="font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
                             <td><span style="padding:3px 8px; border-radius:8px; font-size:11px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
                             <td style="color:#64748b; font-size:12px; white-space: nowrap;">${timeStr}</td>
                             <td><span style="padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; background:${s.bg}; color:${s.statusColor}; white-space: nowrap;">${s.statusText}</span></td>
@@ -1168,9 +1169,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (filterValue === 'working' || filterValue === 'break') return;
 
                     const role = (s['full-time'] || s.fullTime) === 'yes' ? 'Full Time' : 'Part Time';
+                    const avatarContent = s.faceImage ? `<img src="${s.faceImage}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; flex-shrink:0; opacity:0.5;">` : `<div style="width:28px; height:28px; border-radius:50%; background:#f1f5f9; color:#94a3b8; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div>`;
                     rowsHtml += `
                         <tr>
-                            <td><div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:50%; background:#f1f5f9; color:#94a3b8; display:flex; justify-content:center; align-items:center; font-weight:700; font-size:12px; flex-shrink:0;">${s.name.charAt(0).toUpperCase()}</div><div style="font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
+                            <td><div style="display:flex; align-items:center; gap:8px;">${avatarContent}<div style="font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${s.name}</div></div></td>
                             <td><span style="padding:3px 8px; border-radius:8px; font-size:11px; font-weight:600; background:#f1f5f9; color:#475569; white-space: nowrap;">${role}</span></td>
                             <td style="color:#94a3b8; font-size:12px; white-space: nowrap;">--:--</td>
                             <td><span style="padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; background:#FEE2E2; color:#EF4444; white-space: nowrap;">Absent</span></td>
@@ -1319,14 +1321,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const isActive = emp.isActive !== false;
             const initial = (emp.name ? emp.name.charAt(0).toUpperCase() : '?');
             const empRole = emp['blood-group'] || 'Staff Member';
+            const avatarHtml = emp.faceImage 
+                ? `<img src="${emp.faceImage}" style="width:40px; height:40px; border-radius:10px; object-fit:cover; box-shadow: 0 4px 12px ${isActive ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.05)'};">`
+                : `<div style="width:40px; height:40px; border-radius:10px; background: ${isActive ? 'var(--accent)' : 'var(--bg)'}; color:${isActive ? 'white' : 'var(--text-muted)'}; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 16px; box-shadow: 0 4px 12px ${isActive ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.05)'};">${initial}</div>`;
 
             listHTML += `
                 <tr>
                     <td>
                         <div style="display:flex; align-items:center; gap:16px;">
-                            <div style="width:40px; height:40px; border-radius:10px; background: ${isActive ? 'var(--primary-accent)' : 'var(--bg-hover)'}; color:${isActive ? 'white' : 'var(--text-muted)'}; display:flex; justify-content:center; align-items:center; font-weight:700; font-size: 16px; box-shadow: 0 4px 12px ${isActive ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.05)'};">
-                                ${initial}
-                            </div>
+                            ${avatarHtml}
                             <div>
                                 <div style="font-weight: 700; color: var(--text-heading); font-size: 14px;">${emp.name}</div>
                                 <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">ID: ${emp.employeeId || 'EM-99'} &bull; ${empRole}</div>
@@ -3305,12 +3308,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizing...';
             captureBtn.disabled = true;
+            
+            let faceImageBase64 = null;
+            const videoElement = document.getElementById('face-video');
+            if (videoElement) {
+                const snapCanvas = document.createElement('canvas');
+                snapCanvas.width = 160;
+                snapCanvas.height = Math.floor((videoElement.videoHeight / videoElement.videoWidth) * 160) || 160;
+                const ctx = snapCanvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, snapCanvas.width, snapCanvas.height);
+                faceImageBase64 = snapCanvas.toDataURL('image/jpeg', 0.8);
+            }
 
             try {
                 const res = await fetch('/api/employees/' + currentRegId + '/face', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ descriptor: Array.from(window.lastDescriptor) })
+                    body: JSON.stringify({ 
+                        descriptor: Array.from(window.lastDescriptor),
+                        faceImage: faceImageBase64
+                    })
                 });
                 const data = await res.json();
                 if (data.success) {

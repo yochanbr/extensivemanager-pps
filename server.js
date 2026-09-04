@@ -863,7 +863,7 @@ app.get('/api/scanner/descriptors', apiLimiter, verifyKioskOrAdmin, async (req, 
 app.post('/api/employees/:id/face', apiLimiter, verifyKioskOrAdmin, async (req, res) => {
     try {
         const employeeId = req.params.id;
-        const { descriptor } = req.body;
+        const { descriptor, faceImage } = req.body;
 
         if (!descriptor || !Array.isArray(descriptor)) {
             return res.status(400).json({ success: false, message: 'Invalid face descriptor data provided.' });
@@ -874,7 +874,12 @@ app.post('/api/employees/:id/face', apiLimiter, verifyKioskOrAdmin, async (req, 
             return res.status(404).json({ success: false, message: 'Employee not found.' });
         }
 
-        await doc.ref.update({ faceDescriptor: descriptor });
+        const updateData = { faceDescriptor: descriptor };
+        if (faceImage) {
+            updateData.faceImage = faceImage;
+        }
+
+        await doc.ref.update(updateData);
         
         // Cleanup face request queue automatically
         try {
