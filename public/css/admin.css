@@ -676,7 +676,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-body);
 .t-min { width: 45px !important; }
 .t-period { width: 55px !important; color: #6366F1 !important; }
 .t-sep { font-weight: 800; color: #94A3B8; }
-   ========================================================================== */
+/* ========================================================================== */
 
 .reporting-studio-overlay {
     position: fixed;
@@ -951,7 +951,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-body);
 /* ==========================================================================
 /* ==========================================================================
    RESPONSIVE DESIGN SYSTEM (UNIVERSAL COMPATIBILITY)
-   ========================================================================== */
+/* ========================================================================== */
 
 /* 1. TABLET & LAPTOP SMALL (Under 1024px) */
 @media screen and (max-width: 1024px) {
@@ -1119,7 +1119,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-body);
 
 /* ==========================================================================
    MASTER REPORT MODULE CARDS
-   ========================================================================== */
+/* ========================================================================== */
 
 .master-reports-grid {
     display: grid;
