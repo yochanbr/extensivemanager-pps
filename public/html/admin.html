@@ -1312,50 +1312,56 @@
     <!-- ADD EMPLOYEE SLIDE-OVER PANEL -->
     <div class="side-panel-overlay" id="add-employee-overlay" onclick="window.closeAddEmployeePanel()"></div>
     <div class="side-panel" id="add-employee-panel">
-        <!-- Top-right close button -->
         <button class="panel-close-btn" onclick="window.closeAddEmployeePanel()" title="Close">
             <i class="fas fa-times"></i>
         </button>
-        <div class="side-panel-header">
-            <div class="panel-title">
-                <h3>New Staff Enrollment</h3>
-                <p>Register a new member to the system &mdash; drag to move</p>
+        <div class="side-panel-header" style="background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%); padding: 32px 40px 24px;">
+            <div class="panel-title" style="display:flex; align-items:center; gap:16px;">
+                <div style="width: 52px; height: 52px; background: #EEF2FF; color: #6366F1; border-radius: 16px; display:flex; align-items:center; justify-content:center; font-size: 24px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 4px 12px rgba(99,102,241,0.15);">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div>
+                    <h3 style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.5px;">New Staff Enrollment</h3>
+                    <p style="font-size: 13.5px; color: #64748B; margin: 6px 0 0; font-weight: 500;">Register a new team member into the system</p>
+                </div>
             </div>
         </div>
         
-        <div class="side-panel-body">
+        <div class="side-panel-body" style="padding: 24px 40px;">
             <!-- Progress Stepper -->
-            <div class="stepper-minimal">
-                <div class="step-dot active" data-step="1">1</div>
+            <div class="stepper-minimal" style="padding: 0; margin-bottom: 36px; gap: 8px;">
+                <div class="step-dot active" data-step="1" style="width:40px; height:40px; font-size:15px; border-radius:12px;"><i class="fas fa-id-card"></i></div>
                 <div class="step-line" id="add-line-1"></div>
-                <div class="step-dot" data-step="2">2</div>
+                <div class="step-dot" data-step="2" style="width:40px; height:40px; font-size:15px; border-radius:12px;"><i class="fas fa-briefcase"></i></div>
                 <div class="step-line" id="add-line-2"></div>
-                <div class="step-dot" data-step="3">3</div>
+                <div class="step-dot" data-step="3" style="width:40px; height:40px; font-size:15px; border-radius:12px;"><i class="fas fa-heartbeat"></i></div>
                 <div class="step-line" id="add-line-3"></div>
-                <div class="step-dot" data-step="4">4</div>
+                <div class="step-dot" data-step="4" style="width:40px; height:40px; font-size:15px; border-radius:12px;"><i class="fas fa-money-check-alt"></i></div>
             </div>
 
-            <form id="spa-add-employee-form">
+            <form id="spa-add-employee-form" style="display: flex; flex-direction: column; min-height: 100%;">
+                
                 <!-- STEP 1: Personal Information -->
                 <div class="spa-step active" id="spa-step-1">
-                    <div class="form-section-title">Personal Information</div>
+                    <div class="form-section-title" style="border-left-color: #6366F1;"><i class="fas fa-user-circle" style="margin-right:6px;"></i> Personal Profile</div>
+                    
                     <div class="input-group">
-                        <label>Employee Full name *</label>
-                        <input type="text" name="name" placeholder="Johnathan Doe" required>
+                        <label>Full Legal Name <span style="color:#EF4444">*</span></label>
+                        <input type="text" name="name" placeholder="E.g. Johnathan Doe" required style="font-size:15px; padding: 14px 16px;">
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Employee ID *</label>
+                            <label>Employee ID <span style="color:#EF4444">*</span></label>
                             <input type="text" name="employee-id" placeholder="EMP101" required>
                         </div>
                         <div class="input-group">
-                            <label>Employee phone Numeber *</label>
+                            <label>Phone Number <span style="color:#EF4444">*</span></label>
                             <input type="tel" name="phone" placeholder="9876543210" required>
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Adhar Number</label>
+                            <label>Aadhar Number</label>
                             <input type="text" name="aadhar-number" placeholder="XXXX-XXXX-XXXX">
                         </div>
                         <div class="input-group">
@@ -1365,11 +1371,11 @@
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Date of birth</label>
+                            <label>Date of Birth</label>
                             <input type="date" name="dob">
                         </div>
                         <div class="input-group">
-                            <label>gender</label>
+                            <label>Gender</label>
                             <div class="custom-select-wrapper">
                                 <select name="gender">
                                     <option value="Male">Male</option>
@@ -1381,7 +1387,7 @@
                         </div>
                     </div>
                     <div class="input-group" id="spa-add-marital-group">
-                        <label>matrial status</label>
+                        <label>Marital Status</label>
                         <div class="custom-select-wrapper">
                             <select name="marital-status">
                                 <option value="Single">Single</option>
@@ -1391,38 +1397,35 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <label>Full address</label>
-                        <textarea name="address" placeholder="Residential Address..." style="height: 60px;"></textarea>
+                        <label>Full Residential Address</label>
+                        <textarea name="address" placeholder="Enter complete address..." style="height: 90px; resize: none; padding: 14px 16px;"></textarea>
                     </div>
                 </div>
 
                 <!-- STEP 2: Job & Access -->
                 <div class="spa-step" id="spa-step-2">
-                    <div class="form-section-title">Access & Scheduling</div>
+                    <div class="form-section-title" style="border-left-color: #6366F1;"><i class="fas fa-fingerprint" style="margin-right:6px;"></i> Access & Scheduling</div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Login username *</label>
+                            <label>Login Username <span style="color:#EF4444">*</span></label>
                             <input type="text" name="username" placeholder="Emp ID or unique name" required>
                         </div>
                         <div class="input-group">
-                            <label>Login Password *</label>
+                            <label>Login Password <span style="color:#EF4444">*</span></label>
                             <input type="password" name="password" id="spa-pass-1" placeholder="••••••••" required>
                         </div>
                         <div class="input-group">
-                            <label>Confirm Password *</label>
+                            <label>Confirm Password <span style="color:#EF4444">*</span></label>
                             <input type="password" id="spa-pass-2" placeholder="••••••••" required>
                         </div>
                     </div>
-                    <div class="input-row">
-
+                    <div class="input-row" style="margin-top: 10px; border-top: 1px dashed #E2E8F0; padding-top: 20px;">
                         <div class="input-group">
                             <label>Joining Date</label>
                             <input type="date" name="joining-date">
                         </div>
-                    </div>
-                    <div class="input-row">
                         <div class="input-group">
-                            <label>Employee ment type</label>
+                            <label>Employment Type</label>
                             <div class="custom-select-wrapper">
                                 <select name="full-time">
                                     <option value="yes">Full Time</option>
@@ -1431,15 +1434,11 @@
                                 <i class="fas fa-chevron-down select-icon"></i>
                             </div>
                         </div>
-                        <div class="input-group spa-add-time-group">
-                            <label>Break in minutes</label>
-                            <input type="number" name="break-time" value="30">
-                        </div>
                     </div>
-                    <div class="input-row spa-add-time-group">
-                        <div class="input-group">
-                            <label>Legal Chekin Time (12h)</label>
-                            <div class="time-12h-group">
+                    <div class="input-row" style="margin-top: 10px;">
+                        <div class="input-group spa-add-time-group">
+                            <label>Check-in Time (12h)</label>
+                            <div class="time-12h-group" style="padding:6px 10px; background: #F8FAFC; border-color: #E2E8F0;">
                                 <select name="start-hour" class="t-hour">
                                     <option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
                                     <option value="01">01</option><option value="02">02</option><option value="03" selected>03</option><option value="04">04</option>
@@ -1453,9 +1452,9 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="input-group">
-                            <label>Legal Checkout Time (12h)</label>
-                            <div class="time-12h-group">
+                        <div class="input-group spa-add-time-group">
+                            <label>Check-out Time (12h)</label>
+                            <div class="time-12h-group" style="padding:6px 10px; background: #F8FAFC; border-color: #E2E8F0;">
                                 <select name="end-hour" class="t-hour">
                                     <option value="06" selected>06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option>
                                     <option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="01">01</option>
@@ -1470,7 +1469,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="input-group spa-add-time-group">
+                    <div class="input-group spa-add-time-group" style="margin-top: 10px;">
                         <label>Working Days</label>
                         <div class="mini-days-selector">
                             <label><input type="checkbox" name="working-days" value="Monday" checked> M</label>
@@ -1486,14 +1485,14 @@
 
                 <!-- STEP 3: Emergency & Financial -->
                 <div class="spa-step" id="spa-step-3">
-                    <div class="form-section-title">Emergency & Banking</div>
+                    <div class="form-section-title" style="border-left-color: #6366F1;"><i class="fas fa-first-aid" style="margin-right:6px;"></i> Emergency & Banking</div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Guardian Name</label>
+                            <label>Guardian / Emergency Contact</label>
                             <input type="text" name="guardian-name" placeholder="Contact Person">
                         </div>
                         <div class="input-group">
-                            <label>Guardian relation ship</label>
+                            <label>Relationship</label>
                             <div class="custom-select-wrapper">
                                 <select name="guardian-relationship">
                                     <option value="Father">Father</option><option value="Mother">Mother</option><option value="Spouse">Spouse</option>
@@ -1507,100 +1506,112 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <label>Gurdain Number</label>
+                        <label>Emergency Phone Number</label>
                         <input type="tel" name="guardian-phone" placeholder="Emergency Phone">
                     </div>
                     
-                    <div class="input-row" style="margin-top: 15px; border-top: 1px solid #F1F5F9; padding-top: 15px;">
+                    <div class="input-row" style="margin-top: 15px; border-top: 1px dashed #E2E8F0; padding-top: 25px;">
                         <div class="input-group">
                             <label>Bank Name</label>
-                            <input type="text" name="bank-name">
+                            <input type="text" name="bank-name" placeholder="E.g. HDFC Bank">
                         </div>
                         <div class="input-group">
-                            <label>Bank branch</label>
+                            <label>Bank Branch</label>
                             <input type="text" name="bank-branch">
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
                             <label>Account Number</label>
-                            <input type="text" name="account-number">
+                            <input type="text" name="account-number" placeholder="XXXX XXXX XXXX">
                         </div>
                         <div class="input-group">
-                            <label>Acount holder Name</label>
+                            <label>Account Holder Name</label>
                             <input type="text" name="account-holder-name">
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>Ifsc code</label>
-                            <input type="text" name="ifsc-code">
+                            <label>IFSC Code</label>
+                            <input type="text" name="ifsc-code" placeholder="HDFC0001234">
                         </div>
                         <div class="input-group">
-                            <label>Pan card Number</label>
-                            <input type="text" name="pan-number">
+                            <label>PAN Card Number</label>
+                            <input type="text" name="pan-number" placeholder="ABCDE1234F">
                         </div>
                     </div>
                 </div>
 
                 <!-- STEP 4: Payroll Configuration -->
                 <div class="spa-step" id="spa-step-4">
-                    <div class="form-section-title">Payroll Configuration</div>
+                    <div class="form-section-title" style="border-left-color: #6366F1;"><i class="fas fa-file-invoice-dollar" style="margin-right:6px;"></i> Payroll Configuration</div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label id="spa-add-basic-salary-label">Monthly Basic salary *</label>
-                            <input type="number" name="basicSalary" placeholder="e.g. 15000" required>
+                            <label id="spa-add-basic-salary-label">Monthly Basic Salary <span style="color:#EF4444">*</span></label>
+                            <div style="position: relative;">
+                                <i class="fas fa-rupee-sign" style="position: absolute; left: 16px; top: 16px; color: #94A3B8;"></i>
+                                <input type="number" name="basicSalary" placeholder="15000" style="padding-left: 36px; font-weight: 700; color: #0F172A;" required>
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label>Esi/benefit Code</label>
+                            <label>ESI / Benefit Code</label>
                             <input type="text" name="esi" placeholder="Optional">
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
                             <label>PF Number</label>
-                            <input type="text" name="pf-number" value="N/A" id="spa-edit-pf-number">
+                            <input type="text" name="pf-number" value="N/A">
                         </div>
                         <div class="input-group">
                             <label>PF UAN Number</label>
-                            <input type="text" name="uan-number" value="N/A" id="spa-edit-uan-number">
+                            <input type="text" name="uan-number" value="N/A">
                         </div>
                     </div>
                     <div class="input-row">
                         <div class="input-group">
-                            <label>LOP Per Day (₹) *</label>
-                            <input type="number" name="lopPerDay" placeholder="e.g. 500" id="spa-edit-lop-per-day">
+                            <label>LOP Per Day <span style="color:#EF4444">*</span></label>
+                            <div style="position: relative;">
+                                <i class="fas fa-rupee-sign" style="position: absolute; left: 16px; top: 16px; color: #94A3B8;"></i>
+                                <input type="number" name="lopPerDay" placeholder="500" style="padding-left: 36px;" required>
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label>LOP Per Hour (₹) *</label>
-                            <input type="number" name="lopPerHour" placeholder="e.g. 70" id="spa-edit-lop-per-hour">
+                            <label>LOP Per Hour <span style="color:#EF4444">*</span></label>
+                            <div style="position: relative;">
+                                <i class="fas fa-rupee-sign" style="position: absolute; left: 16px; top: 16px; color: #94A3B8;"></i>
+                                <input type="number" name="lopPerHour" placeholder="70" style="padding-left: 36px;" required>
+                            </div>
                         </div>
                     </div>
                     <div class="input-group">
                         <label>Work Location</label>
                         <input type="text" name="location" value="Sullia, Karnataka">
                     </div>
-                    <div style="background: #FFF7ED; padding: 20px; border-radius: 16px; border: 1px solid #FFEDD5; margin-top: 20px;">
-                        <p style="font-size: 13px; color: #9A3412; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-info-circle"></i> Verification Required
+                    
+                    <div style="background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); padding: 18px 24px; border-radius: 16px; border: 1px solid rgba(253, 186, 116, 0.4); margin-top: 32px; box-shadow: 0 4px 12px rgba(251, 146, 60, 0.08);">
+                        <p style="font-size: 14px; color: #9A3412; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-shield-alt"></i> Final Verification Checklist
                         </p>
-                        <p style="font-size: 12px; color: #C2410C; margin: 8px 0 0;">Please ensure the Employee ID matches the biometric ID for sync.</p>
+                        <p style="font-size: 13px; color: #C2410C; margin: 8px 0 0; font-weight: 500; line-height: 1.5;">Please ensure the assigned <strong style="color: #9A3412; background: rgba(255,255,255,0.5); padding: 2px 6px; border-radius: 4px;">Employee ID</strong> matches the physical biometric scanner ID to enable automated attendance sync.</p>
                     </div>
                 </div>
+                
+                <!-- Spacer to push footer down -->
+                <div style="flex: 1;"></div>
 
-                <div class="panel-footer" style="justify-content: space-between;">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button type="button" class="panel-btn-secondary" id="spa-btn-prev" style="display: none;" onclick="window.goBackAdd()"><i class="fas fa-arrow-left"></i> Back</button>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button type="button" class="panel-btn-primary" id="spa-btn-next">Next <i class="fas fa-arrow-right"></i></button>
-                        <button type="submit" class="panel-btn-primary" id="spa-btn-submit" style="display: none;">Finish &amp; Save <i class="fas fa-check"></i></button>
+                <div class="side-panel-footer" style="margin: 0 -40px -24px; border-radius: 0 0 28px 28px; padding: 24px 40px; background: rgba(248, 250, 252, 0.95); backdrop-filter: blur(12px);">
+                    <button type="button" class="panel-btn-secondary" id="spa-btn-prev" onclick="window.goBackAdd()" style="background: #FFFFFF; border: 1.5px solid #E2E8F0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 44px; display: none;">Back</button>
+                    <div style="display:flex; gap:12px; margin-left: auto;">
+                        <button type="button" class="panel-btn-primary" id="spa-btn-next" style="background: #0F172A; color: #FFFFFF; box-shadow: 0 8px 16px rgba(15,23,42,0.2); height: 44px;">Next Step <i class="fas fa-arrow-right"></i></button>
+                        <button type="submit" class="panel-btn-primary" id="spa-btn-submit" style="display: none; background: #10B981; color: #FFFFFF; box-shadow: 0 8px 16px rgba(16,185,129,0.2); height: 44px;">Complete Registration <i class="fas fa-check-circle"></i></button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
-    <!-- FACE REGISTRATION MODAL (SMART SCANNER) -->
+<!-- FACE REGISTRATION MODAL (SMART SCANNER) -->
+
     <div class="modal-overlay" id="face-register-modal">
         <div class="modern-modal" style="max-width: 540px; border-radius: 32px; overflow: hidden; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);">
             <div class="modern-modal-header" style="border: none; padding: 32px 32px 10px 32px;">
