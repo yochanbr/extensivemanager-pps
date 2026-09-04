@@ -19,6 +19,25 @@ const formatIST = (date) => {
     return new Date(date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 };
 
+// --- GLOBAL FETCH WRAPPER FOR CSRF --- //
+const originalFetch = window.fetch;
+window.fetch = async function () {
+    let [resource, config] = arguments;
+    if (config && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method?.toUpperCase())) {
+        const xsrfMatch = document.cookie.match(new RegExp('(^| )xsrf-token=([^;]+)'));
+        const xsrf = xsrfMatch ? xsrfMatch[2] : '';
+        if (xsrf) {
+            config.headers = config.headers || {};
+            if (config.headers instanceof Headers) {
+                config.headers.set('X-XSRF-TOKEN', xsrf);
+            } else {
+                config.headers['X-XSRF-TOKEN'] = xsrf;
+            }
+        }
+    }
+    return originalFetch(resource, config);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- INACTIVITY MONITOR (1 MINUTE) --- //
     let inactivityTimer;
@@ -3321,9 +3340,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
+                const xsrf = document.cookie.match(new RegExp('(^| )xsrf-token=([^;]+)'))?.[2];
                 const res = await fetch('/api/employees/' + currentRegId + '/face', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': xsrf || ''
+                    },
                     body: JSON.stringify({ 
                         descriptor: Array.from(window.lastDescriptor),
                         faceImage: faceImageBase64
