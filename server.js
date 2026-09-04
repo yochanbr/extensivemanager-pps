@@ -314,7 +314,8 @@ app.use('/api', (req, res, next) => {
     // Face requests DELETE is public (scanner clears after registration)
     if (req.path.startsWith('/admin/face-requests/') && req.method === 'DELETE') return next();
     // Face descriptor registration is public (scanner has no auth token)
-    // /employees/:id/face is now protected by verifyKioskOrAdmin
+    // /employees/:id/face is protected independently by verifyKioskOrAdmin
+    if (req.path.match(/^\/employees\/[^/]+\/face$/) && req.method === 'POST') return next();
     
     // Password Reset APIs are public
     if (req.path === '/request-reset-otp' && req.method === 'POST') return next();
