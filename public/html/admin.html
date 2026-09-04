@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="../js/face-api.min.js"></script>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../css/admin.css?v=20260726_MODAL_UI">
+    <link rel="stylesheet" href="../css/admin.css?v=20260902_V10">
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -28,30 +28,26 @@
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="sidebar-header" style="padding: 24px;">
-                <img src="/assets/logo.svg" alt="Logo" style="width: 40px; height: 40px; border-radius: 10px;">
+            <div class="sidebar-header">
+                <img src="/assets/logo.svg" alt="Logo" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;">
                 <div class="sidebar-title">
                     <span class="title-main">Extensive Manager</span>
                     <span class="title-sub">by Pinpoint Startups</span>
                 </div>
             </div>
-
             <nav class="sidebar-nav">
-                <!-- Group 1 -->
                 <div class="nav-group-title">Core Operations</div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item dashboard-btn" onclick="location.reload()">
-                        <i class="fas fa-th-large"></i><span>Dashboard</span>
-                    </button>
-                    </div>
-                <div class="nav-item-wrapper">
-                    <button class="nav-item update-btn">
-                        <i class="fas fa-cog"></i><span>Menu settings</span>
+                        <i class="fas fa-house"></i><span>Dashboard</span>
                     </button>
                 </div>
-
-                <!-- Group 2 -->
-                <div class="nav-group-title" style="margin-top: 20px;">Staff & Time</div>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item update-btn">
+                        <i class="fas fa-sliders-h"></i><span>Menu Settings</span>
+                    </button>
+                </div>
+                <div class="nav-group-title">Staff &amp; Time</div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item manage-employees-btn">
                         <i class="fas fa-users"></i><span>Employees</span>
@@ -59,80 +55,72 @@
                 </div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item attendance-btn">
-                        <i class="fas fa-user-clock"></i><span>Attendance</span>
+                        <i class="fas fa-calendar-check"></i><span>Attendance</span>
                     </button>
                 </div>
-
-                <!-- Group 3 -->
-                <div class="nav-group-title" style="margin-top: 20px;">Analytics & Shifts</div>
+                <div class="nav-group-title">Analytics &amp; Shifts</div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item view-report-btn">
-                        <i class="fas fa-file-alt"></i><span>Reports</span>
+                        <i class="fas fa-chart-bar"></i><span>Reports</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item view-esr-jpgs-btn">
-                        <i class="fas fa-history"></i><span>Shift Summary</span>
+                        <i class="fas fa-file-contract"></i><span>Shift Summary</span>
                     </button>
                 </div>
                 <div class="nav-item-wrapper">
                     <button class="nav-item master-report-btn">
-                        <i class="fas fa-file-invoice"></i><span>Studio</span>
+                        <i class="fas fa-layer-group"></i><span>Studio</span>
                     </button>
                 </div>
-
-                <div
-                    style="margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <span style="font-size: 9px; color: #3F3F46; text-transform: uppercase; letter-spacing: 1px;">Build v9.0 Core Operations</span>
+                <div style="margin-top:auto;padding-top:16px;">
+                    <span class="build-version">Build v10.0</span>
                 </div>
             </nav>
-
             <div class="sidebar-footer">
-                <div class="nav-item-wrapper" style="margin-bottom: 20px;">
-                    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+                <div class="nav-item-wrapper">
+                    <button class="nav-item logout-btn" style="color:#F87171;">
+                        <i class="fas fa-sign-out-alt" style="color:#F87171;"></i><span>Logout</span>
+                    </button>
                 </div>
-
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-            <!-- Premium Background Orbs -->
-            <div class="ambient-orb orb-1"></div>
-            <div class="ambient-orb orb-2"></div>
-            <div class="ambient-orb orb-3"></div>
             <header class="topbar">
                 <div class="topbar-left">
-                    <button class="mobile-menu-btn" id="mobile-menu-toggle" style="display: none;">
+                    <button class="mobile-menu-btn" id="mobile-menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1 id="view-title">Dashboard</h1>
+                    <div>
+                        <h1 id="view-title">Dashboard</h1>
+                        <span id="topbar-datetime"></span>
+                    </div>
                 </div>
                 <div class="topbar-right">
                     <div class="user-profile" id="user-profile-toggle">
-                        <div
-                            style="width: 36px; height: 36px; border-radius: 50%; background: #7C3AED; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
-                            YO</div>
-                        <div class="user-info"><span class="user-name">Yochan</span><span
-                                class="user-role">Developer</span></div>
+                        <div style="width:32px;height:32px;border-radius:50%;background:#6366F1;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">YO</div>
+                        <div class="user-info">
+                            <span class="user-name">Yochan</span>
+                            <span class="user-role">Developer</span>
+                        </div>
                         <i class="fas fa-chevron-down dropdown-icon"></i>
-
                         <!-- Developer Profile Dropdown -->
                         <div class="profile-dropdown-menu" id="profile-dropdown">
-                            <div style="padding: 16px; border-bottom: 1px solid #F1F5F9; margin-bottom: 8px;">
-                                <div style="font-weight: 700; font-size: 14px; color: #1E293B;">Yochan</div>
-                                <div style="font-size: 11px; color: #64748B;">Lead Developer</div>
+                            <div style="padding:12px 14px;border-bottom:1px solid #F1F5F9;margin-bottom:4px;">
+                                <div style="font-weight:700;font-size:14px;color:#0F172A;">Yochan</div>
+                                <div style="font-size:11px;color:#94A3B8;">Lead Developer</div>
                             </div>
-                            <a href="https://www.linkedin.com/search/results/all/?keywords=yochan%20balekaje"
-                                target="_blank" class="profile-dropdown-item">
-                                <i class="fab fa-linkedin" style="color: #0077B5;"></i> Linkedin
+                            <a href="https://www.linkedin.com/search/results/all/?keywords=yochan%20balekaje" target="_blank" class="profile-dropdown-item">
+                                <i class="fab fa-linkedin" style="color:#0077B5;"></i> Linkedin
                             </a>
                             <a href="https://github.com/yochanbr" target="_blank" class="profile-dropdown-item">
-                                <i class="fab fa-github" style="color: #181717;"></i> Git Hub
+                                <i class="fab fa-github" style="color:#181717;"></i> Git Hub
                             </a>
-                            <div style="padding: 12px 16px; margin-top: 8px; border-top: 1px solid #F1F5F9;">
-                                <a href="mailto:yochanbr@gmail.com" class="action-btn secondary"
-                                    style="width: 100%; box-sizing: border-box; font-size: 12px; height: 36px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <div style="padding:10px 14px;margin-top:4px;border-top:1px solid #F1F5F9;">
+                                <a href="mailto:yochanbr@gmail.com" class="action-btn secondary" style="width:100%;box-sizing:border-box;font-size:12px;height:36px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
                                     <i class="fas fa-envelope"></i> Message Developer
                                 </a>
                             </div>
@@ -372,28 +360,14 @@
             <div class="content-area">
                 <div class="content-area">
 
-                    <!-- BETA WARNING BANNER -->
-                    <div class="beta-notice-banner"
-                        style="margin: 0 0 32px; padding: 20px 28px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; display: flex; align-items: flex-start; gap: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.05);">
-                        <div style="background: #3B82F6; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);">
-                            <i class="fas fa-flask"></i>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                                <span style="font-weight: 800; font-size: 15px; color: #1E293B; letter-spacing: -0.01em;">BETA Version - Testing &amp; Development</span>
-                                <span style="background: #3B82F6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; text-transform: uppercase;">Active Review</span>
-                            </div>
-                            <div style="font-size: 13.5px; color: #475569; line-height: 1.6; font-weight: 500;">
-                                This is a beta version under testing development. The application service may show errors or even serious mismatching bugs. Reporting lets the developer know the bug quicker for resolving.
-                            </div>
-                            <div style="margin-top: 15px; display: flex; gap: 12px;">
-                                <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]"
-                                    target="_blank"
-                                    style="background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
-                                    <i class="fab fa-whatsapp"></i> REPORT ON WHATSAPP
-                                </a>
-                            </div>
-                        </div>
+                    <!-- Compact Beta Strip -->
+                    <div id="beta-strip" style="display:flex; align-items:center; gap:12px; background: linear-gradient(135deg, #1E3A5F, #1e40af); border-radius:14px; padding:12px 20px; margin-bottom:24px;">
+                        <span style="background:rgba(255,255,255,0.15); border-radius:8px; padding:4px 10px; font-size:10px; font-weight:800; color:white; letter-spacing:1px; text-transform:uppercase;">BETA</span>
+                        <span style="font-size:13px; color:rgba(255,255,255,0.85); font-weight:500; flex:1;">Testing &amp; Development — Report bugs via WhatsApp for faster resolution.</span>
+                        <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]" target="_blank" style="background:#25D366; color:white; padding:7px 16px; border-radius:10px; font-size:12px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; transition:0.2s;">
+                            <i class="fab fa-whatsapp"></i> Report
+                        </a>
+                        <button onclick="document.getElementById('beta-strip').style.display='none'" style="background:rgba(255,255,255,0.1); border:none; color:rgba(255,255,255,0.6); width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">&times;</button>
                     </div>
 
                     <!-- Studio Hub (Employee-Portal Style Bento) -->
@@ -450,40 +424,59 @@
                     <div id="dashboard-view">
 
 
-                        <div class="summary-grid">
+                        <div class="summary-grid" id="kpi-section">
                             <div class="summary-card active">
-                                <div class="stat-details"><span class="label">Working Now</span><span class="value"
-                                        id="dash-working">0</span></div>
+                                <div class="stat-details">
+                                    <span class="label">Working Now</span>
+                                    <span class="value" id="dash-working">0</span>
+                                    <span class="trend">Active on floor</span>
+                                </div>
                                 <div class="stat-icon"><i class="fas fa-user-check"></i></div>
                             </div>
                             <div class="summary-card break">
-                                <div class="stat-details"><span class="label">On Break</span><span class="value"
-                                        id="dash-break">0</span></div>
+                                <div class="stat-details">
+                                    <span class="label">On Break</span>
+                                    <span class="value" id="dash-break">0</span>
+                                    <span class="trend">Currently resting</span>
+                                </div>
                                 <div class="stat-icon"><i class="fas fa-coffee"></i></div>
                             </div>
                             <div class="summary-card checkins">
-                                <div class="stat-details"><span class="label">Total Check-ins</span><span class="value"
-                                        id="dash-checkins">0</span></div>
+                                <div class="stat-details">
+                                    <span class="label">Total Check-ins</span>
+                                    <span class="value" id="dash-checkins">0</span>
+                                    <span class="trend">Today's arrivals</span>
+                                </div>
                                 <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+                            </div>
+                            <div class="summary-card absent">
+                                <div class="stat-details">
+                                    <span class="label">Absent Today</span>
+                                    <span class="value" id="dash-absent">0</span>
+                                    <span class="trend">Not checked in</span>
+                                </div>
+                                <div class="stat-icon"><i class="fas fa-user-times"></i></div>
                             </div>
                         </div>
 
-                        <div class="dashboard-grid" style="display: flex; gap: 24px; align-items: stretch;">
-                            <div class="live-status-section" style="flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 380px; max-height: 560px;">
-                                <div class="section-header" style="flex-shrink: 0;">
-                                    <h3>Live Attendance Monitor</h3>
-                                    <div style="display: flex; gap: 10px;">
+                        <div class="dashboard-grid">
+                            <div class="live-status-section" style="display:flex;flex-direction:column;max-height:500px;">
+                                <div class="section-header">
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <div style="width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 0 3px rgba(16,185,129,0.2);animation:livePulse 2s infinite;"></div>
+                                        <h3>Live Attendance Monitor</h3>
+                                    </div>
+                                    <div style="display:flex;gap:8px;align-items:center;">
                                         <select id="live-status-filter" class="filter-dropdown">
                                             <option value="all">All Staff</option>
-                                            <option value="working">Working Only</option>
+                                            <option value="working">Working</option>
                                             <option value="break">On Break</option>
                                             <option value="absent">Absent</option>
                                         </select>
-                                        <input type="date" id="mainDateFilter" class="input-dark"
-                                            style="background: white; color: black; border: 1px solid #E2E8F0;">
+                                        <input type="date" id="mainDateFilter" class="filter-dropdown" style="cursor:pointer;">
                                     </div>
                                 </div>
-                                <div class="table-wrapper" style="flex: 1; overflow-y: auto;">
+                                <div class="table-wrapper" style="flex:1;">
                                     <table class="status-table">
                                         <thead>
                                             <tr>
@@ -497,16 +490,22 @@
                                     </table>
                                 </div>
                             </div>
-
-                            <!-- Action Required Card -->
-                            <div class="live-status-section action-required-panel" style="flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 380px; max-height: 560px;">
-                                <div class="section-header" style="flex-shrink: 0;">
-                                    <h3 style="color: #F95A2C;"><i class="fas fa-exclamation-circle"></i> Action Required</h3>
+                            <div class="live-status-section action-required-panel" style="display:flex;flex-direction:column;max-height:500px;">
+                                <div class="section-header" style="border-bottom-color:#FEE2E2;">
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <div style="width:32px;height:32px;border-radius:8px;background:#FEE2E2;display:flex;align-items:center;justify-content:center;">
+                                            <i class="fas fa-exclamation" style="color:#EF4444;font-size:13px;"></i>
+                                        </div>
+                                        <div>
+                                            <h3 style="margin:0;">Action Required</h3>
+                                            <span id="action-required-count" style="font-size:11px;color:#94A3B8;font-weight:500;">Checking...</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="action-required-list" style="flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px;">
-                                    <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
-                                        <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                                        <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
+                                <div id="action-required-list">
+                                    <div class="empty-state">
+                                        <i class="fas fa-check-circle"></i>
+                                        <p>No immediate actions pending.</p>
                                     </div>
                                 </div>
                             </div>
@@ -2091,6 +2090,24 @@
     <script src="../js/script.js"></script>
     <script src="../js/admin.js?v=20260902_FIT_POLISH_01"></script>
     <script src="../js/admin_reports.js?v=20260902_FIT_POLISH_01"></script>
+    <script>
+    // Live clock in topbar
+    (function() {
+        function updateClock() {
+            var el = document.getElementById('topbar-datetime');
+            if (!el) return;
+            var now = new Date();
+            var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var h = now.getHours(), m = now.getMinutes();
+            var ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear() + '  \u2022  ' + h + ':' + (m < 10 ? '0' + m : m) + ' ' + ampm;
+        }
+        updateClock();
+        setInterval(updateClock, 30000);
+    })();
+    </script>
 </body>
 
 </html>

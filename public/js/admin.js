@@ -1052,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setVal('dash-checkins', checkins);
             setVal('dash-working', active);
             setVal('dash-break', breakCount);
+            setVal('dash-absent', employees.filter(e => e.isActive !== false && !sessions.find(s => s.employeeId == e.id)).length);
 
             // --- ALERT HUB ENGINE (REFINED FOR APPROVALS) ---
             const alerts = [];
@@ -2942,24 +2943,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use manualAlerts passed from loadDashboardData if available, fallback to global
         const alerts = manualAlerts || window.dashboardAlerts.attendance || [];
 
+        // Update the count subtitle if the element exists
+        const countEl = document.getElementById('action-required-count');
+        if (countEl) {
+            countEl.textContent = alerts.length === 0 ? 'All clear' : `${alerts.length} item${alerts.length === 1 ? '' : 's'} need attention`;
+        }
+
         if (alerts.length === 0) {
             listContainer.innerHTML = `
-                <div style="padding: 40px 20px; text-align: center; color: #94a3b8;">
-                    <i class="fas fa-check-circle" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5; color: #10B981;"></i>
-                    <p style="font-size: 14px; font-weight: 500;">No immediate actions pending.</p>
+                <div class="empty-state">
+                    <i class="fas fa-check-circle" style="color:#10B981;"></i>
+                    <p>No immediate actions pending.</p>
                 </div>`;
             return;
         }
 
         listContainer.innerHTML = alerts.map(a => {
+            // Determine icon class category for CSS styling
+            let iconClass = 'info';
+            if (a.type === 'bill_verification') iconClass = 'bill';
+            else if (a.color === '#EF4444' || a.color === '#f43f5e') iconClass = 'alert';
+
             let actionHtml = '';
             if (a.isActionable) {
                 if (a.type === 'bill_verification') {
-                    actionHtml = `<button class="action-btn" onclick="${a.action}" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">${a.actionLabel || 'VERIFY'}</button>`;
+                    actionHtml = `<button class="action-cta" onclick="${a.action}" style="background: ${a.color}; color: white; box-shadow: 0 2px 8px ${a.color}33;">${a.actionLabel || 'VERIFY'}</button>`;
                 } else {
                     actionHtml = `
-                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap;">IGNORE</button>
-                        <button class="action-btn" onclick="reviewAttendance(event, '${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; font-size: 11px; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px ${a.color}33;">APPROVE</button>
+                        <button class="action-cta" onclick="reviewAttendance(event, '${a.id}', 'DECLINE')" style="background: #f1f5f9; color: #64748b;">IGNORE</button>
+                        <button class="action-cta" onclick="reviewAttendance(event, '${a.id}', 'APPROVE')" style="background: ${a.color}; color: white; box-shadow: 0 2px 8px ${a.color}33;">APPROVE</button>
                     `;
                 }
             } else {
@@ -2967,15 +2979,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             return `
-            <div style="background: white; border-left: 4px solid ${a.color}; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                    <div style="width: 38px; height: 38px; border-radius: 10px; background: ${a.color}10; color: ${a.color}; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">
-                        <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
-                    </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 700; font-size: 14px; color: #1E293B; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.user}</div>
-                        <div style="font-size: 11.5px; color: #64748B; font-weight: 600; line-height: 1.4; word-break: break-word;">${a.desc || a.title}</div>
-                    </div>
+            <div class="action-required-item">
+                <div class="action-icon ${iconClass}">
+                    <i class="fas fa-${a.icon || 'exclamation-circle'}"></i>
+                </div>
+                <div class="action-content">
+                    <div class="action-name">${a.user}</div>
+                    <div class="action-sub">${a.desc || a.title}</div>
                 </div>
                 <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
                     ${actionHtml}
