@@ -360,15 +360,7 @@
             <div class="content-area">
                 <div class="content-area">
 
-                    <!-- Compact Beta Strip -->
-                    <div id="beta-strip" style="display:flex; align-items:center; gap:12px; background: linear-gradient(135deg, #1E3A5F, #1e40af); border-radius:14px; padding:12px 20px; margin-bottom:24px;">
-                        <span style="background:rgba(255,255,255,0.15); border-radius:8px; padding:4px 10px; font-size:10px; font-weight:800; color:white; letter-spacing:1px; text-transform:uppercase;">BETA</span>
-                        <span style="font-size:13px; color:rgba(255,255,255,0.85); font-weight:500; flex:1;">Testing &amp; Development — Report bugs via WhatsApp for faster resolution.</span>
-                        <a href="https://wa.me/916363251294?text=Bug%20Report%20from%20Namma%20Mart%20Admin%20Panel:%20[Describe%20Issue%20Here%20with%20Screenshot%20if%20possible]" target="_blank" style="background:#25D366; color:white; padding:7px 16px; border-radius:10px; font-size:12px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; transition:0.2s;">
-                            <i class="fab fa-whatsapp"></i> Report
-                        </a>
-                        <button onclick="document.getElementById('beta-strip').style.display='none'" style="background:rgba(255,255,255,0.1); border:none; color:rgba(255,255,255,0.6); width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">&times;</button>
-                    </div>
+                    <!-- Beta Strip Removed for Production -->
 
                     <!-- Studio Hub (Employee-Portal Style Bento) -->
                     <div id="master-reports-hub-v2" style="display: none;">
@@ -599,13 +591,12 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="settings-view" style="display: none;">
                         <div class="settings-container">
                             <!-- Security Hub Card -->
                             <div class="settings-card">
                                 <div class="settings-card-header">
-                                    <div class="icon-box" style="background: #FEE2E2; color: #EF4444;">
+                                    <div class="icon-box" style="background: var(--danger-light); color: var(--danger);">
                                         <i class="fas fa-shield-alt"></i>
                                     </div>
                                     <h4>Security Hub</h4>
@@ -624,55 +615,48 @@
                                         <label>Admin Phone Number</label>
                                         <input type="tel" id="admin-contact-phone" class="modern-input" placeholder="e.g. +91 98765 43210">
                                     </div>
-                                    <div class="modern-form-group" style="margin-bottom: 32px;">
+                                    <div class="modern-form-group" style="margin-bottom: 24px;">
                                         <label>Current Master Password</label>
-                                        <input type="password" id="current-admin-password" class="modern-input" placeholder="••••••••">
+                                        <input type="password" id="current-admin-password" class="modern-input" placeholder="••••••••••••">
                                     </div>
-                                    <button type="submit" class="modern-btn accent" style="width: 100%; height: 56px; font-weight: 700;">
+                                    <button type="submit" class="primary-btn" style="width: 100%; justify-content: center; height: 44px;">
                                         Update Recovery Info
                                     </button>
                                 </form>
 
                                 <!-- Danger Zone Component -->
-                                <div class="danger-zone-box">
-                                    <div class="danger-title-row">
+                                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-light);">
+                                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--danger); margin-bottom: 8px; font-size: 13px;">
                                         <i class="fas fa-radiation-alt"></i>
                                         <span>Selective System Reset</span>
                                     </div>
-                                    <p style="font-size: 13px; color: #7F1D1D; opacity: 0.8; margin-bottom: 20px;">
+                                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
                                         Clear specific activity logs while preserving critical business reports.
                                     </p>
 
-                                    <div class="reset-options-grid">
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="attendance" checked>
-                                            Attendance
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="attendance" checked> Attendance
                                         </label>
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="extra">
-                                            Extra Work
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="extra"> Extra Work
                                         </label>
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="delivery">
-                                            Deliveries
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="delivery"> Deliveries
                                         </label>
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="bill_paid">
-                                            Bill Paid
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="bill_paid"> Bill Paid
                                         </label>
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="issue">
-                                            Issues
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="issue"> Issues
                                         </label>
-                                        <label class="reset-option-item">
-                                            <input type="checkbox" class="reset-target" value="retail_credit">
-                                            Credits
+                                        <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-heading); font-weight: 500; cursor: pointer;">
+                                            <input type="checkbox" class="reset-target" value="retail_credit"> Credits
                                         </label>
                                     </div>
 
-                                    <button id="master-reset-attendance-btn" class="modern-btn"
-                                        style="width: 100%; height: 52px; background: #EF4444; color: #FFFFFF; border: none; font-weight: 800; border-radius: 14px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
-                                        EXECUTE SYSTEM RESET
+                                    <button id="master-reset-attendance-btn" class="action-btn danger" style="width: 100%; justify-content: center; height: 44px;">
+                                        Execute System Reset
                                     </button>
                                 </div>
                             </div>
@@ -680,7 +664,7 @@
                             <!-- Cloud Health Card -->
                             <div class="settings-card">
                                 <div class="settings-card-header">
-                                    <div class="icon-box" style="background: #DCFCE7; color: #10B981;">
+                                    <div class="icon-box" style="background: var(--success-light); color: var(--success);">
                                         <i class="fas fa-network-wired"></i>
                                     </div>
                                     <h4>Cloud Resilience</h4>
@@ -690,39 +674,39 @@
                                     Monitor real-time infrastructure status and cloud synchronization health.
                                 </p>
 
-                                <div class="cloud-status-list">
-                                    <div class="cloud-status-item">
-                                        <i class="fas fa-cloud" style="color: #3B82F6;"></i>
-                                        <div class="label" style="color: #1E40AF;">Firebase Real-time Operational</div>
+                                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; padding: 16px; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border-light);">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 32px; height: 32px; border-radius: var(--radius-sm); background: rgba(59,130,246,0.1); color: #3B82F6; display: flex; align-items: center; justify-content: center;"><i class="fas fa-cloud"></i></div>
+                                        <div style="font-size: 13px; font-weight: 600; color: var(--text-heading);">Firebase Operational</div>
+                                        <div style="margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-light);"></div>
                                     </div>
-                                    <div class="cloud-status-item">
-                                        <i class="fab fa-github" style="color: #0F172A;"></i>
-                                        <div class="label" style="color: #0F172A;">GitHub Secure Backup Active</div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 32px; height: 32px; border-radius: var(--radius-sm); background: rgba(15,23,42,0.1); color: #0F172A; display: flex; align-items: center; justify-content: center;"><i class="fab fa-github"></i></div>
+                                        <div style="font-size: 13px; font-weight: 600; color: var(--text-heading);">GitHub Secure Backup Active</div>
+                                        <div style="margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-light);"></div>
                                     </div>
                                 </div>
 
-                                <div style="display: flex; flex-direction: column; gap: 14px;">
-                                    <button id="sync-cloud-btn" class="action-btn"
-                                        style="height: 60px; background: #0F172A; color: white; border-radius: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 15px;">
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <button id="sync-cloud-btn" class="action-btn" style="height: 44px; justify-content: center; background: var(--text-heading);">
                                         <i class="fab fa-github"></i> Manual Cloud Sync
                                     </button>
                                     
-                                    <button id="reset-settings-btn" class="action-btn secondary" 
-                                        style="height: 56px; border-radius: 16px; font-weight: 600; color: #64748B;">
+                                    <button id="reset-settings-btn" class="secondary-btn" style="height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
                                         <i class="fas fa-history"></i> Revert All System Prefs
                                     </button>
                                 </div>
 
-                                <div style="margin-top: 60px; padding: 24px; background: #F8FAFC; border-radius: 20px; border: 1px solid #F1F5F9;">
-                                    <div style="font-weight: 800; font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;">System Version</div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div style="font-size: 14px; font-weight: 700; color: #1E293B;">Extensive Manager OS</div>
-                                        <div style="padding: 4px 10px; background: #E2E8F0; border-radius: 8px; font-size: 11px; font-weight: 800; color: #475569;">v8.4.2 PRO</div>
+                                <div style="margin-top: 32px; padding: 16px; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 800; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">System Version</div>
+                                        <div style="font-size: 13px; font-weight: 700; color: var(--text-heading);">Extensive Manager OS</div>
                                     </div>
+                                    <div style="padding: 4px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; color: var(--text-body);">v10.0 PRO</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>            </div>
                     </div>
 
                     <!-- BILL REPORT VIEW (Studio Tab) -->
